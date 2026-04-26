@@ -1,0 +1,25 @@
+name: workern_notifications
+description: Reusable FCM notification service for Workern apps
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_messaging: ^16.1.1
+  flutter_local_notifications: ^19.5.0
+  cloud_firestore: ^6.1.1
+  flutter_riverpod: ^3.1.0
+  workern_models:
+    path: ../workern_models
+  workern_auth:
+    path: ../workern_auth
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

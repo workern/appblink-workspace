@@ -1,0 +1,23 @@
+<!-- Mobile: show language code only -->
+<select
+  class="sm:hidden border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-fit rounded-md border px-2 py-1 text-xs shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+  [value]="currentLang()"
+  (change)="onValueChange($any($event.target).value)"
+>
+  @for (locale of locales; track locale.code) {
+    <option [value]="locale.code">{{ locale.code.toUpperCase() }}</option>
+  }
+</select>
+
+<!-- Desktop: show full language name -->
+<select
+  class="hidden sm:block border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-fit rounded-md border px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+  [value]="currentLang()"
+  (change)="onValueChange($any($event.target).value)"
+>
+  @for (locale of locales; track locale.code) {
+    <option [value]="locale.code">
+      {{ displayMode() === 'name' ? locale.name : locale.code.toUpperCase() }}
+    </option>
+  }
+</select>

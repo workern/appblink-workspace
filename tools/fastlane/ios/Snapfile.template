@@ -1,0 +1,20 @@
+# iOS screenshot configuration
+# Requires an iOS UI test target configured for Snapshot.
+devices([
+  "iPhone 14 Pro Max",
+  "iPhone 14 Plus",
+  "iPad Pro (12.9-inch) (3rd generation)"
+])
+
+languages([
+  "en-GB"
+])
+
+# Update if your UI test scheme differs.
+scheme("FastlaneSnapshots")
+
+clear_previous_screenshots(true)
+output_directory("../screenshots/ios/en-GB")
+
+# Keep this false for faster local iterations.
+headless(false)

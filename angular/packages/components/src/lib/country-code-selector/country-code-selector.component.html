@@ -1,0 +1,30 @@
+<div
+  hlmCombobox
+  [value]="value()"
+  (valueChange)="onValueChange($event)"
+  [isItemEqualToValue]="isEqualFn"
+  [filter]="filterFn"
+>
+  <hlm-combobox-trigger
+    class="h-10 min-w-[80px] gap-1.5 whitespace-nowrap px-3"
+  >
+    <span aria-hidden="true">{{ value().flag }}</span>
+    <span>{{ value().dialCode }}</span>
+  </hlm-combobox-trigger>
+
+  <ng-template hlmComboboxPortal>
+    <hlm-combobox-content class="w-64">
+      <hlm-combobox-input placeholder="Search country..." />
+      <div hlmComboboxList>
+        @for (country of countryCodes; track country.isoCode) {
+          <hlm-combobox-item [value]="country">
+            <span aria-hidden="true">{{ country.flag }}</span>
+            <span class="flex-1 truncate">{{ country.name }}</span>
+            <span class="shrink-0 text-muted-foreground">{{ country.dialCode }}</span>
+          </hlm-combobox-item>
+        }
+        <hlm-combobox-empty>No countries found</hlm-combobox-empty>
+      </div>
+    </hlm-combobox-content>
+  </ng-template>
+</div>

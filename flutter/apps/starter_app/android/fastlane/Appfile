@@ -1,0 +1,3 @@
+# json_key_file is loaded from SUPPLY_JSON_KEY environment variable
+# Set GOOGLE_PLAY_JSON_KEY_PATH in root .env file
+package_name("com.workern.starterApp") # e.g. com.workern.yourapp

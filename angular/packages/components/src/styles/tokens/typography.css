@@ -1,0 +1,39 @@
+
+:root {
+
+  --font-sans: 'Poppins', sans-serif;
+
+  /* Display */
+  --display-lg: 3.5625rem;
+  --display-lg-lh: 4rem;
+  --display-lg-ls: -0.25px;
+  --display-lg-fw: 400;
+
+  /* Headline */
+  --headline-lg: 2rem;
+  --headline-md: 1.75rem;
+
+  /* Title */
+  --title-lg: 1.375rem;
+  --title-md: 1rem;
+
+  /* Body */
+  --body-lg: 1rem;
+  --body-md: 0.875rem;
+
+  /* Label */
+  --label-lg: 0.875rem;
+  --label-sm: 0.6875rem;
+
+  /* Tailwind Mapping */
+  --text-xs: 0.6875rem;
+  --text-sm: 0.875rem;
+  --text-base: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1rem;
+  --text-2xl: 1.375rem;
+  --text-3xl: 1.75rem;
+  --text-4xl: 2rem;
+  --text-5xl: 3.5625rem;
+
+}

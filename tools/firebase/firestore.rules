@@ -1,0 +1,1075 @@
+rules_version = '2';
+service cloud.firestore {
+
+    match /databases/{database}/documents {
+      function isAnonymous(){
+        return auth.token.firebase.sign_in_provider == 'anonymous'
+      }  
+      function isSangrahShopsAdmin(){
+        let claims = request.auth.token;
+        return claims!=null && claims.admin!=null && claims.admin.sangrahApp!=null && claims.admin.sangrahApp.shops;
+      } 
+
+      function isSangrahItemsAdmin(){
+        let claims = request.auth.token;
+        return claims!=null && claims.admin!=null && claims.admin.sangrahApp!=null && claims.admin.sangrahApp.items;
+      }
+      function isSangrahOrdersAdmin(){
+        let claims = request.auth.token;
+        return claims!=null && claims.admin!=null && claims.admin.sangrahApp!=null && claims.admin.sangrahApp.orders;
+      }              
+      function existingValue(key){
+        return resource.data[key]
+      }
+      function newValue(key){
+        return request.resource.data[key]
+      }
+      function floatEqual(float1, float2) {
+        return math.abs(float1 - float2) <= 0.01;
+      }
+      function isDocumentBeingCreated(){
+        return resource==null
+      }
+      function isAdmin(){
+        return request.auth.token.email=="admin@workern.com" && request.auth.token.email_verified==true
+      }
+      function hasClaim(claim){
+        return request.auth.token[claim]==true
+      }
+      match /llmEnhancerAppCommunities/public/prompts/{promptId}{
+       allow read,list:if auth.uid!=null;
+      }
+      
+      match /{path=**}/applications/{applicationID} {
+      allow read: if isAdmin()
+    	}
+      match /{path=**}/tasks/{taskId} {
+      allow read: if isAdmin()
+    	}
+      match /transactions/{transactionId}{
+          allow read:if isAdmin()
+          allow write:if false;
+      }
+    
+      match /usersPublicData/{uid}{
+          allow read:if true;
+          allow write:if false;
+      }
+    
+      
+      // Expired Products Finder rules
+      match /apps/expiredProductsFinder/products/{productId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null;
+      }
+      match /users/{userId}/mySpaces/expiredProductsFinder/products/{productId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      // match /apps/{appId}{
+      //     allow read:if true;
+      //     allow write:if false;
+         
+      // }
+     match /users/{uid}/mySpaces/{appId}/subscriptions/{subId} {
+  allow read: if request.auth.uid == uid;
+  allow write: if false; // only backend writes
+} 
+      match /apps/automationsApp{
+          match /customTriggers/{appId}{
+          	allow read:if request.auth.uid!=null;
+            allow write:if hasClaim('createTriggerApp')||hasClaim('admin');
+            match /pollingBased/{triggerId}{
+            	allow read:if request.auth.uid!=null;
+              allow write: if hasClaim('createCustomTrigger')||hasClaim('admin');
+            }            
+          }
+          match /customCredentialTypes/{credentialTypeId}{
+            allow read:if request.auth.uid!=null;
+            allow write: if hasClaim('createCustomCredential')||hasClaim('admin');
+          }
+     		
+
+      }
+     match /apps/sangrahApp{
+          match /shops/{shopId}{
+            allow read:if isSangrahShopsAdmin();
+            allow write:if isSangrahShopsAdmin();
+          }
+          match /items/{itemId}{
+            allow read:if isSangrahItemsAdmin();
+            allow write:if isSangrahItemsAdmin();
+          }
+          match /orders/{orderId}{
+            function isOrderDeliveryPerson(){
+              let claims = request.auth.token;
+              return claims!=null && claims.sangrahApp!=null && claims.sangrahApp.orders!=null && claims.sangrahApp.orders[orderId]!=null && claims.sangrahApp.orders[orderId].fulfillment!=null && claims.sangrahApp.orders[orderId].fulfillment.read==true && claims.sangrahApp.orders[orderId].fulfillment.write==true;
+            }
+            allow read:if isSangrahOrdersAdmin() || isOrderDeliveryPerson();
+            allow write:if isSangrahOrdersAdmin();
+          }
+
+    }  
+     match /apps/nikatApp{
+            function isOrderDeliveryPerson(){
+              let claims = request.auth.token;
+              return claims!=null && claims.nikatApp!=null && claims.nikatApp.orders!=null && claims.nikatApp.orders[orderId]!=null && claims.nikatApp.orders[orderId].fulfillment!=null && claims.nikatApp.orders[orderId].fulfillment.read==true && claims.nikatApp.orders[orderId].fulfillment.write==true;
+            }
+          match /shops/{shopId}{
+            allow read:if true;
+            allow write:if false;
+          }
+          match /items/{itemId}{
+            allow read:if true;
+            allow write:if false;
+          }
+          match /orders/{orderId}{
+            allow read:if isOrderDeliveryPerson();
+            allow write:if isOrderDeliveryPerson();
+          }
+
+    }
+    
+     match /apps/nikatDeliveryPartnerApp{
+          match /deliveryPartners/{partnerId}{
+            function isPartner(){
+              return request.auth.uid == partnerId;
+            }
+            allow read:if isPartner();
+            allow write:if false; // Only written by cloud functions
+            
+            match /offers/{offerId}{
+              allow read:if isPartner();
+              allow write:if false; // Only written by cloud functions
+            }
+          }
+
+    }
+    
+     match /apps/promptkul{
+          match /posts/{postId}{
+            allow read: if true;
+            allow write: if false; // Only written by cloud functions
+          }
+    }
+
+    match /apps/save-nest{
+          // MCP connection codes: NOT directly readable by clients.
+          // Redemption is handled exclusively by the redeemMcpCode Cloud Function.
+          match /mcpCodes/{code}{
+            allow read: if false;
+            allow write: if false;
+          }
+          // Save detail analysis (AI-generated metadata)
+          match /saveDetails/{saveId}{
+            allow read: if false;
+            allow write: if false;
+          }
+    }
+
+    match /apps/deskflowPro{
+          match /deviceStatus/{statusId}{
+            allow read: if request.auth.uid != null;
+            allow write: if false; // Only written by cloud functions
+          }
+          match /cleanupSuggestions/{suggestionId}{
+            allow read: if request.auth.uid != null;
+            allow write: if false; // Only written by cloud functions
+          }
+          match /clipboards/{clipboardId}{
+            allow read: if request.auth.uid != null;
+            allow write: if false; // Only written by cloud functions
+          }
+    }
+
+    match /apps/eGiftsApp{
+          match /customWebsites/{websiteId}{
+            allow get: if resource.data.billing.status=="paid" || resource.data.createdAt < timestamp.date(2026, 2, 8);
+            allow list: if false; // Prevent listing multiple documents
+            allow write: if false; // Only written by cloud functions
+          }
+          match /config/customWebsite{
+            allow read: if true;
+            allow write: if false;
+          }
+    }
+
+    match /apps/netWorthCalculatorApp{
+          match /holdings/{holdingId}{
+            allow read: if true; // Public stock data
+            allow write: if false; // Only written by cloud functions
+          }
+          match /assets/{assetId}{
+            allow read: if false; // Private data
+            allow write: if false; // Only written by cloud functions
+          }
+          match /liabilities/{liabilityId}{
+            allow read: if false; // Private data
+            allow write: if false; // Only written by cloud functions
+          }
+    }
+
+    match /apps/workpulseTracker{
+          match /employeeSessions/{sessionId}{
+            allow read: if request.auth.uid != null;
+            allow write: if false; // Only written by cloud functions
+          }
+          match /tasks/{taskId}{
+            allow read: if request.auth.uid != null;
+            allow write: if false; // Only written by cloud functions
+          }
+          match /userProfiles/{profileId}{
+            allow read: if request.auth.uid != null;
+            allow write: if false; // Only written by cloud functions
+          }
+    }
+
+    match /apps/taskwhatsManager{
+          match /tasks/{taskId}{
+            allow read, write: if request.auth.uid != null;
+          }
+    }
+
+    // ── Generic workspace collection (any app that uses the teams pattern) ──────
+    // Path: apps/{appId}/workspaces/{workspaceDocId}
+    // Access: determined solely by membership — safe to leave open for all appIds.
+    match /apps/{appId}/workspaces/{workspaceDocId} {
+      function isWorkspaceMember() {
+        return exists(/databases/$(database)/documents/apps/$(appId)/workspaces/$(workspaceDocId)/members/$(request.auth.uid));
+      }
+      function memberData() {
+        return get(/databases/$(database)/documents/apps/$(appId)/workspaces/$(workspaceDocId)/members/$(request.auth.uid)).data;
+      }
+      function hasSpaceAccess(spaceId) {
+        let spaces = memberData().spaces;
+        // null means access to all spaces; otherwise check the list.
+        return spaces == null || spaceId in spaces;
+      }
+      function isWorkspaceOwner() {
+        return isWorkspaceMember() && memberData().role == 'owner';
+      }
+
+      allow read: if request.auth != null && isWorkspaceMember();
+      allow write: if false; // only Cloud Functions write workspace docs
+
+      match /members/{uid} {
+        allow read: if request.auth != null && isWorkspaceMember();
+        allow write: if false; // only Cloud Functions manage membership
+      }
+
+      // Pending invites — only owners can see them
+      match /invites/{inviteId} {
+        allow read: if request.auth != null && isWorkspaceOwner();
+        allow write: if false; // only Cloud Functions write invites
+      }
+
+      match /spaces/{spaceId} {
+        allow read: if request.auth != null && isWorkspaceMember() && hasSpaceAccess(spaceId);
+        allow write: if false; // only Cloud Functions manage spaces
+      }
+
+      match /spaces/{spaceId}/tasks/{taskId} {
+        allow read, delete: if request.auth != null && isWorkspaceMember() && hasSpaceAccess(spaceId);
+        allow create, update: if false; // only Cloud Functions create/update tasks
+      }
+
+      match /spaces/{spaceId}/vibechecks/{vcId} {
+        allow read: if request.auth != null && isWorkspaceMember() && hasSpaceAccess(spaceId);
+        allow write: if false; // only Cloud Functions write vibechecks
+      }
+
+      // Command queue — members can stream commands; only Cloud Functions write them.
+      match /commands/{commandId} {
+        allow read: if request.auth != null && isWorkspaceMember();
+        allow write: if false; // only Cloud Functions create/update commands
+      }
+    }
+
+    // Pending invites for users who don't have a Firebase account yet.
+    // Path: apps/{appId}/invites/{inviteId}
+    // Only Cloud Functions read/write these; clients never access them directly.
+    match /apps/{appId}/invites/{inviteId} {
+      allow read, write: if false;
+    }
+    // ── end Generic workspace collection ────────────────────────────────────────
+
+    // ── Turk Guru global paths ────────────────────────────────────────────────
+    match /apps/turkGuru{
+      match /accounts/list/{accountId}{
+        allow read, write: if false; // only Cloud Functions
+      }
+      match /tasks/list/{taskId}{
+        allow read: if request.auth != null;
+        allow write: if false; // only Cloud Functions
+      }
+    }
+
+    match /apps/utsavApp{
+            allow write: if false; // Only written by cloud functions/admin
+          match /tickets/{ticketId}{
+            allow read: if false; // Tickets are private
+            allow write: if false; // Only written by cloud functions
+          }
+          match /supportRequests/{requestId}{
+            allow read: if false; // Support requests are private
+            allow write: if false; // Only written by cloud functions
+          }
+    }
+
+
+      match /users/{uid} {
+          function isDocumentOwner(){
+          return request.auth.uid==uid || resource.data.owner.uid==request.auth.uid;
+      }
+
+          allow read:if isDocumentOwner()
+          allow write:if isDocumentOwner()&& (
+          !request.resource.data.keys().hasOnly(['phoneNumber'])
+          ||(request.resource.data.keys().hasOnly(['phoneNumber']) &&
+          request.auth.token.phone_number==request.resource
+          .data.phoneNumber)) && (!request.resource.data.keys().hasOnly(['email'])||
+          (request.resource.data.keys().hasOnly(['email'])
+          && (request.resource.data.email==request.auth.token.email
+          && request.auth.token.email_verified==true)));
+
+
+                match /requesterReviews/{docId}{
+                  allow read:if isDocumentOwner()
+                  allow update:if  isDocumentOwner()
+                }
+
+                match /checkInAppVisits/{visitId}{
+                  allow read:if isDocumentOwner()
+                }
+        
+                match /notifications/{notificationId}{
+                  allow read,write:if isDocumentOwner()
+                }
+        
+                match /requesterReviews/{requesterId}{
+                  allow read,write:if isDocumentOwner()
+                }
+
+                match /mySpaces/{spaceId}/notifications/{notificationId}{
+                    allow read,write:if isDocumentOwner()
+                }
+
+                match /mySpaces/leadsAppSpace{
+                		match /products/{productId}{
+                  		allow read,delete: if isDocumentOwner()
+                      match /leads/{leadId}{
+                        allow read: if isDocumentOwner()
+                        match /posts/{postId}{
+                          allow read: if isDocumentOwner()
+                        }
+                      }	
+                  	}
+                }
+                match /mySpaces/nikatApp{
+                		match /addresses/{addressId}{
+                  		allow read,write: if isDocumentOwner()
+                  	}
+                		match /carts/default/items/{itemId}{
+                  		allow read,write: if isDocumentOwner()
+                  	}
+                    match /orders/{orderId}{
+                        allow read,write: if isDocumentOwner()
+                      }	
+                		match /favorites/{favoriteId}{
+                  		allow read,write: if isDocumentOwner()
+                  	}   
+
+                    match /reviews/{favoriteId}{
+                  		allow read,write: if isDocumentOwner()
+                  	}                                                              
+                }
+                match /mySpaces/nikatDeliveryPartnerApp{
+                		match /deliveryPartners/{partnerId}{
+                  		allow read: if isDocumentOwner() && partnerId == uid;
+                      allow write: if false; // Only written by cloud functions
+                      
+                      match /offers/{offerId}{
+                        allow read: if isDocumentOwner() && partnerId == uid;
+                        allow write: if false; // Only written by cloud functions
+                      }
+                  	}
+                }
+                match /mySpaces/utsavApp{
+                		match /tickets/{ticketId}{
+                  		allow read: if isDocumentOwner();
+                      allow write: if false; // Only written by cloud functions
+                  	}
+                }
+                match /mySpaces/workpulseTracker{
+                  match /employeeSessions/{sessionId}{
+                    allow read: if isDocumentOwner();
+                    allow write: if false; // Only written by cloud functions
+                  }
+                  match /tasks/{taskId}{
+                    allow read: if isDocumentOwner();
+                    allow write: if false; // Only written by cloud functions
+                  }
+                  match /userProfiles/{profileId}{
+                    allow read: if isDocumentOwner();
+                    allow write: if false; // Only written by cloud functions
+                  }
+                }
+                match /mySpaces/taskwhatsManager{
+                  match /tasks/{taskId}{
+                    allow read, write: if isDocumentOwner();
+                  }
+                }
+                // ── Turk Guru user space ──────────────────────────────────────
+                match /mySpaces/turkGuru{
+                  // Account metadata (no credentials)
+                  match /accounts/list/{accountId}{
+                    allow read: if isDocumentOwner();
+                    allow write: if false; // only Cloud Functions write
+                  }
+                  // Notification/monitoring settings
+                  match /settings/docs/preferences{
+                    allow read: if isDocumentOwner();
+                    allow write: if false; // only Cloud Functions write
+                  }
+                  // Discovered tasks
+                  match /tasks/list/{taskId}{
+                    allow read: if isDocumentOwner();
+                    allow write: if false; // only Cloud Functions write
+                  }
+                }
+                match /mySpaces/app-blink{
+                  match /tasks/{taskId}{
+                    allow read: if isDocumentOwner();
+                  }
+                  match /vibechecks/{vibecheckId}{
+                    allow read: if isDocumentOwner();
+                  }
+                  match /machines/{machineId}{
+                    allow read: if isDocumentOwner();
+                  }
+                  // Membership index: lets Flutter/Angular discover which workspaces the user belongs to.
+                  match /memberships/{workspaceDocId}{
+                    allow read: if isDocumentOwner();
+                    allow write: if false; // only written by Cloud Functions
+                  }
+                }
+                match /mySpaces/{spaceId}{
+                    function isSangrahAppSpace(){
+                      return spaceId.matches('^sangrahApp-.*')
+                    }
+                    function verificationStatusIsValid(shop){
+                      let verificationStatus = shop.verification.status;
+                      let existingVerficationStatus = resource.data.verification.status;
+                      let isVisible = shop.nikatSettings.visibility.shop;
+                      return (!isVisible && verificationStatus in ['not_started','pending','rejected'] && (existingVerficationStatus=='not_started'||(existingVerficationStatus=='pending' && verificationStatus!='not_started')||(existingVerficationStatus=='rejected' && verificationStatus in ['pending','rejected'])))
+                      || (shop.verification.status=='verified')
+                    }
+                    function sangrahCheck(){
+                      return isSangrahAppSpace() && isDocumentOwner()
+                    }
+                    match /shops/{shopId}{
+                      function isCurrentShopAdmin(){
+                        let claims = request.auth.token;
+                        return claims!=null && claims.sangrahApp!=null && claims.sangrahApp.shops!=null && claims.sangrahApp.shops[shopId]!=null && claims.sangrahApp.shops[shopId].admin==true;
+                      }
+
+                    	allow read: if sangrahCheck() || isSangrahShopsAdmin() || isCurrentShopAdmin();
+                      allow write: if (sangrahCheck() && verificationStatusIsValid(request.resource.data)) || isSangrahShopsAdmin() || isCurrentShopAdmin();
+                		match /items/{itemId}{
+                  		allow read,write: if sangrahCheck() || isSangrahShopsAdmin()
+                      match /purchases/{purchaseId}{
+                        allow read,write: if sangrahCheck() || isCurrentShopAdmin()
+                      }
+                  	}
+                    match /reviews/{reviewId}{
+                        allow read: if sangrahCheck() || isSangrahShopsAdmin() || isCurrentShopAdmin();
+                        allow write: if sangrahCheck() || isSangrahShopsAdmin() || isCurrentShopAdmin();
+                      }
+                		match /supplyBills/{billId}{
+                      function canReadSupplyBills(){
+                        let claims = request.auth.token;
+                        return claims!=null && claims.sangrahApp!=null && claims.sangrahApp.shops!=null && claims.sangrahApp.shops[shopId]!=null && (claims.sangrahApp.shops[shopId].admin==true || claims.sangrahApp.shops[shopId].supplyBills.read==true);
+                      }
+                      function canWriteSupplyBills(){
+                        let claims = request.auth.token;
+                        return claims!=null && claims.sangrahApp!=null && claims.sangrahApp.shops!=null && claims.sangrahApp.shops[shopId]!=null && (claims.sangrahApp.shops[shopId].admin==true || claims.sangrahApp.shops[shopId].supplyBills.write==true);
+                      }                       
+                        allow read:if sangrahCheck() || canReadSupplyBills();
+                        allow write:if sangrahCheck() || canWriteSupplyBills();
+                      }
+                  	
+                  	
+                    match /suppliers/{supplierId}{
+                        allow read,write: if sangrahCheck() || isCurrentShopAdmin();
+                      }	 
+                     match /sales/{salesId}{
+                        allow read,write: if sangrahCheck();
+                      }	 
+                     match /orders/{orderId}{
+                        function canReadOrders(){
+                          let claims = request.auth.token;
+                          return claims!=null && claims.sangrahApp!=null && claims.sangrahApp.shops!=null && claims.sangrahApp.shops[shopId]!=null && (claims.sangrahApp.shops[shopId].admin==true || claims.sangrahApp.shops[shopId].orders.read==true);
+                        }
+                        function canWriteOrders(){
+                          let claims = request.auth.token;
+                          return claims!=null && claims.sangrahApp!=null && claims.sangrahApp.shops!=null && claims.sangrahApp.shops[shopId]!=null && (claims.sangrahApp.shops[shopId].admin==true || claims.sangrahApp.shops[shopId].orders.write==true);
+                        }                       
+                          allow read:if sangrahCheck() || canReadOrders();
+                          allow write:if sangrahCheck() || canWriteOrders();
+                      }
+                       
+                                                                                     
+                    }
+                }
+                                                             
+                                          
+                match /mySpaces/llmEnhancerAppSpace{
+                    match /settings/default{
+                    	allow read,write: if isDocumentOwner()
+                    }
+                		match /prompts/{promptId}{
+                  		allow read,delete: if isDocumentOwner();
+										  allow create,update: if isDocumentOwner() && isPromptValid(request.resource.data);
+
+
+                  	}
+
+                function isPromptValid(prompt) {
+                  let validKeys = [
+                    'id',
+                    'createdAt',
+                    'updatedAt',
+                    'text',
+                    'tags',
+                    'owner',
+                    'isPubliclyShareable',
+                    'stars',
+                    'upvotes'
+                  ];
+                  return prompt.keys().hasAll(validKeys) && prompt.keys().size()==validKeys.size() &&
+                  prompt.id is string &&
+                  prompt.createdAt is timestamp &&
+                  prompt.updatedAt is timestamp &&
+                  prompt.text is string &&
+                  prompt.tags is list &&
+                  prompt.owner is map &&
+                  prompt.owner.uid is string &&
+                  (prompt.owner.name is string || prompt.owner.name==null) &&
+                  prompt.isPubliclyShareable is bool &&
+                  prompt.stars is int &&
+                  prompt.upvotes is int;
+                }
+                }                
+                
+                match /mySpaces/messengerAppSpace{
+                		match /contacts/{contactId}{
+                  		allow read,write: if isDocumentOwner()
+                  	}
+                		match /templates/{templateId}{
+                  		allow read,write: if isDocumentOwner()
+                  	}
+                		match /conversations/{conversationId}{
+                  		allow read: if isDocumentOwner()
+                      match /messages/{messageId}{
+                  			allow read: if isDocumentOwner()
+                      
+                  			}  
+                  	}                      
+                }
+                
+                match /mySpaces/promptKulApp{
+                		match /posts/{postId}{
+                      allow read: if true;
+                  		allow write: if isDocumentOwner()
+                      
+                      match /likes/{userId}{
+                        allow read: if request.auth.uid != null;
+                        allow create: if request.auth.uid != null && request.auth.uid == userId;
+                        allow delete: if request.auth.uid == userId;
+                      }
+                      
+                      match /comments/{commentId}{
+                        allow read: if request.auth.uid != null;
+                        allow create: if request.auth.uid != null && request.resource.data.userId == request.auth.uid;
+                        allow delete: if request.auth.uid != null && resource.data.userId == request.auth.uid;
+                      }
+                  	}
+                  	
+                  	match /profile/{profileId}{
+                      // Allow authenticated users to read any profile
+                      allow read: if request.auth.uid != null;
+                      // Only allow owner to write their own profile
+                      allow write: if isDocumentOwner() && profileId == 'default';
+                  	}
+                  	
+                  	match /saved/{postId}{
+                      // Only allow users to read/write their own saved posts
+                      allow read, write: if isDocumentOwner();
+                  	}
+                }
+
+                match /mySpaces/save-nest{
+                  match /saves/{saveId}{
+                    allow read:if isDocumentOwner()
+                    allow write:if false
+                  }
+                  match /config/default{
+                    allow read:if isDocumentOwner()
+                    allow write:if false // written only by cloud functions
+                  }
+                  match /quickActions/{quickActionId}{
+                    allow read:if isDocumentOwner()
+                    allow write:if false
+                  }
+                  match /skills/{skillId}{
+                    allow read:if isDocumentOwner()
+                    allow write:if false // written only by cloud functions
+                  }
+                  match /mcpConnections/{connectionId}{
+                    allow read:if isDocumentOwner()
+                    allow write:if false // written only by cloud functions
+                  }
+                  allow read:if isDocumentOwner()
+                  allow write:if false
+                }
+
+                match /mySpaces/deskflowPro{
+                  match /deviceStatus/{statusId}{
+                    allow read:if isDocumentOwner();
+                    allow write:if false;
+                  }
+                  match /cleanupSuggestions/{suggestionId}{
+                    allow read:if isDocumentOwner();
+                    allow write:if false;
+                  }
+                  match /clipboards/{clipboardId}{
+                    allow read:if isDocumentOwner();
+                    allow write:if false;
+                  }
+                  allow read:if isDocumentOwner();
+                  allow write:if false;
+                }
+
+                match /mySpaces/netWorthCalculatorApp{
+                  match /holdings/{holdingId}{
+                    allow read,write: if isDocumentOwner()
+                  }
+                  match /assets/{assetId}{
+                    allow read,write: if isDocumentOwner()
+                  }
+                  match /liabilities/{liabilityId}{
+                    allow read,write: if isDocumentOwner()
+                  }
+                  match /portfolios/{portfolioId}{
+                    allow read,write: if isDocumentOwner()
+                  }
+                  match /history/{snapshotId}{
+                    allow read: if isDocumentOwner()
+                    allow write: if false; // Only written by cloud functions
+                  }
+                }
+        
+                match /mySpaces/{spaceId}{
+                  function isMember(){
+                    return exists(/databases/$(database)/documents/users/$(uid)/mySpaces/$(spaceId)/members/$(request.auth.uid));
+                  }                  
+                  allow read:if isDocumentOwner()
+                    match /credentialsMeta/{credentialId}{
+                      allow read:if isDocumentOwner()
+                    }
+
+                    match /automations/{automationId}{
+                      allow read,write:if isDocumentOwner() || isMember();
+                      match /executionData/{executionId}{
+                        allow read,write:if isDocumentOwner() || isMember() || true;
+                      }
+                      match /executions/{executionId}{
+                        allow read,write:if isDocumentOwner() || isMember() || true;
+                      }
+                    }
+                    match /interviews/{interviewId}{
+
+                    function isStateValid(interview){
+                       return interview.state == 'DRAFT' && (resource==null || resource.data.state=='DRAFT');
+                    }
+
+                    function spaceExists(){
+                      return exists(/databases/$(database)/documents/users/$(uid)/mySpaces/$(spaceId))
+                    }
+
+                    function areInterviewFieldsValid(interview){
+                      return interview.id==interviewId &&
+                             interview.spaceId==spaceId &&
+                             interview.title is string &&
+                             interview.description is string &&
+                             isStateValid(interview);
+                    }
+
+                      allow read: if isDocumentOwner() || isMember()
+                      allow write:if isDocumentOwner()|| isMember() 
+                        match /applications/{applicationId}{
+                          allow read:if isDocumentOwner() || resource.data.worker.uid==request.auth.uid
+                          allow write:if false;
+                        }
+                        match /rounds/{roundId}{
+                          allow read,write:if isDocumentOwner() || isMember()
+                        }                        
+                    }
+                   
+                    match /tasks/{taskId}{
+
+                    function hasValidServerValueByKey(key,initialValue){
+                      return (isDocumentBeingCreated() && (newValue(key) is timestamp && newValue(key) >= request.time - duration.value(30, 's'))
+                      || (!(newValue(key) is timestamp) && newValue(key)==initialValue)) 
+                      || (!isDocumentBeingCreated() && newValue(key)==existingValue(key))
+                    }
+
+                    function hasValidServerValueByValue(newValue,existingValue,initialValue){
+                      return (isDocumentBeingCreated() && (newValue is timestamp && newValue >= request.time - duration.value(30, 's'))
+                      || (!(newValue is timestamp) && newValue==initialValue)) 
+                      || (!isDocumentBeingCreated() && newValue==existingValue)
+                    }                    
+
+                    function writtenToTasksPath(){
+                      return !isDocumentBeingCreated() && resource.data.timings.publishedAt!=null
+                    }
+                    function isTaskStateValid(task){
+                      return (isTaskInDraft() && !writtenToTasksPath()) || (isTaskPaused() && writtenToTasksPath() && !isTaskCompleted())
+                    }
+          
+                    function isTaskCountValid(task){
+                      let newCount = task.stats.totalOfferingOpportunities;
+                      let oldCount = resource.data.stats.totalOfferingOpportunities;
+                      let hasVariables = task.meta.hasVariables;
+                      return (!hasVariables && newCount>=1) ||(hasVariables && (newCount==oldCount || (isDocumentBeingCreated() && newCount==0)))
+                    }
+                    function isQualificationsValid(task){
+                      return task.qualifications.keys().hasAll(['IDs','groups','linkingOperator']) //TODO
+                    }
+                    function hasValidRequesterDetails(task){
+                      let requesterDetails = get(/databases/$(database)/documents/users/$(uid)).data;
+                      let owner = task.owner;
+                      return requesterDetails.name==owner.name && requesterDetails.rating==owner.rating;
+                    }
+
+                    function hasValidTaskType(task){
+                      let taskType = task.type;
+                      let validKeys = ['group','library','name','value','template'];
+                      return taskType.keys().hasAll(validKeys) &&
+                        taskType.size()==validKeys.size() &&
+                        taskType.library in ['survey-js','label-studio','syncfusion-spreadsheet','theia'] &&
+                        taskType.name is string &&
+                        taskType.value is string
+                    }
+                    function isMetaValid(task){
+                      return true //TODO
+                    }                    
+
+                    function hasValidStats(task){
+                      let stats = task.stats;
+                      let statsExisting = resource.data.stats;
+                      let validKeys = ['submittedOfferingsCount','approvedOfferingsCount','rejectedOfferingsCount','totalOfferingOpportunities'
+                      ,'amountSpentOnBonus','averageTimeTakenPerWorker','amountSpent'];
+                      return stats.keys().hasAll(validKeys) &&
+                        stats.size()==validKeys.size() &&
+                        hasValidServerValueByValue(stats.submittedOfferingsCount,statsExisting.submittedOfferingsCount,0) &&
+                        hasValidServerValueByValue(stats.approvedOfferingsCount,statsExisting.approvedOfferingsCount,0) &&
+                        hasValidServerValueByValue(stats.rejectedOfferingsCount,statsExisting.rejectedOfferingsCount,0) &&
+                        hasValidServerValueByValue(stats.amountSpentOnBonus,statsExisting.amountSpentOnBonus,0) &&
+                        hasValidServerValueByValue(stats.averageTimeTakenPerWorker,statsExisting.averageTimeTakenPerWorker,0) &&
+                        hasValidServerValueByValue(stats.amountSpent,statsExisting.amountSpent,0) &&
+                        stats.submittedOfferingsCount is int &&
+                        stats.approvedOfferingsCount is int &&
+                        stats.rejectedOfferingsCount is int &&
+                        stats.totalOfferingOpportunities is int &&
+                        stats.amountSpentOnBonus is number &&
+                        stats.averageTimeTakenPerWorker is number &&
+                        stats.amountSpent is number &&
+                        isTaskCountValid(task)
+                    }
+
+                    function isValidOwner(task){
+                      let owner = task.owner;
+                      let validKeys = ['uid','name','rating'];
+                      return owner.keys().hasAll(validKeys) &&
+                        owner.size()==validKeys.size() &&
+                        owner.uid is string &&
+                        owner.name is string &&
+                        owner.rating is map &&
+                        owner.rating.worker>=0 &&
+                        owner.rating.publisher>=0 &&
+                        owner.uid==request.auth.uid &&
+                        hasValidRequesterDetails(task)
+                    }
+
+                    function hasValidReward(task){
+                      let reward = task.reward;
+                      let validKeys = ['value','currency','symbol','type'];
+                      return reward.keys().hasAll(validKeys) &&
+                        reward.size()==validKeys.size() &&
+                        reward.value is number &&
+                        reward.currency == 'INR' &&
+                        reward.symbol =='₹' &&
+                        reward.value>=100
+                    }
+
+                    function hasValidTimings(task){
+                      let timings = task.timings;
+                      let validKeys = ['expiresAt','autoApproveInMs','timeAllottedInMs','createdAt','updatedAt','publishedAt'];
+                      let published = writtenToTasksPath();
+                      return timings.keys().hasAll(validKeys) &&
+                        timings.size()==validKeys.size() &&
+                        timings.expiresAt is timestamp  &&
+                        timings.autoApproveInMs is number &&
+                        timings.timeAllottedInMs is number &&
+                        timings.createdAt is timestamp &&
+                        timings.updatedAt is timestamp &&
+                        timings.expiresAt >= request.time &&
+                        timings.autoApproveInMs>=60000 &&
+                        timings.timeAllottedInMs>=60000 &&
+                        timings.updatedAt >= request.time - duration.value(30, 's') &&
+                        ((!published &&timings.publishedAt == null) || (published && timings.publishedAt!=null))
+                        
+                    }
+                    function isLimitValid(task){
+                      return true //TODO
+                    }
+
+                    function isSpaceIdValid(task){
+                      return true //TODO
+                    }
+
+                    function areFieldValuesValid(task){                     
+                      return task.id==taskId &&
+                        isSpaceIdValid(task) &&
+                        hasValidStats(task) &&
+                        isMetaValid(task) &&
+                        hasValidReward(task) &&
+                        isValidOwner(task) &&
+                        isLimitValid(task) &&
+                        hasValidTaskType(task) &&
+                        isTaskStateValid(task) &&
+                        hasValidTimings(task) &&
+                        task.title.size()>=4 &&
+                        hasValidServerValueByKey('toBeBonused',{})
+
+                    }
+
+                    function areFieldTypesValid(task){
+                      return  task.id is string &&
+                        task.spaceId is string &&
+                        task.title is string &&
+                        task.stats is map &&
+                        task.reward is map &&
+                        task.type is map &&
+                        task.limit is map &&
+                        task.meta is map &&
+                        task.owner is map &&
+                        task.state is string &&
+                        task.toBeBonused is map &&
+                        task.timings is map
+                    }
+
+                    function hasAllFields(task){
+                      let properties = ['id','spaceId','title','stats','state'
+                      ,'meta','limit','owner'
+                      ,'reward','type','timings','toBeBonused'];
+                      return task.keys().hasAll(properties) && task.size()==properties.size();
+                    }
+
+                    function onlyAllowedKeysChanged(){
+                      let task = request.resource.data;
+                      let timings = task.timings;
+                      let existingTask = resource.data;
+                      let existingTimings = existingTask.timings;
+                      return (!writtenToTasksPath() && task.diff(existingTask).affectedKeys()
+                      .hasOnly(['limit','meta','reward','timings','title','stats','owner'])) || (writtenToTasksPath() && task.diff(existingTask).affectedKeys().hasOnly(['state','timings']) && timings.diff(existingTimings).affectedKeys().hasOnly(['updatedAt']));
+                    }                    
+
+                    function areFieldsValid(){
+                      let task = request.resource.data;
+                      return hasAllFields(task) &&  areFieldValuesValid(task)
+                    }
+          
+                    function isTaskInDraft(){
+                      return newValue('state')=='DRAFT' 
+                    }
+          
+                    function isTaskPaused(){
+                      return newValue('state')=='PAUSED' 
+                    }
+  
+          
+                    function isTaskCompleted(){
+                      return resource.data.state in ['COMPLETED','COMPLETED_WITHOUT_REVIEW']
+                    }
+
+                    allow read:   if isDocumentOwner() || isMember()
+                    allow create: if isDocumentOwner() || isMember()
+                    allow update: if isDocumentOwner() || isMember()
+
+                        match /submittedOfferings/{offeringId}{
+                          allow read:if isDocumentOwner()
+                        }
+                    
+                        match /dynamicDataUploads/{uploadId}{
+                          allow read:if isDocumentOwner();
+                        }
+                        match /dynamicDataStore/{uploadId}{
+                          allow read:if isDocumentOwner();
+                          allow update: if isDocumentOwner() && request.resource.data.keys().hasOnly(resource.data.keys())
+                          && request.resource.data.data.keys().hasOnly(resource.data.data.keys());
+                        }
+                    }
+
+                    match /members/{memberId}{
+
+                      allow list:if isDocumentOwner() || isMember()
+                      allow read: if isDocumentOwner() || isMember()
+                      allow read,write:if isDocumentOwner()
+                    }
+
+                    match /apps/{appId}{
+                        
+                        allow read:if isDocumentOwner() || isMember()
+                        allow write:if isDocumentOwner() || isMember()
+
+                        match /visits/{visitId}{
+                          allow read:if isDocumentOwner() || isMember()
+                        }
+                    }
+                }
+        
+
+        
+                match /transactions/{transactionId}{
+                  allow read:if isDocumentOwner()
+                  allow write:if request.resource.data.type==2 && isDocumentOwner()
+                }
+                match /submittedOfferings/{offeringId}{
+                  allow read:if isDocumentOwner()
+                }
+        
+                match /pendingOfferings/{offeringId}{
+                  allow read:if isDocumentOwner()
+                }
+
+                match /applications/{applicationId}{
+                  allow read:if isDocumentOwner()
+                }
+
+
+
+        }
+    
+        match /tasks/{taskId}{
+          function canReadTask(){
+                let task = resource.data;
+                let owner = task.owner;
+                let allowedVisibilities = task.limit.visibility.value;
+                return task.state == 'ACTIVE' && (allowedVisibilities.hasAny(['PUBLIC']) || allowedVisibilities.hasAny(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.visibilities) || owner.uid==request.auth.uid)
+              }          
+
+            allow read:if canReadTask();
+            allow write:if false;
+        }
+
+        match /interviews/{interviewId}{
+          function canReadInterview(){
+                let interview = resource.data;
+                let owner = interview.owner;
+                let allowedVisibilities = interview.limit.visibility.value;
+                return interview.state == 'PUBLISHED' && (allowedVisibilities.hasAny(['PUBLIC']) || allowedVisibilities.hasAny(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.visibilities) || owner.uid==request.auth.uid)
+              }          
+
+            allow read:if canReadInterview();
+            allow write:if false;
+
+              match /rounds/{roundId}{
+                function canFetchRounds(){
+                  let userVisibilities = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.visibilities;
+                  let allowedVisibilites = get(/databases/$(database)/documents/interviews/$(interviewId)).data.limit.visibility.value;
+                  return allowedVisibilites.hasAny(userVisibilities);
+                }
+                  allow list:if canFetchRounds();
+              }
+        }        
+        
+        match /qualifications/{spaceId}{
+          allow read: if true
+        }
+        
+        match /contactUs/{message}{
+          allow write:if true;
+          allow read:if false;
+        }
+
+        match /publicRequesterReviews/{requesterId}{
+          allow read:if true;
+          match /starRating/{docId}{
+            allow read:if true;
+          }
+          
+        }
+
+        // Promotions App Rules
+        match /apps/promotionsApp/campaigns/{campaignId} {
+          allow read: if true; // Public campaigns
+          allow write: if false; // Only via Cloud Functions
+        }
+
+        match /apps/promotionsApp/submissions/{submissionId} {
+          allow read: if true;
+          allow write: if false;
+        }
+
+        match /users/{userId}/mySpaces/promotionsApp/campaigns/{campaignId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+
+        match /users/{userId}/mySpaces/promotionsApp/submissions/{submissionId} {
+          allow read: if request.auth != null && request.auth.uid == userId;
+          allow write: if false; // Only via Cloud Functions
+        }
+
+        // Content Creators App Rules
+        match /apps/contentCreatorsApp/creators/{creatorId} {
+          allow read: if true; // Public creator profiles
+          allow write: if false; // Only via Cloud Functions
+        }
+
+        match /apps/contentCreatorsApp/submissions/{submissionId} {
+          allow read: if true;
+          allow write: if false;
+        }
+
+        match /users/{userId}/mySpaces/contentCreatorsApp/profile/{profileId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+
+        match /users/{userId}/mySpaces/contentCreatorsApp/eligibleOpportunities/{opportunityId} {
+          allow read: if request.auth != null && request.auth.uid == userId;
+          allow write: if false; // Populated by trigger
+        }
+
+        match /users/{userId}/mySpaces/contentCreatorsApp/submissions/{submissionId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+
+        // Attribution App Rules
+        match /apps/attributionApp/links/{linkId} {
+          allow read: if true;
+          allow write: if false;
+        }
+
+        match /users/{userId}/mySpaces/attributionApp/links/{linkId} {
+          allow read: if request.auth != null && request.auth.uid == userId;
+          allow write: if false;
+        }
+
+        match /attributionClicks/{clickId} {
+          allow read: if false;
+          allow write: if false;
+        }
+    }
+}
+

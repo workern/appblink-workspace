@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SITEMAP SETUP CHECKLIST:
+  1. Replace all "https://your-app-domain.com" with your actual deployed URL
+  2. Update <lastmod> dates when you make major content changes
+  3. Add additional public <url> entries for any new public-facing routes
+  4. Submit this URL to Google Search Console and Bing Webmaster Tools
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <!-- TODO: Replace domain -->
+    <loc>https://your-app-domain.com/</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <!--
+      If your app supports multiple languages, uncomment and configure hreflang:
+      <xhtml:link rel="alternate" hreflang="en" href="https://your-app-domain.com/?lang=en"/>
+      <xhtml:link rel="alternate" hreflang="hi" href="https://your-app-domain.com/?lang=hi"/>
+      <xhtml:link rel="alternate" hreflang="x-default" href="https://your-app-domain.com/"/>
+    -->
+  </url>
+  <!--
+    TODO: Add one <url> block per public route. Example:
+    <url>
+      <loc>https://your-app-domain.com/features</loc>
+      <lastmod>2026-03-31</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.8</priority>
+    </url>
+  -->
+</urlset>

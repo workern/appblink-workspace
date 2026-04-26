@@ -1,0 +1,16 @@
+{
+  "name": "@workern/firebase-infra",
+  "private": true,
+  "devDependencies": {
+    "gulp": "^4.0.2",
+    "firebase-tools": "^11.0.0",
+    "kill-port": "^2.0.1"
+  },
+  "scripts": {
+    "kill-ports": "gulp kill-ports",
+    "emulators-direct": "firebase emulators:start --only firestore,functions,auth,ui,storage,extensions --import=./saved-firebase-emulators-data --export-on-exit=./saved-firebase-emulators-data --project workern-app",
+    "start-emulators": "npm run kill-ports && npm run emulators-direct",
+    "py:setup": "python3 -m venv ./functions-py/.venv && . ./functions-py/.venv/bin/activate && python -m pip install --upgrade pip && python -m pip install -r ./functions-py/requirements.txt",
+    "py:check": ". ./functions-py/.venv/bin/activate && python -m pip check"
+  }
+}

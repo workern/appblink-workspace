@@ -1,0 +1,127 @@
+{
+    "metadata":{
+        "timestamp_utc":"2020-01-19 02:58:28",
+        "music":[
+            {
+                "db_begin_time_offset_ms":0,
+                "db_end_time_offset_ms":9280,
+                "sample_begin_time_offset_ms":0,
+                "sample_end_time_offset_ms":9280,
+                "play_offset_ms":9040,
+                "artists":[
+                    {
+                        "name":"Adele",
+                        "langs":[{"code":"zh-Hans", "name":"阿黛尔"}]
+                    }
+                ],
+                "lyrics":{
+                    "copyrights":[
+                        "Sony/ATV Music Publishing LLC",
+                        "Universal Music Publishing Group"
+                    ]
+                },
+                "acrid":"6049f11da7095e8bb8266871d4a70873",
+                "album":{
+                    "name":"Hello",
+                    "langs":[{"code":"zh-Hans","name":"Hello"}]
+                },
+                "rights_claim": [
+                    {"distributor":{"id":"PADPIDA2007050901U", "name":"Warner Music Group"},"rights_owners":[{"name":"Warner Music Group", "share_percentage":100.00}],"rights_claim_policy":"monetize", "territories":["AD","AE","AF"]},
+                    {"distributor":{"id":"PADPIDA2007040502I", "name":"Sony Music Entertainment"}, "rights_owners":[{"name":"Sony Music Entertainment", "share_percentage":100.00}],"territories":["AB","AC"]}
+               ],                
+               "external_ids":{
+                    "iswc":"T-917.819.808-8",
+                    "isrc":"GBBKS1500214",
+                    "upc":"886445581959"
+                },
+                "result_from":3,
+                "contributors":{
+                    "composers":[
+                        "Adele Adkins",
+                        "Greg Kurstin"
+                    ],
+                    "lyricists":[
+                        "ADELE ADKINS",
+                        "GREGORY KURSTIN"
+                    ]
+                },
+                "title":"Hello",
+                "langs":[{"code":"zh-Hans","name":"Hello"}]
+                "language":"en",
+                "duration_ms":295000,
+                "label":"XL Recording",
+                "external_metadata":{
+                    "musicbrainz":[
+                        {
+                            "track":{
+                                "id":"0a8e8d55-4b83-4f8a-9732-fbb5ded9f344"
+                            }
+                        }
+                    ],
+                    "deezer":{
+                        "track":{
+                            "id":"110265034"
+                        },
+                        "artists":[
+                            {
+                                "id":"75798"
+                            }
+                        ],
+                        "album":{
+                            "id":"11483764"
+                        }
+                    },
+                    "spotify":{
+                        "track":{
+                            "id":"4aebBr4JAihzJQR0CiIZJv"
+                        },
+                        "artists":[
+                            {
+                                "id":"4dpARuHxo51G3z768sgnrY"
+                            }
+                        ],
+                        "album":{
+                            "id":"7uwTHXmFa1Ebi5flqBosig"
+                        }
+                    },
+                    "musicstory":{
+                        "track":{
+                            "id":"13106540"
+                        },
+                        "album":{
+                            "id":"931271"
+                        }
+                    },
+                    "youtube":{
+                        "vid":"YQHsXMglC9A"
+                    }
+                },
+                "score":100,
+                "genres":[{"name":"Pop"}],
+                "release_date":"2015-10-23"
+                "release_by_territories": [{"territories": ["DK"], "release_date": "2006-04-17"}, {"territories": ["JP"], "release_date": "2006-10-17"}, {"territories": ["SE"], "release_date": "2005-06-21"}, {"territories": ["BG", "AL", "BA", "CZ", "EE", "HR", "HU", "LT", "LV", "MK", "ME", "PL", "RO", "RS", "SI", "SK", "UA"], "release_date": "2006-03-24"}, {"territories": ["GB", "IE", "NZ"], "release_date": "2005-07-18"}, {"territories": ["FR"], "release_date": "2005-07-26"}]
+ 
+            }
+        ],
+        "custom_files": [
+            {
+                "acrid":"e6f7e3884b00fd265871754c5b64782b",
+                "title":"YOUR_TITLE",
+                "bucket_id":999,
+                "duration_ms":295000,
+                "db_begin_time_offset_ms":0,
+                "db_end_time_offset_ms":9280,
+                "sample_begin_time_offset_ms":0,
+                "sample_end_time_offset_ms":9280,
+                "key1":"value1",  //custom-defined 
+                "key2":"value2"   //custom-defined 
+            }
+        ]
+    },
+    "status":{
+        "msg":"Success",
+        "version":"1.0",
+        "code":0
+    },
+    "result_type":0
+}

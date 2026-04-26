@@ -1,0 +1,5 @@
+export enum TransactionType {
+  DEBIT = 'DEBIT',
+  CREDIT = 'CREDIT',
+  LEADS_APP_PLAN_PURCHASE = 'LEADS_APP_PLAN_PURCHASE'
+}

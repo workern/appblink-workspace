@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "types": ["node"],
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "baseUrl": "../../../",
+    "paths": {
+      "@workern/models": ["libs/shared/models/src/index.ts"],
+      "@workern/enums": ["libs/shared/models/src/index.ts"],
+      "@workern/services": ["angular/packages/services/src/index.ts"],
+      "@workern/guards": ["angular/packages/guards/src/index.ts"],
+      "@workern/components": ["angular/packages/components/src/index.ts"],
+      "@workern/pipes": ["angular/packages/pipes/src/index.ts"],
+      "@spartan/components/*": ["angular/packages/spartan/*/src/index.ts"]
+    }
+  },
+  "files": ["./src/main.ts", "src/main.server.ts", "src/server.ts"],
+  "angularCompilerOptions": {
+    "disableTypeScriptVersionCheck": true,
+    "fullTemplateTypeCheck": true,
+    "strictTemplates": true
+  }
+}

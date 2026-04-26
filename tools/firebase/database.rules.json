@@ -1,0 +1,38 @@
+{
+    "rules": {
+        "cron-jobs": {
+            ".indexOn": [
+                "time",
+                "cid"
+            ]
+        },
+        "cron-by-function": {
+            "$function": {
+                ".indexOn": [
+                    "cid"
+                ]
+            }
+        },
+        "metadata": {
+            ".read": "true",
+            "project_types": {
+                ".indexOn": ["noImage", "isVisible"]
+            }
+        },
+        "public_requester_reviews": {
+            ".read": "true"
+        },
+        "users": {
+            "$uid": {
+                ".read": "auth.uid==$uid",
+                ".write": "auth.uid==$uid"
+            }
+        },
+        "_messages": {
+            "$messageId": {
+                ".read": "$messageId.contains(auth.uid)",
+                ".write": "$messageId.contains(auth.uid)"
+            }
+        }
+    }
+}

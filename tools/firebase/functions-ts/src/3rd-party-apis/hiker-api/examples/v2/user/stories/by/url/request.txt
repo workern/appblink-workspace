@@ -1,0 +1,6 @@
+curl -X 'GET' \
+  'https://api.hikerapi.com/v2/story/by/url?url=https%3A%2F%2Fwww.instagram.com%2Fstories%2Fyoga_with_kush%2F3819286471220407169%3Futm_source%3Dig_story_item_share%26igsh%3DMTN5ZWZyamdzcHd5Mg%3D%3D' \
+  -H 'accept: application/json'
+
+
+  https://api.hikerapi.com/v2/story/by/url?url=https%3A%2F%2Fwww.instagram.com%2Fstories%2Fyoga_with_kush%2F3819286471220407169%3Futm_source%3Dig_story_item_share%26igsh%3DMTN5ZWZyamdzcHd5Mg%3D%3D

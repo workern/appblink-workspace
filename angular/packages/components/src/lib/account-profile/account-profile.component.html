@@ -1,0 +1,298 @@
+<div class="min-h-screen bg-background">
+  <!-- Header -->
+  <header
+    class="sticky top-0 z-10 flex h-14 items-center border-b border-border bg-background/95 px-4 backdrop-blur-sm"
+  >
+    <button
+      hlmBtn
+      variant="ghost"
+      size="icon"
+      class="-ml-2 mr-2"
+      aria-label="Go back"
+      (click)="goBack()"
+    >
+      <ng-icon hlm name="lucideChevronLeft" size="sm" />
+    </button>
+    <h1 class="text-base font-semibold text-foreground">{{ pageTitle() }}</h1>
+  </header>
+
+  <!-- Deleting overlay -->
+  @if (isDeletingAccount()) {
+    <div class="flex flex-col items-center justify-center gap-4 py-24">
+      <div
+        class="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary"
+      ></div>
+      <p class="text-sm text-muted-foreground">Deleting your account…</p>
+    </div>
+  } @else {
+    <div class="mx-auto max-w-lg space-y-6 px-4 py-6">
+      <!-- User info card -->
+      @if (currentUser(); as user) {
+        <section hlmCard class="p-5">
+          <div class="flex items-center gap-4">
+            <hlm-avatar class="size-14 shrink-0">
+              @if (user.photoURL) {
+                <img
+                  hlmAvatarImage
+                  [src]="user.photoURL"
+                  [alt]="user.name ?? 'Profile'"
+                />
+              }
+              <span hlmAvatarFallback class="bg-primary/10 text-primary">
+                @if (initials) {
+                  {{ initials }}
+                } @else {
+                  <ng-icon
+                    hlm
+                    name="lucideUser"
+                    size="sm"
+                    class="text-primary"
+                  />
+                }
+              </span>
+            </hlm-avatar>
+            <div class="min-w-0 flex-1">
+              @if (user.name) {
+                <p class="truncate font-semibold text-foreground">
+                  {{ user.name }}
+                </p>
+              }
+              @if (user.mobile) {
+                <p class="truncate text-sm text-muted-foreground">
+                  {{ user.mobile }}
+                </p>
+              }
+              @if (user.email) {
+                <p class="truncate text-sm text-muted-foreground">
+                  {{ user.email }}
+                </p>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- Subscription section -->
+      <div>
+        <p
+          class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
+        >
+          Subscription
+        </p>
+        <div hlmCard class="gap-0 overflow-hidden p-0">
+          <div class="flex items-center gap-3 px-4 py-4">
+            @if (isSubscribed()) {
+              <span hlmBadge variant="default" class="shrink-0">PRO</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-foreground">Pro Plan</p>
+                <p class="text-xs text-muted-foreground">
+                  Unlimited saves &amp; searches
+                </p>
+              </div>
+            } @else {
+              <span hlmBadge variant="secondary" class="shrink-0">FREE</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-foreground">Free Plan</p>
+                <p class="text-xs text-muted-foreground">
+                  Limited saves &amp; searches
+                </p>
+              </div>
+            }
+          </div>
+          <div class="px-4 pb-4">
+            @if (isSubscribed()) {
+              <button
+                hlmBtn
+                variant="outline"
+                class="w-full"
+                (click)="navigateToUpgrade()"
+              >
+                Manage Subscription
+              </button>
+            } @else {
+              <button
+                hlmBtn
+                class="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                (click)="navigateToUpgrade()"
+              >
+                <ng-icon hlm name="lucideStar" size="sm" />
+                Upgrade to Pro
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Legal section — only shown when URLs are provided -->
+      @if (hasLegalLinks) {
+        <div>
+          <p
+            class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
+          >
+            Legal
+          </p>
+          <div hlmCard class="divide-y divide-border gap-0 overflow-hidden p-0">
+            @if (privacyPolicyUrl()) {
+              <button
+                class="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
+                (click)="openUrl(privacyPolicyUrl())"
+              >
+                <ng-icon
+                  hlm
+                  name="lucideShield"
+                  size="sm"
+                  class="shrink-0 text-muted-foreground"
+                />
+                <span class="flex-1 text-sm font-medium text-foreground"
+                  >Privacy Policy</span
+                >
+                <ng-icon
+                  hlm
+                  name="lucideExternalLink"
+                  size="sm"
+                  class="shrink-0 text-muted-foreground"
+                />
+              </button>
+            }
+            @if (termsUrl()) {
+              <button
+                class="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
+                (click)="openUrl(termsUrl())"
+              >
+                <ng-icon
+                  hlm
+                  name="lucideFileText"
+                  size="sm"
+                  class="shrink-0 text-muted-foreground"
+                />
+                <span class="flex-1 text-sm font-medium text-foreground"
+                  >Terms of Use</span
+                >
+                <ng-icon
+                  hlm
+                  name="lucideExternalLink"
+                  size="sm"
+                  class="shrink-0 text-muted-foreground"
+                />
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Account section -->
+      <div>
+        <p
+          class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
+        >
+          Account
+        </p>
+        <div hlmCard class="divide-y divide-border gap-0 overflow-hidden p-0">
+          <hlm-alert-dialog>
+            <button
+              hlmAlertDialogTrigger
+              class="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
+            >
+              <ng-icon
+                hlm
+                name="lucideLogOut"
+                size="sm"
+                class="shrink-0 text-foreground"
+              />
+              <span class="flex-1 text-sm font-medium text-foreground"
+                >Sign Out</span
+              >
+              <ng-icon
+                hlm
+                name="lucideChevronRight"
+                size="sm"
+                class="shrink-0 text-muted-foreground"
+              />
+            </button>
+            <hlm-alert-dialog-content *hlmAlertDialogPortal="let ctx">
+              <hlm-alert-dialog-header>
+                <h2 hlmAlertDialogTitle>Sign Out</h2>
+                <p hlmAlertDialogDescription>
+                  Are you sure you want to sign out?
+                </p>
+              </hlm-alert-dialog-header>
+              <hlm-alert-dialog-footer>
+                <button hlmAlertDialogCancel (click)="ctx.close()">
+                  Cancel
+                </button>
+                <button
+                  hlmAlertDialogAction
+                  variant="destructive"
+                  (click)="ctx.close(); signOut()"
+                >
+                  Sign Out
+                </button>
+              </hlm-alert-dialog-footer>
+            </hlm-alert-dialog-content>
+          </hlm-alert-dialog>
+        </div>
+      </div>
+
+      <!-- Danger zone -->
+      <div>
+        <p
+          class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-destructive/70"
+        >
+          Danger Zone
+        </p>
+        <div
+          hlmCard
+          class="divide-y divide-border gap-0 overflow-hidden border-destructive/30 p-0"
+        >
+          <hlm-alert-dialog>
+            <button
+              hlmAlertDialogTrigger
+              class="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors duration-150 hover:bg-destructive/5 focus-visible:bg-destructive/5 focus-visible:outline-none"
+            >
+              <ng-icon
+                hlm
+                name="lucideTrash2"
+                size="sm"
+                class="shrink-0 text-destructive"
+              />
+              <span class="flex-1">
+                <span class="block text-sm font-medium text-destructive"
+                  >Delete Account</span
+                >
+                <span class="block text-xs text-muted-foreground">{{
+                  deleteAccountSubtitle()
+                }}</span>
+              </span>
+              <ng-icon
+                hlm
+                name="lucideChevronRight"
+                size="sm"
+                class="shrink-0 text-muted-foreground"
+              />
+            </button>
+            <hlm-alert-dialog-content *hlmAlertDialogPortal="let ctx">
+              <hlm-alert-dialog-header>
+                <h2 hlmAlertDialogTitle>Delete Account</h2>
+                <p hlmAlertDialogDescription>
+                  {{ deleteAccountConfirmMessage() }}
+                </p>
+              </hlm-alert-dialog-header>
+              <hlm-alert-dialog-footer>
+                <button hlmAlertDialogCancel (click)="ctx.close()">
+                  Cancel
+                </button>
+                <button
+                  hlmAlertDialogAction
+                  variant="destructive"
+                  (click)="ctx.close(); deleteAccount()"
+                >
+                  Delete Account
+                </button>
+              </hlm-alert-dialog-footer>
+            </hlm-alert-dialog-content>
+          </hlm-alert-dialog>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,7 @@
+export enum SpaceMemberRole {
+  OWNER = 'OWNER',
+  MEMBER = 'MEMBER',
+  EDITOR = 'EDITOR',
+  NOT_MEMBER = 'NOT_MEMBER',
+  DELIVERY_PERSON = 'DELIVERY_PERSON'
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "origin": [
+      "https://promptkul.web.app",
+      "https://nikat.workern.com",
+      "https://nikat.in",
+      "https://manage.nikat.in"
+    ],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600
+  }
+]

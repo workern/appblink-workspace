@@ -1,0 +1,3 @@
+curl -X 'GET' \
+  'https://api.hikerapi.com/v2/story/by/id?id=3819286471220407169' \
+  -H 'accept: application/json'

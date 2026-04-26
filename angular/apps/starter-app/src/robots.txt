@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Disallow authenticated-only routes
+Disallow: /home
+Disallow: /billing
+Disallow: /profile
+
+# TODO: Add any other auth-gated paths your app has
+
+# TODO: Replace with your actual deployed domain
+Sitemap: https://your-app-domain.com/sitemap.xml

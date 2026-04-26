@@ -1,0 +1,96 @@
+<hlm-dialog
+  [state]="open() ? 'open' : 'closed'"
+  (stateChanged)="$event === 'closed' && close()"
+>
+  <hlm-dialog-content *hlmDialogPortal class="dialog-content">
+    <hlm-dialog-header>
+      <h2 hlmDialogTitle>Your Subscription</h2>
+      <p hlmDialogDescription>Your current plan at a glance.</p>
+    </hlm-dialog-header>
+
+    @if (isLoading()) {
+      <div class="summary-skeleton">
+        <hlm-skeleton class="h-5 w-36 mb-2" />
+        <hlm-skeleton class="h-8 w-28 mb-1" />
+        <hlm-skeleton class="h-4 w-48" />
+      </div>
+    } @else if (!subscription()) {
+      <!-- No plan -->
+      <div class="summary-empty">
+        <p class="summary-empty-label">No active subscription</p>
+        <p class="summary-empty-hint">Subscribe to access premium features.</p>
+      </div>
+    } @else {
+      <!-- Plan summary -->
+      <div class="summary-body">
+        <!-- Status row -->
+        <div class="summary-status-row">
+          <span
+            hlmBadge
+            [class]="statusDisplay().colorClass + ' summary-badge'"
+          >
+            {{ statusDisplay().label }}
+          </span>
+          <span class="summary-product">{{
+            subscription()!.product?.name ?? subscription()!.id
+          }}</span>
+        </div>
+
+        <!-- Amount -->
+        <div class="summary-amount">
+          {{ subscription()!.amount | amountDisplay }}
+          <span class="summary-interval">/ cycle</span>
+        </div>
+
+        <hlm-separator class="my-3" />
+
+        <!-- Next charge -->
+        @if (subscription()!.nextChargeAt || subscription()!.currentPeriodEnd) {
+          <div class="summary-detail-row">
+            <span class="summary-detail-label">Next charge</span>
+            <span class="summary-detail-value">
+              {{
+                subscription()!.nextChargeAt ?? subscription()!.currentPeriodEnd
+                  | date: 'MMM d, y'
+              }}
+              @if (daysUntilRenewal() !== null) {
+                <span class="summary-days-chip"
+                  >({{ daysUntilRenewal() }}d)</span
+                >
+              }
+            </span>
+          </div>
+        }
+
+        <!-- Cycles -->
+        @if (subscription()!.totalCount && subscription()!.totalCount! > 0) {
+          <div class="summary-detail-row">
+            <span class="summary-detail-label">Cycles</span>
+            <span class="summary-detail-value">
+              {{ subscription()!.paidCount ?? 0 }} /
+              {{ subscription()!.totalCount }}
+            </span>
+          </div>
+        }
+      </div>
+    }
+
+    <hlm-dialog-footer class="summary-footer">
+      <button hlmBtn variant="ghost" size="sm" (click)="onManageBilling()">
+        Manage Billing
+      </button>
+      <button hlmBtn size="sm" (click)="openUpgrade()">
+        {{ subscription() ? 'Change Plan' : 'View Plans' }}
+      </button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>
+
+<!-- Upgrade / PaymentDialog -->
+@if (showUpgradeDialog()) {
+  <wn-payment-dialog
+    [open]="showUpgradeDialog()"
+    (canceled)="showUpgradeDialog.set(false)"
+    (checkoutCompleted)="onUpgradeCompleted()"
+  />
+}

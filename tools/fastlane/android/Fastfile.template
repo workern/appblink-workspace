@@ -1,0 +1,188 @@
+# Fastfile — Android
+# Generated and managed by App Blink. Edit tools/fastlane/android/Fastfile.template to update all apps.
+# App-specific data (title, descriptions, release notes) lives in android/metadata.json.
+
+default_platform(:android)
+
+platform :android do
+  desc "Create Google Play Store entry (builds a minimal APK and registers the app)"
+  lane :create_store_entry do
+    require 'json'
+    metadata_json = JSON.parse(File.read(File.expand_path('../metadata.json', __dir__)))
+    app_title = metadata_json.dig('appStoreInfo', 'name') ||
+                metadata_json.dig('localizations', 'en-US', 'title') ||
+                'App'
+    language = metadata_json['metadata']&.keys&.first || 'en_US'
+    # Build a minimal APK (not AAB) — required by create_app_on_managed_play_store
+    sh("cd ../.. ; flutter build apk --release")
+    apk_path = File.expand_path('../../build/app/outputs/flutter-apk/app-release.apk', __dir__)
+    create_app_on_managed_play_store(
+      json_key: ENV['SUPPLY_JSON_KEY'],
+      developer_account_id: ENV['PLAY_DEVELOPER_ACCOUNT_ID'],
+      app_title: app_title,
+      language: language.tr('-', '_'),
+      apk: apk_path
+    )
+  end
+
+  desc "Build Android App Bundle (AAB)"
+  lane :build do
+    sh("cd ../.. ; flutter build appbundle --release")
+  end
+
+  desc "Upload to Google Play Internal Testing Track"
+  lane :internal do
+    build
+    upload_to_play_store(
+      track: 'internal',
+      aab: '../build/app/outputs/bundle/release/app-release.aab',
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Upload to Google Play Internal Testing Track with Metadata"
+  lane :internal_with_metadata do
+    build
+    upload_to_play_store(
+      track: 'internal',
+      aab: '../build/app/outputs/bundle/release/app-release.aab'
+    )
+  end
+
+  desc "Upload to Google Play Alpha Track"
+  lane :alpha do
+    build
+    upload_to_play_store(
+      track: 'alpha',
+      aab: '../build/app/outputs/bundle/release/app-release.aab',
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Upload to Google Play Alpha Track with Metadata"
+  lane :alpha_with_metadata do
+    build
+    upload_to_play_store(
+      track: 'alpha',
+      aab: '../build/app/outputs/bundle/release/app-release.aab'
+    )
+  end
+
+  desc "Upload to Google Play Beta Track"
+  lane :beta do
+    build
+    upload_to_play_store(
+      track: 'beta',
+      aab: '../build/app/outputs/bundle/release/app-release.aab',
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Upload to Google Play Beta Track with Metadata"
+  lane :beta_with_metadata do
+    build
+    upload_to_play_store(
+      track: 'beta',
+      aab: '../build/app/outputs/bundle/release/app-release.aab'
+    )
+  end
+
+  desc "Upload to Google Play Production"
+  lane :production do
+    build
+    upload_to_play_store(
+      track: 'production',
+      aab: '../build/app/outputs/bundle/release/app-release.aab',
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Upload to Google Play Production with Metadata"
+  lane :production_with_metadata do
+    build
+    upload_to_play_store(
+      track: 'production',
+      aab: '../build/app/outputs/bundle/release/app-release.aab'
+    )
+  end
+
+  desc "Promote Internal to Alpha"
+  lane :promote_internal_to_alpha do
+    upload_to_play_store(
+      track: 'internal',
+      track_promote_to: 'alpha',
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Promote Alpha to Beta"
+  lane :promote_alpha_to_beta do
+    upload_to_play_store(
+      track: 'alpha',
+      track_promote_to: 'beta',
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Promote Beta to Production"
+  lane :promote_beta_to_production do
+    upload_to_play_store(
+      track: 'beta',
+      track_promote_to: 'production',
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Promote Internal to Production"
+  lane :promote_internal_to_production do
+    upload_to_play_store(
+      track: 'internal',
+      track_promote_to: 'production',
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Upload only metadata and screenshots to Google Play (no binary)"
+  lane :upload_metadata do
+    upload_to_play_store(
+      track: 'internal',
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_changelogs: true
+    )
+  end
+
+  desc "Capture Android screenshots from emulator using Screengrab"
+  lane :screenshots do
+    # Ensure flutter deps are ready before instrumentation tests.
+    sh("cd ../.. ; flutter pub get")
+    screengrab(
+      clear_previous_screenshots: true,
+      output_directory: "../screenshots/android"
+    )
+  end
+end

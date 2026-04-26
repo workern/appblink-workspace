@@ -1,0 +1,401 @@
+<div class="billing-page">
+  <!-- Page header with back button -->
+  <div class="billing-header">
+    <div class="billing-header-row">
+      <button
+        hlmBtn
+        variant="ghost"
+        size="icon"
+        class="back-btn"
+        (click)="goBack()"
+        aria-label="Go back"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M19 12H5" />
+          <path d="m12 19-7-7 7-7" />
+        </svg>
+      </button>
+      <div>
+        <h2 class="billing-title">Billing &amp; Subscription</h2>
+        @if (appName()) {
+          <p class="billing-subtitle">{{ appName() }}</p>
+        }
+      </div>
+    </div>
+  </div>
+
+  <hlm-tabs tab="plan" class="billing-tabs">
+    <hlm-tabs-list class="billing-tabs-list">
+      <button hlmTabsTrigger="plan">Current Plan</button>
+      <button hlmTabsTrigger="history">Billing History</button>
+    </hlm-tabs-list>
+
+    <!-- ─────────────────── CURRENT PLAN TAB ─────────────────── -->
+    <div hlmTabsContent="plan" class="tab-content">
+      @if (isLoadingSubscription()) {
+        <!-- Skeleton loader -->
+        <section hlmCard class="plan-card">
+          <header hlmCardHeader>
+            <hlm-skeleton class="h-5 w-32 mb-2" />
+            <hlm-skeleton class="h-4 w-48" />
+          </header>
+          <div hlmCardContent class="space-y-4">
+            <hlm-skeleton class="h-8 w-40" />
+            <hlm-skeleton class="h-3 w-full" />
+            <hlm-skeleton class="h-4 w-56" />
+          </div>
+        </section>
+      } @else if (!subscription()) {
+        <!-- No active plan — show plans inline like a pricing page -->
+        <div class="pricing-section">
+          <div class="pricing-header">
+            <h3 class="pricing-title">Choose your plan</h3>
+            <p class="pricing-desc">
+              Get full access to
+              @if (appName()) {
+                <strong>{{ appName() }}</strong>
+              } @else {
+                all features
+              }
+              . Cancel anytime.
+            </p>
+          </div>
+
+          @if (isLoadingPlans()) {
+            <!-- Skeleton plan cards -->
+            <div class="plans-grid">
+              @for (s of [1, 2]; track s) {
+                <section hlmCard class="plan-card-item">
+                  <header hlmCardHeader>
+                    <hlm-skeleton class="h-4 w-24 mb-3" />
+                    <hlm-skeleton class="h-9 w-32 mb-1" />
+                    <hlm-skeleton class="h-3 w-20" />
+                  </header>
+                  <div hlmCardContent class="plan-card-body">
+                    <hlm-skeleton class="h-3 w-full mb-1" />
+                    <hlm-skeleton class="h-3 w-4/5 mb-6" />
+                    <hlm-skeleton class="h-10 w-full" />
+                  </div>
+                </section>
+              }
+            </div>
+          } @else if (plans().length === 0) {
+            <div class="plans-empty">
+              <p class="plans-empty-text">
+                No plans available right now. Check back soon.
+              </p>
+            </div>
+          } @else {
+            <div class="plans-grid">
+              @for (plan of plans(); track plan.id; let i = $index) {
+                <div class="plan-card-wrapper">
+                  @if (plan.badge || (i === 0 && plans().length > 1)) {
+                    <div class="plan-badge-row">
+                      <span hlmBadge variant="default">
+                        {{ plan.badge || 'Most Popular' }}
+                      </span>
+                    </div>
+                  }
+                  <section
+                    hlmCard
+                    class="plan-card-item"
+                    [class.plan-card-featured]="i === 0 && plans().length > 1"
+                  >
+                    <header hlmCardHeader class="plan-card-header">
+                      <h3 hlmCardTitle class="plan-name">{{ plan.name }}</h3>
+                      <div class="plan-price-row">
+                        <span class="plan-price">
+                          {{ plan.amount | amountDisplay }}
+                        </span>
+                        @if (plan.intervalLabel) {
+                          <span class="plan-interval">{{
+                            plan.intervalLabel
+                          }}</span>
+                        }
+                      </div>
+                    </header>
+
+                    <div hlmCardContent class="plan-card-body">
+                      @if (plan.description) {
+                        <p class="plan-description">{{ plan.description }}</p>
+                      }
+
+                      <ul class="plan-perks">
+                        <li>
+                          <svg
+                            class="perk-check"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                          >
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                          Full access to all features
+                        </li>
+                        <li>
+                          <svg
+                            class="perk-check"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                          >
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                          Priority support
+                        </li>
+                        <li>
+                          <svg
+                            class="perk-check"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                          >
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                          Cancel anytime
+                        </li>
+                      </ul>
+
+                      <button
+                        hlmBtn
+                        class="plan-cta-btn"
+                        [variant]="
+                          i === 0 && plans().length > 1 ? 'default' : 'outline'
+                        "
+                        [disabled]="!!purchasingPlanId()"
+                        (click)="purchasePlan(plan)"
+                      >
+                        @if (purchasingPlanId() === plan.id) {
+                          <svg
+                            class="btn-spinner"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                          </svg>
+                          Processing...
+                        } @else {
+                          Get started
+                        }
+                      </button>
+                    </div>
+                  </section>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <!-- Active subscription card -->
+        <section hlmCard class="plan-card">
+          <header hlmCardHeader class="plan-card-header">
+            <div class="plan-card-title-row">
+              <h3 hlmCardTitle>
+                {{ subscription()!.product?.name ?? subscription()!.id }}
+              </h3>
+              <span
+                hlmBadge
+                [class]="statusDisplay().colorClass + ' status-badge'"
+              >
+                {{ statusDisplay().label }}
+              </span>
+            </div>
+            <p hlmCardDescription>
+              {{
+                subscription()!.product?.description ??
+                  'Plan: ' + subscription()!.planId
+              }}
+            </p>
+          </header>
+
+          <div hlmCardContent class="plan-card-content">
+            <!-- Amount & interval -->
+            <div class="plan-amount-row">
+              <span class="plan-amount">
+                {{ subscription()!.amount | amountDisplay }}
+              </span>
+              <span class="plan-interval">/ billing cycle</span>
+            </div>
+
+            <hlm-separator class="my-4" />
+
+            <!-- Period progress -->
+            @if (
+              subscription()!.currentPeriodStart &&
+              subscription()!.currentPeriodEnd
+            ) {
+              <div class="period-section">
+                <div class="period-label-row">
+                  <span class="period-label">Current period</span>
+                  <span class="period-dates">
+                    {{ subscription()!.currentPeriodStart | date: 'MMM d, y' }}
+                    —
+                    {{ subscription()!.currentPeriodEnd | date: 'MMM d, y' }}
+                  </span>
+                </div>
+                <div class="progress-bar-track">
+                  <div
+                    class="progress-bar-fill"
+                    [style.width.%]="progressPercent()"
+                  ></div>
+                </div>
+                <p class="period-days-left">
+                  @if (daysUntilRenewal() !== null) {
+                    <span
+                      >{{ daysUntilRenewal() }} day{{
+                        daysUntilRenewal() !== 1 ? 's' : ''
+                      }}
+                      until
+                      {{
+                        subscription()?.cancelAtCycleEnd
+                          ? 'cancellation'
+                          : 'renewal'
+                      }}</span
+                    >
+                  }
+                </p>
+              </div>
+            }
+
+            <!-- Next charge / Cancels on -->
+            @if (
+              subscription()!.nextChargeAt || subscription()!.currentPeriodEnd
+            ) {
+              <div class="detail-row">
+                <span class="detail-label">{{
+                  subscription()?.cancelAtCycleEnd
+                    ? 'Cancels on'
+                    : 'Next charge'
+                }}</span>
+                <span class="detail-value">{{
+                  subscription()!.nextChargeAt ??
+                    subscription()!.currentPeriodEnd | date: 'MMM d, y'
+                }}</span>
+              </div>
+            }
+
+            <hlm-separator class="my-4" />
+
+            <!-- CTA -->
+            <div class="plan-cta-row">
+              @if (subscription()?.cancelAtCycleEnd) {
+                <span class="cancel-scheduled-text">
+                  Cancels at end of billing period
+                </span>
+              } @else {
+                @if (showCancelConfirm()) {
+                  <div class="cancel-confirm">
+                    <span>Cancel renewal?</span>
+                    <button
+                      hlmBtn
+                      variant="destructive"
+                      size="sm"
+                      [disabled]="isCancelling()"
+                      (click)="cancelSubscription()"
+                    >
+                      @if (isCancelling()) {
+                        Cancelling…
+                      } @else {
+                        Yes, Cancel
+                      }
+                    </button>
+                    <button
+                      hlmBtn
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="isCancelling()"
+                      (click)="showCancelConfirm.set(false)"
+                    >
+                      Keep Plan
+                    </button>
+                  </div>
+                } @else {
+                  <button
+                    class="cancel-btn"
+                    hlmBtn
+                    variant="ghost"
+                    size="sm"
+                    (click)="showCancelConfirm.set(true)"
+                  >
+                    Cancel Renewal
+                  </button>
+                  <button hlmBtn variant="outline" (click)="openUpgrade()">
+                    Change Plan
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        </section>
+      }
+    </div>
+
+    <!-- ─────────────────── BILLING HISTORY TAB ─────────────────── -->
+    <div hlmTabsContent="history" class="tab-content">
+      @if (transactions().length === 0) {
+        <div class="history-empty">
+          <p class="history-empty-text">No billing history yet.</p>
+        </div>
+      } @else {
+        <ul class="history-list">
+          @for (tx of transactions(); track tx.id) {
+            <li hlmCard class="history-item">
+              <div class="history-item-inner">
+                <div class="history-item-left">
+                  <span class="history-reason">{{
+                    reasonLabel(tx.reason)
+                  }}</span>
+                  <span class="history-date">{{
+                    tx.createdAt | date: 'MMM d, y'
+                  }}</span>
+                </div>
+                <div class="history-item-right">
+                  <span class="history-amount">{{
+                    tx.amount | amountDisplay
+                  }}</span>
+                  <span
+                    hlmBadge
+                    [class]="
+                      'history-state-badge ' +
+                      (tx.state === 'SUCCESSFUL'
+                        ? 'badge-success'
+                        : tx.state === 'PENDING'
+                          ? 'badge-pending'
+                          : 'badge-failed')
+                    "
+                  >
+                    {{ tx.state }}
+                  </span>
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </hlm-tabs>
+</div>
+
+<!-- Payment / upgrade dialog -->
+@if (showUpgradeDialog()) {
+  <wn-payment-dialog
+    [open]="showUpgradeDialog()"
+    (canceled)="closeUpgrade()"
+    (checkoutCompleted)="closeUpgrade()"
+  />
+}

@@ -1,0 +1,18 @@
+/* Responsive grid handles column wrapping.
+   All colors come from CSS variable tokens – no hardcoded values. */
+
+a {
+  text-underline-offset: 3px;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a {
+    transition: none;
+  }
+}

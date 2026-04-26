@@ -1,0 +1,67 @@
+/* Spartan UI Variables (OKLCH format) + Save Nest Theme Integration */
+:root {
+  color-scheme: light;
+  --background: oklch(0.990 0.009 78.3);
+  --foreground: oklch(0.335 0.033 260.9);
+  --card: oklch(1.000 0.000 106.4);
+  --card-foreground: oklch(0.335 0.033 260.9);
+  --popover: oklch(1.000 0.000 106.4);
+  --popover-foreground: oklch(0.335 0.033 260.9);
+  --primary: oklch(0.774 0.163 60.3);
+  --primary-foreground: oklch(1.000 0.000 106.4);
+  --secondary: oklch(0.969 0.028 79.5);
+  --secondary-foreground: oklch(0.447 0.034 261.3);
+  --muted: oklch(0.969 0.028 79.5);
+  --muted-foreground: oklch(0.447 0.034 261.3);
+  --accent: oklch(0.969 0.028 79.5);
+  --accent-foreground: oklch(0.416 0.111 49.2);
+  --destructive: oklch(0.688 0.178 22.9);
+  --destructive-foreground: oklch(1.000 0.000 106.4);
+  --border: oklch(0.447 0.034 261.3);
+  --input: oklch(0.969 0.028 79.5);
+  --ring: oklch(0.774 0.163 60.3);
+  --sidebar: oklch(1.000 0.000 106.4);
+  --sidebar-foreground: oklch(0.335 0.033 260.9);
+  --sidebar-primary: oklch(0.774 0.163 60.3);
+  --sidebar-primary-foreground: oklch(1.000 0.000 106.4);
+  --sidebar-accent: oklch(0.969 0.028 79.5);
+  --sidebar-accent-foreground: oklch(0.416 0.111 49.2);
+  --sidebar-border: oklch(0.447 0.034 261.3);
+  --sidebar-ring: oklch(0.774 0.163 60.3);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.445 0.007 78.3);
+  --foreground: oklch(0.734 0.026 260.9);
+  --card: oklch(0.450 0.000 0.0);
+  --card-foreground: oklch(0.734 0.026 260.9);
+  --popover: oklch(0.450 0.000 0.0);
+  --popover-foreground: oklch(0.734 0.026 260.9);
+  --primary: oklch(0.348 0.081 60.3);
+  --primary-foreground: oklch(1.000 0.000 104.1);
+  --secondary: oklch(0.436 0.023 79.5);
+  --secondary-foreground: oklch(0.779 0.027 261.3);
+  --muted: oklch(0.436 0.023 79.5);
+  --muted-foreground: oklch(0.779 0.027 261.3);
+  --accent: oklch(0.436 0.023 79.5);
+  --accent-foreground: oklch(0.766 0.089 49.2);
+  --destructive: oklch(0.310 0.125 22.9);
+  --destructive-foreground: oklch(1.000 0.000 104.1);
+  --border: oklch(0.201 0.027 261.3);
+  --input: oklch(0.436 0.023 79.5);
+  --ring: oklch(0.348 0.081 60.3);
+  --sidebar: oklch(0.450 0.000 0.0);
+  --sidebar-foreground: oklch(0.734 0.026 260.9);
+  --sidebar-primary: oklch(0.348 0.081 60.3);
+  --sidebar-primary-foreground: oklch(1.000 0.000 104.1);
+  --sidebar-accent: oklch(0.436 0.023 79.5);
+  --sidebar-accent-foreground: oklch(0.766 0.089 49.2);
+  --sidebar-border: oklch(0.201 0.027 261.3);
+  --sidebar-ring: oklch(0.348 0.081 60.3);
+}
+
+/* Conscious design: calming green gradient for mindful saving */
+body {
+  min-height: 100vh;
+}

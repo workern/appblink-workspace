@@ -1,0 +1,26 @@
+name: workern_models
+description: 'Common data models and utilities for Workern Flutter applications.'
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Data model support
+  equatable: ^2.0.5
+  cloud_firestore: ^6.1.2
+
+  # Utilities
+  workern_utils:
+    path: ../workern_utils
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0

@@ -1,0 +1,364 @@
+# Fastfile — iOS
+# Generated and managed by App Blink. Edit tools/fastlane/ios/Fastfile.template to update all apps.
+# App-specific data (contacts, review info, locales, what's new) lives in ios/metadata.json.
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Create App Store Connect entry (bare minimum — no binary upload required)"
+  lane :create_store_entry do
+    api_key = connect_api_key
+    metadata_json = load_metadata
+    lang = (metadata_json['metadata']&.keys&.first || 'en-US')
+    version = pubspec_version
+    app_info = metadata_json['appStoreInfo'] || {}
+    app_name = app_info['name'] || CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+    bundle_id = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+    sku = bundle_id.tr('.', '_')
+    produce(
+      api_key: api_key,
+      app_identifier: bundle_id,
+      app_name: app_name,
+      language: lang,
+      app_version: version,
+      sku: sku
+    )
+  end
+  desc "Rebuild archive with Flutter (fast, for code changes)"
+  lane :flutter_archive do
+    flutter_root = File.expand_path('../..', __dir__)
+    sh("cd '#{flutter_root}' && flutter build ipa --release")
+  end
+
+  desc "Export IPA from existing archive (fast)"
+  lane :export do
+    archive_path = File.expand_path('../../build/ios/archive/Runner.xcarchive', __dir__)
+    export_path  = File.expand_path('../../build/ios/ipa', __dir__)
+    plist_path   = File.expand_path('../ExportOptions.plist', __dir__)
+    FileUtils.mkdir_p(export_path)
+    sh("xcodebuild -exportArchive -archivePath '#{archive_path}' -exportOptionsPlist '#{plist_path}' -exportPath '#{export_path}'")
+  end
+
+  private_lane :connect_api_key do
+    app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
+      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"]
+    )
+  end
+
+  private_lane :load_metadata do
+    JSON.parse(File.read(File.expand_path('../metadata.json', __dir__)))
+  end
+
+  # Reads the version name from pubspec.yaml (strips build number after '+').
+  # pubspec format: "1.0.27+122" → returns "1.0.27"
+  private_lane :pubspec_version do
+    pubspec_path = File.expand_path('../../pubspec.yaml', __dir__)
+    raw = File.read(pubspec_path).match(/^version:\s*(\S+)/)&.captures&.first
+    UI.user_error!("Could not read version from #{pubspec_path}") unless raw
+    raw.split('+').first
+  end
+
+  private_lane :latest_ipa_path do
+    # Prefer app-level Flutter build output; keep fallbacks for robustness.
+    candidate_dirs = [
+      File.expand_path('../../build/ios/ipa', __dir__),
+      File.expand_path('../build/ios/ipa', __dir__),
+      File.expand_path('../../../build/ios/ipa', __dir__)
+    ].uniq
+
+    ipa_files = candidate_dirs
+      .flat_map { |dir| Dir.glob(File.join(dir, '*.ipa')) }
+      .sort_by { |f| File.mtime(f) }
+      .reverse
+
+    UI.user_error!("Could not find ipa file in: #{candidate_dirs.join(', ')}") if ipa_files.empty?
+    ipa_files.first
+  end
+
+  desc "Build Flutter IPA and upload to TestFlight with metadata"
+  lane :beta_with_metadata_new_build do
+    flutter_archive
+    beta_with_metadata_existing_build
+  end
+
+  desc "Upload to TestFlight with Metadata (fast, uses existing archive)"
+  lane :beta_with_metadata_existing_build do
+    metadata_json = load_metadata
+
+    beta_info = metadata_json['betaAppReviewInfo'] || {}
+    beta_review = {
+      contact_email:         beta_info['contactEmail'],
+      contact_first_name:    beta_info['contactFirstName'],
+      contact_last_name:     beta_info['contactLastName'],
+      contact_phone:         beta_info['contactPhone'],
+      demo_account_name:     beta_info['demoAccountName'],
+      demo_account_password: beta_info['demoAccountPassword'],
+      notes:                 beta_info['notes']
+    }.compact
+
+    localized_app_info = (metadata_json['localizedAppInfo'] || {}).transform_values do |info|
+      h = { feedback_email: info['feedbackEmail'], description: info['description'] }
+      h[:marketing_url] = info['marketingUrl'] if info['marketingUrl']
+      h[:privacy_policy_url] = info['privacyPolicyUrl'] if info['privacyPolicyUrl']
+      h
+    end
+
+    localized_build_info = (metadata_json['localizedBuildInfo'] || {}).transform_values do |info|
+      { whats_new: info['whatsNew'] }
+    end
+
+    api_key = connect_api_key
+    ipa_path = latest_ipa_path
+    groups  = filter_existing_testflight_groups(api_key: api_key, groups: ["Internal"])
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true,
+      ipa: ipa_path,
+      skip_submission: false,
+      groups: groups.empty? ? nil : groups,
+      demo_account_required: true,
+      beta_app_review_info: beta_review,
+      localized_app_info: localized_app_info,
+      localized_build_info: localized_build_info,
+      uses_non_exempt_encryption: false
+    )
+  end
+
+  # Returns only the group names from `requested` that actually exist in TestFlight.
+  # Logs a warning for any group that is missing so the lane never errors on a missing group.
+  private_lane :filter_existing_testflight_groups do |options|
+    api_key    = options[:api_key]
+    requested  = Array(options[:groups])
+    return [] if requested.empty?
+
+    begin
+      token = Spaceship::ConnectAPI::Token.create(
+        key_id:    api_key[:key_id],
+        issuer_id: api_key[:issuer_id],
+        filepath:  api_key[:key_filepath]
+      )
+      Spaceship::ConnectAPI.token = token
+      bundle_id = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+      app = Spaceship::ConnectAPI::App.find(bundle_id)
+      UI.user_error!("App '#{bundle_id}' not found in App Store Connect") unless app
+
+      existing_names = Spaceship::ConnectAPI::BetaGroup.all(filter: { app: app.id }).map(&:name)
+      found   = requested & existing_names
+      missing = requested - found
+      UI.important("TestFlight groups not found, skipping: #{missing.join(', ')}") unless missing.empty?
+      found
+    rescue => e
+      UI.message("Could not fetch TestFlight groups (#{e.message}). Skipping group assignment.")
+      []
+    end
+  end
+
+  # Shared deliver call — override automatic_release, skip_binary_upload, and ipa as needed.
+  private_lane :deliver_to_app_store do |options|
+    metadata_json = load_metadata
+    languages = metadata_json['metadata'].keys
+    default_locale = metadata_json['metadata'][languages.first] || {}
+    store_info = metadata_json['appStoreInfo'] || {}
+    target_version = pubspec_version
+
+    review_info = metadata_json['appReviewInfo'] || {}
+    app_review = {
+      first_name:    review_info['firstName'],
+      last_name:     review_info['lastName'],
+      phone_number:  review_info['phoneNumber'],
+      email_address: review_info['emailAddress'],
+      demo_user:     review_info['demoUser'],
+      demo_password: review_info['demoPassword'],
+      notes:         review_info['notes']
+    }.compact
+
+    deliver(
+      api_key: options[:api_key],
+      app_version: target_version,
+      submit_for_review: true,
+      automatic_release: options.fetch(:automatic_release, false),
+      force: true,
+      skip_binary_upload: options.fetch(:skip_binary_upload, true),
+      ipa: options[:ipa],
+      skip_screenshots: false,
+      overwrite_screenshots: true,
+      skip_metadata: false,
+      languages: languages,
+      app_review_information: app_review,
+      submission_information: submission_info,
+      app_rating_config_path: './fastlane/itc_rating_config.json',
+      run_precheck_before_submit: true,
+      precheck_default_rule_level: :error,
+      precheck_include_in_app_purchases: false
+    )
+  end
+
+  private_lane :submission_info do
+    require 'json'
+
+    defaults = {
+      export_compliance_uses_encryption: false,
+      export_compliance_compliance_required: false,
+      export_compliance_encryption_updated: false,
+      export_compliance_app_type: nil,
+      export_compliance_platform: 'ios',
+      export_compliance_is_exempt: true,
+      export_compliance_contains_third_party_cryptography: false,
+      export_compliance_contains_proprietary_cryptography: false,
+      export_compliance_available_on_french_store: false,
+      # content_rights_* removed: ASC rejects patching contentRightsDeclaration on already-live/in-review apps.
+      # These fields are managed automatically by App Store Connect.
+      add_id_info_uses_idfa: false,
+      add_id_info_serves_ads: false,
+      add_id_info_tracks_action: false,
+      add_id_info_tracks_install: false,
+      add_id_info_limits_tracking: true
+    }
+
+    # Convert camelCase keys → snake_case symbols
+    overrides = (load_metadata['submissionInfo'] || {}).transform_keys do |k|
+      k.to_s
+      .gsub(/([A-Z])/, '_\1')
+      .downcase
+      .sub(/^_/, '')
+      .to_sym
+    end
+
+    # Merge defaults with overrides
+    submission_info = defaults.merge(overrides)
+
+    # Return so it can be reused in other lanes if needed
+    submission_info
+  end
+
+  desc "Upload privacy nutrition labels to App Store Connect"
+  lane :upload_privacy_details do |options|
+    begin
+      upload_app_privacy_details_to_app_store(
+        json_path: "./fastlane/app_privacy_details.json"
+      )
+    rescue Spaceship::UnexpectedResponse => e
+      # Workaround for fastlane/App Store Connect bug when the binary declares tracking
+      # (NSUserTrackingUsageDescription present) and the action tries to delete existing
+      # privacy entries before re-uploading.
+      if e.message.include?("Your binary indicates that your app tracks users")
+        UI.important("Skipping privacy re-upload due to App Store Connect tracking-delete bug: #{e.message}")
+        UI.important("Existing privacy details on App Store Connect are kept as-is. Update manually in ASC if needed.")
+      else
+        raise
+      end
+    end
+  end
+
+  desc "Cancel any in-progress App Store review submission"
+  lane :cancel_pending_review do |options|
+    api_key = options[:api_key]
+    begin
+      token = Spaceship::ConnectAPI::Token.create(
+        key_id:    api_key[:key_id],
+        issuer_id: api_key[:issuer_id],
+        filepath:  api_key[:key_filepath]
+      )
+      Spaceship::ConnectAPI.token = token
+      app = Spaceship::ConnectAPI::App.find(CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier))
+      submission = app.get_in_progress_review_submission(platform: Spaceship::ConnectAPI::Platform::IOS)
+      if submission
+        UI.important("Cancelling existing App Store review submission…")
+        submission.cancel_submission
+        UI.success("Existing submission cancelled.")
+      end
+    rescue => e
+      UI.message("No in-progress submission found (or could not cancel): #{e.message}")
+    end
+  end
+
+  desc "Build Flutter IPA, upload + submit for App Store review with auto-release"
+  lane :production_with_metadata_new_build do
+    flutter_archive
+    production_with_metadata_existing_build
+  end
+
+  desc "Upload IPA from existing build + metadata and submit for App Store review (fast)"
+  lane :production_with_metadata_existing_build do
+    api_key = connect_api_key
+    cancel_pending_review(api_key: api_key)
+    ipa_path = latest_ipa_path
+    upload_privacy_details
+    deliver_to_app_store(
+      api_key: api_key,
+      ipa: ipa_path,
+      automatic_release: true,
+      skip_binary_upload: false
+    )
+  end
+
+  desc "Promote latest TestFlight build to App Store review"
+  lane :promote_testflight_to_production_for_review do
+    api_key = connect_api_key
+    upload_privacy_details
+    deliver_to_app_store(
+      api_key: api_key,
+      automatic_release: false
+    )
+  end
+
+  desc "Promote latest TestFlight build and release automatically once approved"
+  lane :promote_testflight_to_production_for_release do
+    api_key = connect_api_key
+    upload_privacy_details
+    deliver_to_app_store(
+      api_key: api_key,
+      automatic_release: true
+    )
+  end
+
+  desc "Run Fastlane Precheck to validate metadata before App Store submission"
+  lane :run_precheck do
+    api_key = connect_api_key
+    precheck(
+      api_key: api_key,
+      app_identifier: CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier),
+      default_rule_level: :error,
+      include_in_app_purchases: false
+    )
+  end
+
+  desc "Capture iOS screenshots from simulators using Snapshot"
+  lane :screenshots do
+    # Unlock the login keychain to allow codesigning during UI test build.
+    unlock_keychain(path: "login.keychain")
+    # Ensure flutter deps are ready before running iOS UI screenshot tests.
+    sh("cd ../.. ; flutter pub get")
+    # Use scan instead of snapshot to avoid fastlane's ios_version patch truncation bug
+    # (fastlane/fastlane#21960 — fastlane strips patch version e.g. 26.3.1 → 26.3).
+    # scan passes destination strings to xcodebuild as-is without modification.
+    # Note: simctl shows runtimes as "26.3" but xcodebuild requires the full "26.3.1".
+    [
+      "platform=iOS Simulator,name=iPhone 14 Pro Max,OS=26.3.1",
+      "platform=iOS Simulator,name=iPhone 14 Plus,OS=26.3.1",
+      "platform=iOS Simulator,name=iPad Pro (12.9-inch) (3rd generation),OS=26.3.1"
+    ].each do |destination|
+      scan(
+        workspace: "Runner.xcworkspace",
+        scheme: "FastlaneSnapshots",
+        destination: destination,
+        derived_data_path: "~/Library/Developer/Xcode/DerivedData",
+        result_bundle: true,
+        # Use the screenshot entry point: no Firebase, no billing, no notifications.
+        # Static dummy saves are injected via Riverpod overrides in main_screenshots.dart.
+        xcargs: "FLUTTER_TARGET=lib/main_screenshots.dart"
+      )
+    end
+
+    # SnapshotHelper.swift saves PNGs to ~/Library/Caches/tools.fastlane/screenshots/.
+    # Copy them to the configured output directory, grouped by locale.
+    output_dir = File.expand_path("../screenshots/ios/en-GB")
+    FileUtils.mkdir_p(output_dir)
+    screenshots_cache = File.expand_path("~/Library/Caches/tools.fastlane/screenshots")
+    Dir.glob("#{screenshots_cache}/*.png").each do |f|
+      FileUtils.cp(f, output_dir)
+    end
+  end
+end

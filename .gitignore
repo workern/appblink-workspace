@@ -1,0 +1,123 @@
+.nx/installation
+.nx/cache
+.nx/workspace-data
+ 
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+# turk_guru (local work in progress, not ready to commit)
+# flutter/apps/turk_guru/
+
+# NativeScriptnode_modules/
+platforms/
+hooks/
+src/**/*.js
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# compiled output
+dist/
+builds/
+/tmp
+/out-tsc
+# dependencies
+
+node_modules/
+*node_modules*
+
+/public
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/appblink.vibechecks.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+functions/.gitignore
+**/*.drivedownload
+**/*.stackdump
+**/*.cache
+**/*.**.cache
+**/*.log
+
+
+.angular
+firestore-export-*
+.runtimeconfig.json
+
+venv
+
+__pycache__/
+
+saved-firebase-emulators-data*/
+functions/automations
+update-clients.js
+
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+
+!gulpfile.js
+
+**/lib/**/*.js*.map
+App_Resources*/
+.dart_tool/
+**/.dart_tool/
+**/.DS_Store
+.flutter-plugins-dependencies
+**/.flutter-plugins-dependencies
+# Flutter packages - ignore pubspec.lock in packages (not apps)
+flutter/packages/**/pubspec.lock
+tools/firebase/functions-ts/lib
+firebase-export-*/
+.env
+.env.local
+.secret.local
+secure/
+
+# Generated store backup history (do not commit)
+assets/**/play-store/backups/
+assets/**/app-store/backups/
+
+# Legacy backup folders (transition cleanup)
+assets/**/play-store/feature-graphic-backups/
+assets/**/play-store/preview-video-backups/
+assets/**/play-store/texts-backups/
+assets/**/app-store/feature-graphic-backups/
+assets/**/app-store/preview-video-backups/
+assets/**/app-store/texts-backups/
+**/fastlane/metadata/
+**/fastlane/screenshots/
+**/test_output/
+flutter/apps/**/**/fastlane/report.xml
+backups/
+assets/**/generated/
+assets/**/social-media/
+.venv/
+
+# AppBlink extension data — task metadata and images are local only
+.appblink/
+*/.kotlin/
+*.vsix
+**/out/

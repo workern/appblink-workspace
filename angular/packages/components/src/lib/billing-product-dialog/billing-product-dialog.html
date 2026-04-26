@@ -1,0 +1,7 @@
+<wn-payment-dialog
+  [open]="open()"
+  (canceled)="canceled.emit()"
+  (checkoutStarted)="checkoutStarted.emit($event)"
+  (checkoutCompleted)="checkoutCompleted.emit($event)"
+  (checkoutFailed)="checkoutFailed.emit($event)"
+/>

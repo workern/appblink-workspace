@@ -1,0 +1,30 @@
+{
+  "projects": {
+    "default": "workern-app",
+    "production": "workern-app"
+  },
+  "targets": {
+    "workern-app": {
+      "hosting": {
+        "webapp": [
+          "workern-app"
+        ],
+        "api": [
+          "workernapi"
+        ],
+        "auth": [
+          "auth-cc961"
+        ]
+      }
+    }
+  },
+  "etags": {
+    "workern-app": {
+      "extensionInstances": {
+        "firestore-auth-claims": "3bfe655789dd9a3c6c0b70920d8842b06109395a1e4c38d415033b23d7860666",
+        "firestore-send-email": "a1a73094d4ac29e9d19abf3b5d7488b9a99e576713bdc9af13c1ba7085d66415"
+      }
+    }
+  },
+  "dataconnectEmulatorConfig": {}
+}

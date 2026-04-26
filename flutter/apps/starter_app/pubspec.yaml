@@ -1,0 +1,134 @@
+name: starter_app
+description: 'A starter Flutter app with Firebase, login, notifications, reusable widgets.'
+publish_to: 'none'
+
+version: 1.0.0+3
+
+environment:
+  sdk: ^3.10.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Core packages
+  cupertino_icons: ^1.0.8
+
+  # Firebase
+  firebase_core: ^4.4.0
+  firebase_auth: ^6.1.4
+  firebase_storage: ^13.0.6
+  cloud_firestore: ^6.1.2
+  cloud_functions: ^6.0.6
+  firebase_ui_auth: ^3.0.1
+
+  # State Management
+  flutter_riverpod: ^3.1.0
+  riverpod_annotation: ^4.0.0
+
+  # Share Intent (receiving content from other apps)
+  flutter_sharing_intent: ^2.0.4
+
+  # Common Models
+  workern_models:
+    path: ../../packages/workern_models
+
+  # Authentication Package
+  workern_auth:
+    path: ../../packages/workern_auth
+
+  # Location Services Package
+  workern_location:
+    path: ../../packages/workern_location
+
+  # Cloud Services Package
+  workern_services:
+    path: ../../packages/workern_services
+
+  # Shared Widgets Package
+  workern_widgets:
+    path: ../../packages/workern_widgets
+
+  # Notifications Package
+  workern_notifications:
+    path: ../../packages/workern_notifications
+
+  # Billing Package
+  workern_billing:
+    path: ../../packages/workern_billing
+
+  workern_ai:
+    path: ../../packages/workern_ai
+
+  # UI & Image handling
+  shadcn_ui: ^0.50.2
+  image_picker: ^1.1.2
+  cached_network_image: ^3.4.1
+  photo_view: ^0.15.0
+
+  # Routing
+  go_router: ^14.0.0
+
+  # Utilities
+  intl: ^0.20.2
+  uuid: ^4.5.1
+  timeago: ^3.7.0
+  url_launcher: ^6.3.1
+  share_plus: ^12.0.1
+  shared_preferences: ^2.5.4
+
+  # Location & Maps
+  location: ^8.0.1
+  geolocator: ^14.0.2
+  geoflutterfire_plus: ^0.0.33
+  google_maps_flutter: ^2.14.0
+  google_places_flutter: ^2.1.1
+
+  # HTTP & Networking
+  http: ^1.2.0
+
+  # Payment (if needed for future implementation)
+  firebase_messaging: ^16.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.4
+
+flutter_launcher_icons:
+  image_path_android: 'assets/icons/icon_1024.png'
+  image_path_ios: 'assets/icons/icon_1024.png'
+  android: true
+  ios: true
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  background_color_ios: '#ffffff'
+  web:
+    generate: true
+    image_path: 'assets/icons/icon_1024.png'
+    background_color: '#hexcode'
+    theme_color: '#hexcode'
+  windows:
+    generate: true
+    image_path: 'assets/icons/icon_1024.png'
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: 'assets/icons/icon_1024.png'
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
+
+flutter_native_splash:
+  color: '#FFFFFF'
+  image: assets/icons/icon_1024.png
+  android: true
+  ios: true
+  android_gravity: center
+  ios_content_mode: center
+  fullscreen: false

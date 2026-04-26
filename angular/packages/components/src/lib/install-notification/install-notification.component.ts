@@ -1,0 +1,129 @@
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  signal
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { PwaService } from '@workern/services';
+
+@Component({
+  selector: 'app-install-notification',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    @if (pwaService.installAvailable() && !isDismissed()) {
+      <div
+        class="fixed bottom-4 left-4 right-4 mx-auto max-w-sm bg-green-600 text-white rounded-lg shadow-lg z-50 animate-slide-up"
+      >
+        <div class="p-4">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg
+                class="h-6 w-6 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+                />
+              </svg>
+            </div>
+            <div class="ml-3 w-0 flex-1">
+              <p class="text-sm font-medium">Install Nikaट App!</p>
+              <p class="mt-1 text-sm opacity-90">
+                Add Nikaट to your home screen for quick access and offline
+                browsing.
+              </p>
+              <div class="mt-3 flex space-x-2">
+                <button
+                  (click)="installNow()"
+                  class="bg-white text-green-600 px-3 py-1 rounded text-sm font-medium hover:bg-gray-100 transition"
+                >
+                  Install Now
+                </button>
+                <button
+                  (click)="dismissInstall()"
+                  class="bg-green-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-green-400 transition"
+                >
+                  Not Now
+                </button>
+              </div>
+            </div>
+            <div class="ml-4 flex-shrink-0 flex">
+              <button
+                (click)="dismissInstall()"
+                class="bg-green-500 rounded-md p-1 inline-flex items-center justify-center text-white hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              >
+                <svg
+                  class="h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  `,
+  styles: [
+    `
+      .animate-slide-up {
+        animation: slideUp 0.3s ease-out forwards;
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(100%);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class InstallNotificationComponent {
+  pwaService = inject(PwaService);
+  isDismissed = signal(false);
+
+  async installNow(): Promise<void> {
+    const result = await this.pwaService.promptInstall();
+    if (result === 'accepted') {
+      this.isDismissed.set(true);
+    }
+  }
+
+  dismissInstall(): void {
+    this.isDismissed.set(true);
+    // Store dismissal in localStorage to remember user preference
+    localStorage.setItem('install-notification-dismissed', 'true');
+  }
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const dismissed = localStorage.getItem('install-notification-dismissed');
+      if (dismissed === 'true') {
+        this.isDismissed.set(true);
+      }
+    }
+    // Check if user previously dismissed the notification
+  }
+}

@@ -1,0 +1,47 @@
+<div
+  class="min-h-screen flex items-center justify-center"
+  [style.background]="backgroundColor"
+>
+  <div
+    class="bg-white p-10 rounded-lg shadow-2xl text-center max-w-md w-full animate-fade-in-up"
+  >
+    <div class="mx-auto mb-6">
+      <svg
+        class="payment-waiting-animation"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 100 100"
+      >
+        <circle
+          class="payment-waiting-circle"
+          cx="50"
+          cy="50"
+          r="45"
+          fill="none"
+        />
+        <circle
+          class="payment-waiting-dot"
+          cx="50"
+          cy="15"
+          r="8"
+          fill="#4f46e5"
+        />
+      </svg>
+    </div>
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Processing Payment</h1>
+    <p class="text-gray-600 mb-6">
+      Please wait while we process your payment. Do not close this window.
+    </p>
+    <div class="flex justify-center items-center space-x-1">
+      <div class="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
+      <div
+        class="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"
+        style="animation-delay: 0.1s"
+      ></div>
+      <div
+        class="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"
+        style="animation-delay: 0.2s"
+      ></div>
+    </div>
+    <p class="text-sm text-gray-500 mt-4">This may take a few moments...</p>
+  </div>
+</div>

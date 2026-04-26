@@ -1,0 +1,238 @@
+<!-- <div class="teams-page">
+
+  <div class="teams-header">
+    <div class="teams-header-left">
+      <ng-icon name="lucideUsers" size="20" />
+      <div>
+        <h2 class="teams-title">Team Members</h2>
+        @if (!isLoading()) {
+          <p class="teams-subtitle">
+            {{ members()?.length ?? 0 }} member{{
+              (members()?.length ?? 0) === 1 ? '' : 's'
+            }}
+          </p>
+        }
+      </div>
+    </div>
+
+    @if (isCurrentUserOwner()) {
+      <button
+        hlmBtn
+        size="sm"
+        (click)="openInviteSheet()"
+        aria-label="Invite member"
+      >
+        <ng-icon name="lucideUserPlus" size="16" class="mr-2" />
+        Invite
+      </button>
+    }
+  </div>
+
+  <hlm-separator class="my-4" />
+
+ 
+  @if (isLoading()) {
+   
+    <div class="member-list">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="member-row">
+          <hlm-skeleton class="avatar-skeleton" />
+          <div class="member-info-skeleton">
+            <hlm-skeleton class="h-4 w-32 mb-1" />
+            <hlm-skeleton class="h-3 w-48" />
+          </div>
+          <hlm-skeleton class="h-6 w-16 rounded-full" />
+        </div>
+      }
+    </div>
+  } @else if (!members()?.length) {
+
+    <div class="empty-state">
+      <ng-icon name="lucideUsers" size="48" class="empty-icon" />
+      <p class="empty-title">No members yet</p>
+      <p class="empty-subtitle">
+        Invite colleagues to collaborate in this workspace.
+      </p>
+      @if (isCurrentUserOwner()) {
+        <button hlmBtn size="sm" class="mt-4" (click)="openInviteSheet()">
+          <ng-icon name="lucideUserPlus" size="16" class="mr-2" />
+          Invite first member
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="member-list">
+      @for (member of members(); track member.uid) {
+        <div section hlmCard class="member-card">
+          <div class="member-row">
+          
+            <hlm-avatar size="default">
+              @if (member.photoUrl) {
+                <img
+                  hlmAvatarImage
+                  [src]="member.photoUrl"
+                  [alt]="member.displayName ?? member.email ?? 'member'"
+                />
+              }
+              <span hlmAvatarFallback>{{ initials(member) }}</span>
+            </hlm-avatar>
+
+     
+            <div class="member-info">
+              <p class="member-name">
+                {{ member.displayName ?? member.email ?? member.uid }}
+                @if (isSelf(member)) {
+                  <span class="self-label">(you)</span>
+                }
+              </p>
+              @if (member.displayName && member.email) {
+                <p class="member-email">{{ member.email }}</p>
+              }
+            </div>
+
+  
+            <div class="member-actions">
+              @if (isOwner(member)) {
+                <span hlmBadge variant="default" class="role-badge">
+                  <ng-icon name="lucideCrown" size="12" class="mr-1" />
+                  Owner
+                </span>
+              } @else {
+                <span hlmBadge variant="secondary" class="role-badge">
+                  <ng-icon name="lucideUser" size="12" class="mr-1" />
+                  Member
+                </span>
+              }
+
+      
+              @if (canActOn(member) && !isOwner(member)) {
+                <button
+                  hlmBtn
+                  variant="ghost"
+                  size="icon"
+                  class="remove-btn"
+                  [attr.aria-label]="
+                    actionLabel(member) +
+                    ' ' +
+                    (member.displayName ?? member.email)
+                  "
+                  (click)="confirmRemove(member)"
+                >
+                  <ng-icon name="lucideUserMinus" size="16" />
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+
+<hlm-sheet
+  [state]="showInviteSheet() ? 'open' : 'closed'"
+  side="right"
+  (stateChanged)="onSheetStateChanged($event)"
+>
+  <hlm-sheet-content *hlmSheetPortal>
+    <div hlmSheetHeader>
+      <h3 hlmSheetTitle>Invite a member</h3>
+      <p hlmSheetDescription>
+        Enter the email address of the person you'd like to invite.
+      </p>
+    </div>
+
+    <div class="invite-form">
+      <div class="form-field">
+        <label hlmLabel for="invite-email">Email address</label>
+        <input
+          hlmInput
+          id="invite-email"
+          type="email"
+          placeholder="colleague@example.com"
+          [ngModel]="inviteEmail()"
+          (ngModelChange)="inviteEmail.set($event)"
+          class="w-full"
+        />
+      </div>
+
+      <div class="form-field">
+        <label hlmLabel for="invite-role">Role</label>
+        <brn-select
+          id="invite-role"
+          [ngModel]="inviteRole()"
+          (ngModelChange)="inviteRole.set($event)"
+        >
+          <hlm-select-trigger class="w-full">
+            <hlm-select-value />
+          </hlm-select-trigger>
+          <hlm-select-content>
+            <hlm-option value="member">Member</hlm-option>
+            <hlm-option value="owner">Owner</hlm-option>
+          </hlm-select-content>
+        </brn-select>
+      </div>
+    </div>
+
+    <div hlmSheetFooter>
+      <button hlmBtn variant="outline" (click)="showInviteSheet.set(false)">
+        Cancel
+      </button>
+      <button
+        hlmBtn
+        [disabled]="!inviteEmail().trim() || isInviting()"
+        (click)="submitInvite()"
+      >
+        {{ isInviting() ? 'Sending…' : 'Send invite' }}
+      </button>
+    </div>
+  </hlm-sheet-content>
+</hlm-sheet>
+
+
+<hlm-alert-dialog
+  [state]="memberToRemove() ? 'open' : 'closed'"
+  (closed)="cancelRemove()"
+>
+  <ng-template hlmAlertDialogPortal>
+    <hlm-alert-dialog-content>
+      <hlm-alert-dialog-header>
+        <h2 hlmAlertDialogTitle>
+          {{
+            memberToRemove() && isSelf(memberToRemove()!)
+              ? 'Leave workspace?'
+              : 'Remove member?'
+          }}
+        </h2>
+        <p hlmAlertDialogDescription>
+          @if (memberToRemove() && isSelf(memberToRemove()!)) {
+            You will lose access to this workspace immediately.
+          } @else if (memberToRemove()) {
+            <strong>{{
+              memberToRemove()!.displayName ?? memberToRemove()!.email
+            }}</strong>
+            will lose access to this workspace immediately.
+          }
+        </p>
+      </hlm-alert-dialog-header>
+      <hlm-alert-dialog-footer>
+        <button hlmAlertDialogCancel (click)="cancelRemove()">Cancel</button>
+        <button
+          hlmAlertDialogAction
+          variant="destructive"
+          [disabled]="isRemoving()"
+          (click)="executeRemove()"
+        >
+          {{
+            isRemoving()
+              ? 'Removing…'
+              : memberToRemove() && isSelf(memberToRemove()!)
+                ? 'Leave'
+                : 'Remove'
+          }}
+        </button>
+      </hlm-alert-dialog-footer>
+    </hlm-alert-dialog-content>
+  </ng-template>
+</hlm-alert-dialog> -->

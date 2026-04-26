@@ -1,0 +1,615 @@
+<!-- Header -->
+<hlm-dialog-header class="text-center">
+  @if (!showingOTPForm()) {
+    <div class="flex justify-center mb-4">
+      <img
+        src="assets/icon.png"
+        [alt]="appName() + ' logo'"
+        class="w-16 h-16 rounded"
+      />
+    </div>
+  }
+  <h2 hlmDialogTitle class="text-2xl font-bold">
+    @if (showingOTPForm()) {
+      {{ 'auth.verifyPhoneNumber' | translate }}
+    } @else {
+      {{ 'auth.welcomeTo' | translate }} {{ appName() || 'App' }}
+    }
+  </h2>
+  @if (!showingOTPForm()) {
+    <p hlmDialogDescription class="mt-2">
+      {{ 'auth.signInDescription' | translate }}
+    </p>
+  }
+</hlm-dialog-header>
+
+<!-- Content -->
+<div class="mt-6 space-y-4">
+  @if (showingOTPForm()) {
+    <p class="text-muted-foreground mb-6 text-center">
+      {{ 'auth.otpSentMessage' | translate }} {{ selectedCountry().dialCode
+      }}{{ phoneForm.value.phone }}
+    </p>
+
+    <!-- OTP Form -->
+    <form [formGroup]="otpForm" (ngSubmit)="verifyOTP()">
+      <div class="mb-6 space-y-2">
+        <label hlmLabel>{{ 'auth.verificationCode' | translate }}</label>
+        <div class="flex justify-center">
+          <brn-input-otp
+            hlmInputOtp
+            maxLength="6"
+            formControlName="otp"
+            inputMode="numeric"
+            inputClass="disabled:cursor-not-allowed"
+          >
+            <div hlmInputOtpGroup>
+              <hlm-input-otp-slot index="0" />
+              <hlm-input-otp-slot index="1" />
+              <hlm-input-otp-slot index="2" />
+            </div>
+            <hlm-input-otp-separator />
+            <div hlmInputOtpGroup>
+              <hlm-input-otp-slot index="3" />
+              <hlm-input-otp-slot index="4" />
+              <hlm-input-otp-slot index="5" />
+            </div>
+          </brn-input-otp>
+        </div>
+        @if (
+          otpForm.get('otp')?.invalid &&
+          (otpForm.get('otp')?.dirty || otpForm.get('otp')?.touched)
+        ) {
+          <p class="text-xs text-destructive">
+            @if (otpForm.get('otp')?.errors?.['required']) {
+              {{ 'auth.verificationCodeRequired' | translate }}
+            }
+            @if (otpForm.get('otp')?.errors?.['pattern']) {
+              {{ 'auth.validCodeRequired' | translate }}
+            }
+          </p>
+        }
+      </div>
+
+      <button
+        hlmBtn
+        type="submit"
+        class="w-full"
+        [disabled]="
+          otpForm.invalid || (isLoading() && selectedMethod() === 'otp')
+        "
+      >
+        @if (isLoading() && selectedMethod() === 'otp') {
+          <hlm-spinner class="mr-2" size="sm"></hlm-spinner>
+          {{ 'auth.verifying' | translate }}
+        } @else {
+          {{ 'auth.verifyCode' | translate }}
+        }
+      </button>
+    </form>
+
+    <!-- Resend OTP -->
+    <div class="mt-4 text-center">
+      <p class="text-sm text-muted-foreground">
+        {{ 'auth.didNotReceiveCode' | translate }}
+        <button
+          hlmBtn
+          variant="link"
+          type="button"
+          (click)="resendOTP()"
+          [disabled]="isLoading() && selectedMethod() === 'phone'"
+          class="ml-1 p-0 h-auto"
+        >
+          {{ 'auth.resendCode' | translate }}
+        </button>
+      </p>
+    </div>
+
+    <!-- Back button -->
+    <div class="mt-4 text-center">
+      <button
+        hlmBtn
+        variant="ghost"
+        type="button"
+        (click)="goBackToPhoneForm()"
+        class="text-sm"
+      >
+        {{ 'auth.backToPhone' | translate }}
+      </button>
+    </div>
+  } @else if (showingForgotPasswordForm()) {
+    <!-- Forgot Password Form -->
+    <div class="animate-fade-in-down">
+      <p class="text-muted-foreground mb-6 text-center">
+        {{ 'auth.forgotPasswordDescription' | translate }}
+      </p>
+
+      <form [formGroup]="forgotPasswordForm" (ngSubmit)="resetPassword()">
+        <div class="mb-6 space-y-2">
+          <label hlmLabel for="reset-email">{{
+            'auth.email' | translate
+          }}</label>
+          <input
+            hlmInput
+            type="email"
+            id="reset-email"
+            formControlName="email"
+            [placeholder]="'auth.emailPlaceholder' | translate"
+          />
+          @if (
+            forgotPasswordForm.get('email')?.invalid &&
+            (forgotPasswordForm.get('email')?.dirty ||
+              forgotPasswordForm.get('email')?.touched)
+          ) {
+            <p class="text-xs text-destructive">
+              @if (forgotPasswordForm.get('email')?.errors?.['required']) {
+                {{ 'auth.emailRequired' | translate }}
+              }
+              @if (forgotPasswordForm.get('email')?.errors?.['email']) {
+                {{ 'auth.validEmailRequired' | translate }}
+              }
+            </p>
+          }
+        </div>
+
+        <button
+          hlmBtn
+          type="submit"
+          class="w-full"
+          [disabled]="forgotPasswordForm.invalid || isLoading()"
+        >
+          @if (isLoading()) {
+            <hlm-spinner class="mr-2" size="sm"></hlm-spinner>
+            {{ 'auth.sendingResetEmail' | translate }}
+          } @else {
+            {{ 'auth.sendResetEmail' | translate }}
+          }
+        </button>
+      </form>
+
+      <div class="mt-4 text-center">
+        <button
+          hlmBtn
+          variant="ghost"
+          type="button"
+          (click)="goBackToEmailForm()"
+          class="text-sm"
+        >
+          {{ 'auth.backToSignIn' | translate }}
+        </button>
+      </div>
+    </div>
+  } @else {
+    <p class="text-muted-foreground mb-6 text-center">
+      {{ 'auth.signInDescription' | translate }}
+    </p>
+
+    <!-- Login Options -->
+    <div class="space-y-3">
+      <!-- Google Login -->
+      <button
+        hlmBtn
+        variant="outline"
+        type="button"
+        (click)="loginWithGoogle()"
+        [disabled]="isLoading()"
+        class="w-full justify-start h-11"
+      >
+        @if (isLoading() && selectedMethod() === 'google') {
+          <hlm-spinner class="mr-2" size="sm"></hlm-spinner>
+          <span>{{ 'auth.signingIn' | translate }}</span>
+        } @else {
+          <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
+          </svg>
+          <span>{{ 'auth.continueWithGoogle' | translate }}</span>
+        }
+      </button>
+
+      <!-- Phone Login -->
+      <button
+        hlmBtn
+        variant="outline"
+        type="button"
+        (click)="showPhoneForm()"
+        [disabled]="isLoading()"
+        class="w-full justify-start h-11"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-5 h-5 mr-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
+          />
+        </svg>
+        <span>{{ 'auth.continueWithPhone' | translate }}</span>
+      </button>
+
+      <!-- Email Login -->
+      <button
+        hlmBtn
+        variant="outline"
+        type="button"
+        (click)="showEmailForm()"
+        [disabled]="isLoading()"
+        class="w-full justify-start h-11"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-5 h-5 mr-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 21.75 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
+          />
+        </svg>
+        <span>{{ 'auth.continueWithEmail' | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Phone Form -->
+    @if (showingPhoneForm()) {
+      <div class="mt-6 border-t pt-6 animate-fade-in-down">
+        <form [formGroup]="phoneForm" (ngSubmit)="loginWithPhone()">
+          <div class="mb-4 space-y-2">
+            <label hlmLabel for="phone">{{
+              'auth.phoneNumber' | translate
+            }}</label>
+            <div class="flex gap-2">
+              <!-- Country Code Selector -->
+              <div class="relative">
+                <button
+                  #countryDropdownTrigger
+                  type="button"
+                  class="inline-flex items-center gap-1 h-10 px-3 border border-input bg-muted text-muted-foreground text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors min-w-[80px] whitespace-nowrap"
+                  (click)="toggleCountryDropdown()"
+                  [attr.aria-expanded]="showCountryDropdown()"
+                  aria-label="Select country code"
+                >
+                  <span>{{ selectedCountry().flag }}</span>
+                  <span>{{ selectedCountry().dialCode }}</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-3 w-3 opacity-60"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+                @if (showCountryDropdown()) {
+                  <div
+                    #countryDropdownPanel
+                    class="absolute left-0 z-50 bg-popover border border-border rounded-md shadow-lg w-64 max-h-64 flex flex-col"
+                    [class.bottom-full]="countryDropdownOpenUp()"
+                    [class.mb-1]="countryDropdownOpenUp()"
+                    [class.top-full]="!countryDropdownOpenUp()"
+                    [class.mt-1]="!countryDropdownOpenUp()"
+                  >
+                    <div class="p-2 border-b border-border">
+                      <input
+                        type="text"
+                        [value]="countrySearch()"
+                        (input)="countrySearch.set($any($event.target).value)"
+                        placeholder="Search country..."
+                        class="w-full text-sm px-2 py-1 rounded border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                        aria-label="Search country"
+                      />
+                    </div>
+                    <ul
+                      class="overflow-y-auto flex-1"
+                      role="listbox"
+                      aria-label="Country codes"
+                    >
+                      @for (
+                        country of filteredCountries();
+                        track country.isoCode
+                      ) {
+                        <li>
+                          <button
+                            type="button"
+                            class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors text-left"
+                            [class.bg-accent]="
+                              selectedCountry().isoCode === country.isoCode
+                            "
+                            (click)="selectCountry(country)"
+                            role="option"
+                            [attr.aria-selected]="
+                              selectedCountry().isoCode === country.isoCode
+                            "
+                          >
+                            <span>{{ country.flag }}</span>
+                            <span class="flex-1 truncate">{{
+                              country.name
+                            }}</span>
+                            <span class="text-muted-foreground">{{
+                              country.dialCode
+                            }}</span>
+                          </button>
+                        </li>
+                      }
+                      @if (filteredCountries().length === 0) {
+                        <li
+                          class="px-3 py-4 text-sm text-muted-foreground text-center"
+                        >
+                          No countries found
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+              </div>
+              <input
+                hlmInput
+                type="tel"
+                id="phone"
+                formControlName="phone"
+                [placeholder]="'auth.phoneNumberPlaceholder' | translate"
+                class="flex-1"
+              />
+            </div>
+            @if (
+              phoneForm.get('phone')?.invalid &&
+              (phoneForm.get('phone')?.dirty || phoneForm.get('phone')?.touched)
+            ) {
+              <p class="text-xs text-destructive">
+                @if (phoneForm.get('phone')?.errors?.['required']) {
+                  {{ 'auth.phoneNumberRequired' | translate }}
+                }
+                @if (phoneForm.get('phone')?.errors?.['pattern']) {
+                  {{ 'auth.validPhoneRequired' | translate }}
+                }
+              </p>
+            }
+          </div>
+          <button
+            hlmBtn
+            type="submit"
+            class="w-full"
+            [disabled]="
+              phoneForm.invalid || (isLoading() && selectedMethod() === 'phone')
+            "
+          >
+            @if (isLoading() && selectedMethod() === 'phone') {
+              <hlm-spinner class="mr-2" size="sm"></hlm-spinner>
+              {{ 'auth.sendingOtp' | translate }}
+            } @else {
+              {{ 'auth.sendOtp' | translate }}
+            }
+          </button>
+        </form>
+      </div>
+    }
+
+    <!-- Email Form -->
+    @if (showingEmailForm()) {
+      <div class="mt-6 border-t pt-6 animate-fade-in-down">
+        <!-- Toggle Sign In/Sign Up -->
+        <div class="flex justify-center mb-4">
+          <div class="bg-muted rounded-lg p-1 flex gap-1">
+            <button
+              hlmBtn
+              variant="ghost"
+              size="sm"
+              type="button"
+              (click)="emailMode.set('signin')"
+              [class.bg-background]="emailMode() === 'signin'"
+              [class.shadow-sm]="emailMode() === 'signin'"
+            >
+              {{ 'auth.signIn' | translate }}
+            </button>
+            <button
+              hlmBtn
+              variant="ghost"
+              size="sm"
+              type="button"
+              (click)="emailMode.set('signup')"
+              [class.bg-background]="emailMode() === 'signup'"
+              [class.shadow-sm]="emailMode() === 'signup'"
+            >
+              {{ 'auth.signUp' | translate }}
+            </button>
+          </div>
+        </div>
+
+        <form [formGroup]="emailForm" (ngSubmit)="loginWithEmail()">
+          @if (emailMode() === 'signup') {
+            <div class="mb-4 animate-fade-in-down space-y-2">
+              <label hlmLabel for="name">{{
+                'auth.fullName' | translate
+              }}</label>
+              <input
+                hlmInput
+                type="text"
+                id="name"
+                formControlName="name"
+                [placeholder]="'auth.fullNamePlaceholder' | translate"
+              />
+              @if (
+                emailForm.get('name')?.invalid &&
+                (emailForm.get('name')?.dirty || emailForm.get('name')?.touched)
+              ) {
+                <p class="text-xs text-destructive">
+                  {{ 'auth.fullNameRequired' | translate }}
+                </p>
+              }
+            </div>
+          }
+
+          <div class="mb-4 space-y-2">
+            <label hlmLabel for="email">{{ 'auth.email' | translate }}</label>
+            <input
+              hlmInput
+              type="email"
+              id="email"
+              formControlName="email"
+              placeholder="Enter your email"
+            />
+            @if (
+              emailForm.get('email')?.invalid &&
+              (emailForm.get('email')?.dirty || emailForm.get('email')?.touched)
+            ) {
+              <p class="text-xs text-destructive">
+                @if (emailForm.get('email')?.errors?.['required']) {
+                  {{ 'auth.emailRequired' | translate }}
+                }
+                @if (emailForm.get('email')?.errors?.['email']) {
+                  {{ 'auth.validEmailRequired' | translate }}
+                }
+              </p>
+            }
+          </div>
+
+          <div class="mb-4 space-y-2">
+            <label hlmLabel for="password">{{
+              'auth.password' | translate
+            }}</label>
+            <input
+              hlmInput
+              type="password"
+              id="password"
+              formControlName="password"
+              [placeholder]="
+                (emailMode() === 'signup'
+                  ? 'auth.createPasswordPlaceholder'
+                  : 'auth.enterPasswordPlaceholder'
+                ) | translate
+              "
+            />
+            @if (
+              emailForm.get('password')?.invalid &&
+              (emailForm.get('password')?.dirty ||
+                emailForm.get('password')?.touched)
+            ) {
+              <p class="text-xs text-destructive">
+                @if (emailForm.get('password')?.errors?.['required']) {
+                  {{ 'auth.passwordRequired' | translate }}
+                }
+                @if (emailForm.get('password')?.errors?.['minlength']) {
+                  {{ 'auth.passwordMinLength' | translate }}
+                }
+              </p>
+            }
+          </div>
+
+          @if (emailMode() === 'signin') {
+            <div class="mb-4 text-right">
+              <button
+                hlmBtn
+                variant="link"
+                type="button"
+                (click)="showForgotPasswordForm()"
+                class="text-sm p-0 h-auto"
+              >
+                {{ 'auth.forgotPassword' | translate }}
+              </button>
+            </div>
+          }
+
+          <button
+            hlmBtn
+            type="submit"
+            class="w-full"
+            [disabled]="
+              emailForm.invalid || (isLoading() && selectedMethod() === 'email')
+            "
+          >
+            @if (isLoading() && selectedMethod() === 'email') {
+              <hlm-spinner class="mr-2" size="sm"></hlm-spinner>
+              {{
+                (emailMode() === 'signup'
+                  ? 'auth.creatingAccount'
+                  : 'auth.signingIn'
+                ) | translate
+              }}
+            } @else {
+              {{
+                (emailMode() === 'signup'
+                  ? 'auth.createAccount'
+                  : 'auth.signIn'
+                ) | translate
+              }}
+            }
+          </button>
+        </form>
+
+        @if (emailMode() === 'signup') {
+          <p class="mt-4 text-xs text-muted-foreground text-center">
+            {{ 'auth.agreeToTermsPrefix' | translate }}
+            <a
+              [href]="termsUrl()"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline hover:text-primary"
+              >{{ 'auth.termsOfService' | translate }}</a
+            >
+            {{ 'auth.and' | translate }}
+            <a
+              [href]="privacyUrl()"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline hover:text-primary"
+              >{{ 'auth.privacyPolicy' | translate }}</a
+            >
+          </p>
+        }
+      </div>
+    }
+    @if (!showingPhoneForm() && !showingEmailForm()) {
+      <!-- Terms -->
+      <p class="text-xs text-muted-foreground text-center mt-6">
+        {{ 'auth.continueAgreeToTermsPrefix' | translate }}
+        <a
+          [href]="termsUrl()"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="underline hover:text-primary"
+          >{{ 'auth.termsOfService' | translate }}</a
+        >
+        {{ 'auth.and' | translate }}
+        <a
+          [href]="privacyUrl()"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="underline hover:text-primary"
+          >{{ 'auth.privacyPolicy' | translate }}</a
+        >
+      </p>
+    }
+  }
+</div>
+
+<!-- Hidden reCAPTCHA container -->
+<div #recaptchaContainer class="hidden"></div>

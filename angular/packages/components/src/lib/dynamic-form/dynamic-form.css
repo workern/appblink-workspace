@@ -1,0 +1,14 @@
+/* Most styling is now handled by Tailwind classes in the template */
+/* Keep any component-specific overrides here if needed */
+
+:host {
+  display: block;
+}
+.composite {
+  outline: 1px solid black;
+  margin: 5px;
+  padding: 5px;
+}
+h2 {
+  margin: 0px;
+}

@@ -1,0 +1,11 @@
+(async() => {
+    const result = await fetch('https://api.pinterest.com/v5/pins/{pin_id}?pin_id={pin_id}', {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer <access_token>',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+    });
+    console.log(await result.json());
+})();

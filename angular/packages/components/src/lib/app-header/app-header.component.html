@@ -1,0 +1,76 @@
+<header
+  class="relative z-50 bg-white/85 backdrop-blur-lg border-b border-border/40 px-4 py-3"
+  style="box-shadow: var(--shadow-1, 0 1px 3px 0 rgb(0 0 0 / 0.06))"
+  (click)="onHeaderClick()"
+>
+  <nav class="w-full max-w-7xl mx-auto flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2 min-w-0">
+      <img
+        [src]="logoSrc()"
+        width="40"
+        height="40"
+        class="w-10 h-10 rounded-md"
+        [alt]="logoAlt()"
+      />
+      <div class="flex items-baseline min-w-0">
+        <span class="text-xl sm:text-3xl font-bold text-gray-800 truncate">{{
+          appName()
+        }}</span>
+        @if (byline()?.trim()) {
+          <span
+            class="ml-1 text-xs font-medium text-gray-500 truncate hidden sm:inline"
+            >{{ byline() }}</span
+          >
+        }
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <!-- <workern-language-switcher /> -->
+
+      @if (!isLoggedIn()) {
+        <button
+          hlmBtn
+          size="sm"
+          class="px-3 sm:px-5 text-xs sm:text-sm"
+          (click)="onSignInClick()"
+        >
+          Sign In
+        </button>
+      } @else if (showAvatar()) {
+        <div class="relative" (click)="$event.stopPropagation()">
+          <button
+            type="button"
+            class="w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center hover:bg-primary/25 transition"
+            aria-label="Profile menu"
+            (click)="onAvatarClick($event)"
+          >
+            <ng-icon hlm name="lucideUserRound" size="sm" />
+          </button>
+
+          @if (isMenuOpen()) {
+            <div
+              class="absolute right-0 top-12 w-44 bg-white rounded-xl shadow-lg border border-border py-1 z-40"
+            >
+              <a
+                [routerLink]="billingRoute()"
+                (click)="onBillingClick()"
+                class="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted"
+              >
+                Billing
+              </a>
+              <div class="border-t border-border mx-2 my-1"></div>
+              <button
+                class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
+                (click)="onLogoutClick()"
+              >
+                <ng-icon hlm name="lucideLogOut" size="sm" />
+                Logout
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </nav>
+</header>

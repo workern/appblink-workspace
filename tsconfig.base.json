@@ -1,0 +1,213 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@workern/models": ["libs/shared/models/src/index.ts"],
+      "@workern/enums": ["libs/shared/models/src/index.ts"],
+      "@workern/services": ["angular/packages/services/src/index.ts"],
+      "@workern/guards": ["angular/packages/guards/src/index.ts"],
+      "@workern/components": ["angular/packages/components/src/index.ts"],
+      "@/*": ["apps/*"],
+      "@workern/*": ["libs/*/src/index.ts"],
+      "@spartan/components": ["angular/packages/spartan/src/index.ts"],
+      "@spartan/components/accordion": [
+        "./angular/packages/spartan/accordion/src/index.ts"
+      ],
+      "@spartan/components/alert": [
+        "./angular/packages/spartan/alert/src/index.ts"
+      ],
+      "@spartan/components/alert-dialog": [
+        "./angular/packages/spartan/alert-dialog/src/index.ts"
+      ],
+      "@spartan/components/aspect-ratio": [
+        "./angular/packages/spartan/aspect-ratio/src/index.ts"
+      ],
+      "@spartan/components/autocomplete": [
+        "./angular/packages/spartan/autocomplete/src/index.ts"
+      ],
+      "@spartan/components/avatar": [
+        "./angular/packages/spartan/avatar/src/index.ts"
+      ],
+      "@spartan/components/badge": [
+        "./angular/packages/spartan/badge/src/index.ts"
+      ],
+      "@spartan/components/breadcrumb": [
+        "./angular/packages/spartan/breadcrumb/src/index.ts"
+      ],
+      "@spartan/components/button": [
+        "./angular/packages/spartan/button/src/index.ts"
+      ],
+      "@spartan/components/button-group": [
+        "./angular/packages/spartan/button-group/src/index.ts"
+      ],
+      "@spartan/components/calendar": [
+        "./angular/packages/spartan/calendar/src/index.ts"
+      ],
+      "@spartan/components/card": [
+        "./angular/packages/spartan/card/src/index.ts"
+      ],
+      "@spartan/components/carousel": [
+        "./angular/packages/spartan/carousel/src/index.ts"
+      ],
+      "@spartan/components/checkbox": [
+        "./angular/packages/spartan/checkbox/src/index.ts"
+      ],
+      "@spartan/components/collapsible": [
+        "./angular/packages/spartan/collapsible/src/index.ts"
+      ],
+      "@spartan/components/combobox": [
+        "./angular/packages/spartan/combobox/src/index.ts"
+      ],
+      "@spartan/components/command": [
+        "./angular/packages/spartan/command/src/index.ts"
+      ],
+      "@spartan/components/context-menu": [
+        "./angular/packages/spartan/context-menu/src/index.ts"
+      ],
+      "@spartan/components/date-picker": [
+        "./angular/packages/spartan/date-picker/src/index.ts"
+      ],
+      "@spartan/components/dialog": [
+        "./angular/packages/spartan/dialog/src/index.ts"
+      ],
+      "@spartan/components/dropdown-menu": [
+        "./angular/packages/spartan/dropdown-menu/src/index.ts"
+      ],
+      "@spartan/components/empty": [
+        "./angular/packages/spartan/empty/src/index.ts"
+      ],
+      "@spartan/components/field": [
+        "./angular/packages/spartan/field/src/index.ts"
+      ],
+      "@spartan/components/hover-card": [
+        "./angular/packages/spartan/hover-card/src/index.ts"
+      ],
+      "@spartan/components/icon": [
+        "./angular/packages/spartan/icon/src/index.ts"
+      ],
+      "@spartan/components/input": [
+        "./angular/packages/spartan/input/src/index.ts"
+      ],
+      "@spartan/components/input-group": [
+        "./angular/packages/spartan/input-group/src/index.ts"
+      ],
+      "@spartan/components/input-otp": [
+        "./angular/packages/spartan/input-otp/src/index.ts"
+      ],
+      "@spartan/components/item": [
+        "./angular/packages/spartan/item/src/index.ts"
+      ],
+      "@spartan/components/kbd": [
+        "./angular/packages/spartan/kbd/src/index.ts"
+      ],
+      "@spartan/components/label": [
+        "./angular/packages/spartan/label/src/index.ts"
+      ],
+      "@spartan/components/menubar": [
+        "./angular/packages/spartan/menubar/src/index.ts"
+      ],
+      "@spartan/components/native-select": [
+        "./angular/packages/spartan/native-select/src/index.ts"
+      ],
+      "@spartan/components/navigation-menu": [
+        "./angular/packages/spartan/navigation-menu/src/index.ts"
+      ],
+      "@spartan/components/pagination": [
+        "./angular/packages/spartan/pagination/src/index.ts"
+      ],
+      "@spartan/components/popover": [
+        "./angular/packages/spartan/popover/src/index.ts"
+      ],
+      "@spartan/components/progress": [
+        "./angular/packages/spartan/progress/src/index.ts"
+      ],
+      "@spartan/components/radio-group": [
+        "./angular/packages/spartan/radio-group/src/index.ts"
+      ],
+      "@spartan/components/resizable": [
+        "./angular/packages/spartan/resizable/src/index.ts"
+      ],
+      "@spartan/components/scroll-area": [
+        "./angular/packages/spartan/scroll-area/src/index.ts"
+      ],
+      "@spartan/components/select": [
+        "./angular/packages/spartan/select/src/index.ts"
+      ],
+      "@spartan/components/separator": [
+        "./angular/packages/spartan/separator/src/index.ts"
+      ],
+      "@spartan/components/sheet": [
+        "./angular/packages/spartan/sheet/src/index.ts"
+      ],
+      "@spartan/components/sidebar": [
+        "./angular/packages/spartan/sidebar/src/index.ts"
+      ],
+      "@spartan/components/skeleton": [
+        "./angular/packages/spartan/skeleton/src/index.ts"
+      ],
+      "@spartan/components/slider": [
+        "./angular/packages/spartan/slider/src/index.ts"
+      ],
+      "@spartan/components/sonner": [
+        "./angular/packages/spartan/sonner/src/index.ts"
+      ],
+      "@spartan/components/spinner": [
+        "./angular/packages/spartan/spinner/src/index.ts"
+      ],
+      "@spartan/components/switch": [
+        "./angular/packages/spartan/switch/src/index.ts"
+      ],
+      "@spartan/components/table": [
+        "./angular/packages/spartan/table/src/index.ts"
+      ],
+      "@spartan/components/tabs": [
+        "./angular/packages/spartan/tabs/src/index.ts"
+      ],
+      "@spartan/components/textarea": [
+        "./angular/packages/spartan/textarea/src/index.ts"
+      ],
+      "@spartan/components/toggle": [
+        "./angular/packages/spartan/toggle/src/index.ts"
+      ],
+      "@spartan/components/toggle-group": [
+        "./angular/packages/spartan/toggle-group/src/index.ts"
+      ],
+      "@spartan/components/tooltip": [
+        "./angular/packages/spartan/tooltip/src/index.ts"
+      ],
+      "@spartan/components/typography": [
+        "./angular/packages/spartan/typography/src/index.ts"
+      ],
+      "@spartan/components/utils": [
+        "./angular/packages/spartan/utils/src/index.ts"
+      ]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "tmp",
+    "builds",
+    "flutter",
+    "ios",
+    "android",
+    "dist",
+    ".dart_tool",
+    "Pods",
+    "secure",
+    "backups",
+    "tools/firebase/functions-ts/node_modules"
+  ]
+}

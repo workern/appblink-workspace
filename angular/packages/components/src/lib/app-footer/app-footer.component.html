@@ -1,0 +1,135 @@
+<footer class="bg-card border-t border-border">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8 py-14">
+    <!-- Top: Brand + Nav columns -->
+    <div class="grid grid-cols-1 gap-12 md:grid-cols-[2fr_1fr_1fr]">
+      <!-- Brand column -->
+      <div class="flex flex-col gap-4 max-w-sm">
+        <h2 class="text-xl font-bold text-foreground">
+          {{ config().appName }}
+        </h2>
+        <p class="text-sm leading-relaxed text-muted-foreground">
+          {{ config().tagline }}
+        </p>
+
+        <!-- Contact info -->
+        @if (config().contactEmail || config().contactPhone) {
+          <div class="flex flex-col gap-2 mt-2">
+            @if (config().contactEmail) {
+              <a
+                [href]="'mailto:' + config().contactEmail"
+                class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
+                aria-label="Send email"
+              >
+                <ng-icon hlm name="lucideMail" size="sm" />
+                {{ config().contactEmail }}
+              </a>
+            }
+            @if (config().contactPhone) {
+              <a
+                [href]="'tel:' + config().contactPhone"
+                class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
+                aria-label="Call us"
+              >
+                <ng-icon hlm name="lucidePhone" size="sm" />
+                {{ config().contactPhone }}
+              </a>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Navigation links -->
+      @if (config().links.length) {
+        <div>
+          <h3
+            class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5"
+          >
+            Company
+          </h3>
+          <ul class="flex flex-col gap-3">
+            @for (link of config().links; track link.href) {
+              <li>
+                @if (link.external) {
+                  <a
+                    [href]="link.href"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
+                    >{{ link.label }}</a
+                  >
+                } @else {
+                  <a
+                    [routerLink]="link.href"
+                    class="text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
+                    >{{ link.label }}</a
+                  >
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <!-- Legal links -->
+      @if (config().legalLinks.length) {
+        <div>
+          <h3
+            class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5"
+          >
+            Legal
+          </h3>
+          <ul class="flex flex-col gap-3">
+            @for (link of config().legalLinks; track link.href) {
+              <li>
+                @if (link.external) {
+                  <a
+                    [href]="link.href"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
+                    >{{ link.label }}</a
+                  >
+                } @else {
+                  <a
+                    [routerLink]="link.href"
+                    class="text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
+                    >{{ link.label }}</a
+                  >
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+
+    <!-- Divider -->
+    <div class="mt-12 border-t border-border"></div>
+
+    <!-- Bottom row -->
+    <div
+      class="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p class="text-xs text-muted-foreground">
+        © {{ year }} {{ company }}. All rights reserved.
+      </p>
+
+      <!-- Social links: only rendered when a valid href is provided -->
+      @if (activeSocialLinks.length) {
+        <div class="flex items-center gap-4">
+          @for (social of activeSocialLinks; track social.href) {
+            <a
+              [href]="social.href"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="social.ariaLabel"
+              class="text-muted-foreground hover:text-primary transition-colors duration-150"
+            >
+              <ng-icon hlm [name]="social.icon" size="sm" />
+            </a>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</footer>

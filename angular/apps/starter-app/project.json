@@ -1,0 +1,79 @@
+{
+  "name": "ng-starter-app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "angular/apps/starter-app/src",
+  "prefix": "app",
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "options": {
+        "outputPath": {
+          "base": "dist/angular/apps/starter-app",
+          "browser": "."
+        },
+        "assets": [
+          "angular/apps/starter-app/src/favicon.ico",
+          "angular/apps/starter-app/src/assets",
+          "angular/apps/starter-app/src/manifest.webmanifest",
+          "angular/apps/starter-app/src/robots.txt",
+          "angular/apps/starter-app/src/sitemap.xml",
+          {
+            "glob": "*.json",
+            "input": "angular/packages/components/src/lib/i18n",
+            "output": "assets/i18n/components"
+          }
+        ],
+        "styles": [
+          "angular/packages/components/src/styles/system.css",
+          "angular/apps/starter-app/src/styles.scss"
+        ],
+        "browser": "angular/apps/starter-app/src/main.ts",
+        "tsConfig": "angular/apps/starter-app/tsconfig.json",
+        "server": "angular/apps/starter-app/src/main.server.ts",
+        "outputMode": "server",
+        "ssr": {
+          "entry": "angular/apps/starter-app/src/server.ts"
+        }
+      },
+      "configurations": {
+        "production": {
+          "outputHashing": "all",
+          "serviceWorker": "angular/apps/starter-app/ngsw-config.json",
+          "sourceMap": false,
+          "fileReplacements": [
+            {
+              "replace": "angular/apps/starter-app/src/environments/environment.ts",
+              "with": "angular/apps/starter-app/src/environments/environment.prod.ts"
+            }
+          ]
+        },
+        "development": {
+          "optimization": false,
+          "serviceWorker": "angular/apps/starter-app/ngsw-config.json",
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production",
+      "outputs": [
+        "{options.outputPath.base}"
+      ]
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "options": {
+        "port": 4216
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "ng-starter-app:build:production"
+        },
+        "development": {
+          "buildTarget": "ng-starter-app:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    }
+  }
+}

@@ -1,0 +1,63 @@
+name: workern_widgets
+description: Shared UI widgets for Workern apps
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Shared models and data structures
+  workern_models:
+    path: ../workern_models
+
+  # Localization
+  workern_localization:
+    path: ../workern_localization
+  flutter_riverpod: ^3.1.0
+
+  # Notifications service
+  workern_notifications:
+    path: ../workern_notifications
+  workern_services:
+    path: ../workern_services
+  workern_utils:
+    path: ../workern_utils
+
+  # Google Places autocomplete
+  google_places_flutter: ^2.1.1
+
+  # Shadcn UI components
+  shadcn_ui: ^0.50.2
+
+  # HTTP client for API requests
+  http: ^1.2.0
+
+  # Image picker for document uploads
+  image_picker: ^1.1.2
+
+  # Firebase Storage for file uploads
+  firebase_storage: ^13.0.6
+
+  # Video player
+  video_player: ^2.10.1
+  chewie: ^1.13.0
+
+  # Cached network images
+  cached_network_image: ^3.4.1
+
+  # Firebase UI for Firestore
+  firebase_ui_firestore: ^2.0.1
+  cloud_firestore: ^6.1.2
+  skeletonizer: ^2.1.2
+
+  # Navigation (for WorkernAppShell)
+  go_router: ^14.8.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

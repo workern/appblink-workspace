@@ -1,0 +1,11 @@
+{
+  "app": {
+    "name": "My App",
+    "common": {
+      "loading": "Loading...",
+      "error": "Something went wrong. Please try again.",
+      "retry": "Retry",
+      "noData": "No data available."
+    }
+  }
+}

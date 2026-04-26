@@ -1,0 +1,19 @@
+# Fastlane
+*.mobileprovision
+*.cer
+*.p12
+*.certSigningRequest
+
+# Fastlane temporary files
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Environment variables (IMPORTANT: Keep credentials private!)
+.env
+.env.local
+.env.*.local
+
+# Downloaded metadata
+fastlane/metadata

@@ -1,0 +1,5 @@
+curl -X 'GET' \
+  'https://api.hikerapi.com/v2/media/info/by/url?url=https%3A%2F%2Fwww.instagram.com%2Fp%2FDRe7hftiQtp%2F%3Figsh%3DMWQ1cnV0amFhYnBheQ%3D%3D' \
+  -H 'accept: application/json'
+
+  https://api.hikerapi.com/v2/media/info/by/url?url=https%3A%2F%2Fwww.instagram.com%2Fp%2FDRe7hftiQtp%2F%3Figsh%3DMWQ1cnV0amFhYnBheQ%3D%3D

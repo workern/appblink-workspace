@@ -1,0 +1,148 @@
+@if (open()) {
+<div
+  class="fixed inset-0 z-[1001] flex items-center justify-center bg-black/50 p-4"
+  (click)="closeDialog()"
+  (keydown.escape)="closeDialog()"
+  tabindex="0"
+  role="button"
+>
+  <section
+    hlmCard
+    class="w-full max-w-2xl border-border bg-card text-card-foreground"
+    (click)="$event.stopPropagation()"
+    (keydown.escape)="$event.stopPropagation()"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="dialogAriaLabel()"
+  >
+    <header hlmCardHeader class="gap-3 border-b px-6 pb-5">
+      <div class="flex items-start justify-between gap-4">
+        <div class="space-y-1">
+          <h2 hlmCardTitle class="text-xl font-semibold">
+            {{ resolvedTitle() }}
+          </h2>
+          @if (resolvedDescription()) {
+          <p hlmCardDescription>{{ resolvedDescription() }}</p>
+          }
+        </div>
+        <button
+          hlmBtn
+          variant="ghost"
+          size="icon-sm"
+          type="button"
+          [disabled]="isLoading()"
+          (click)="closeDialog()"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+
+      @if (features().length) {
+      <ul class="grid gap-2 pt-2 sm:grid-cols-2">
+        @for (feature of features(); track feature.label) {
+        <li class="flex items-start gap-2 text-sm">
+          <span
+            class="pt-0.5"
+            [class.text-green-600]="feature.included !== false"
+          >
+            @if (feature.included === false) { ✕ } @else { ✓ }
+          </span>
+          <div class="space-y-0.5">
+            <p class="font-medium">{{ feature.label }}</p>
+            @if (feature.description) {
+            <p class="text-muted-foreground text-xs">
+              {{ feature.description }}
+            </p>
+            }
+          </div>
+        </li>
+        }
+      </ul>
+      }
+    </header>
+
+    <div hlmCardContent class="space-y-4 px-6 py-5">
+      @if (plans().length === 0) {
+      <p class="text-muted-foreground text-sm">
+        @if (isLoadingPlans()) { Loading available plans... } @else { {{
+        emptyStateMessage() }} }
+      </p>
+      } @else {
+      <div class="grid gap-3">
+        @for (plan of plans(); track plan.id) {
+        <button
+          type="button"
+          hlmBtn
+          variant="outline"
+          class="h-auto w-full justify-start overflow-hidden px-4 py-3 text-left"
+          [class.ring-2]="selectedPlan()?.id === plan.id"
+          [class.ring-primary]="selectedPlan()?.id === plan.id"
+          [class.border-primary]="selectedPlan()?.id === plan.id"
+          [disabled]="isLoading() || isLoadingPlans()"
+          (click)="selectPlan(plan.id)"
+        >
+          <div class="flex min-w-0 w-full flex-col gap-1 overflow-hidden">
+            <!-- Top row: name + badge + price always visible -->
+            <div class="flex w-full items-center justify-between gap-2">
+              <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                <p class="font-semibold">{{ plan.name }}</p>
+                @if (plan.badge) {
+                <span hlmBadge variant="secondary">{{ plan.badge }}</span>
+                }
+              </div>
+              <div class="shrink-0 whitespace-nowrap text-right">
+                <p class="text-base font-semibold">
+                  {{ plan.amount | amountDisplay }}
+                </p>
+                @if (plan.intervalLabel) {
+                <p class="text-muted-foreground text-xs">
+                  {{ plan.intervalLabel }}
+                </p>
+                }
+              </div>
+            </div>
+            <!-- Description below, clamped so it never affects price visibility -->
+            @if (plan.description) {
+            <p
+              class="text-muted-foreground line-clamp-2 w-full overflow-hidden text-xs"
+              [title]="plan.description"
+            >
+              {{ plan.description }}
+            </p>
+            }
+          </div>
+        </button>
+        }
+      </div>
+      }
+    </div>
+
+    <footer
+      hlmCardFooter
+      class="flex flex-col gap-2 border-t px-6 pt-5 sm:flex-row sm:justify-end"
+    >
+      <button
+        hlmBtn
+        variant="ghost"
+        type="button"
+        [disabled]="isLoading()"
+        (click)="closeDialog()"
+      >
+        Cancel
+      </button>
+
+      <button
+        hlmBtn
+        type="button"
+        [disabled]="isLoading() || isLoadingPlans() || !selectedPlan()"
+        (click)="continueCheckout()"
+      >
+        @if (isLoading()) { {{ loadingButtonText }} } @else { {{
+        resolvedSubmitButtonText() }} }
+      </button>
+    </footer>
+  </section>
+</div>
+}

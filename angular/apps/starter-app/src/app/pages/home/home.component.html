@@ -1,0 +1,82 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <header class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center">
+          <img
+            src="assets/icons/icon-96x96.png"
+            alt="App logo"
+            class="w-10 h-10 mr-3 rounded"
+          />
+          <h1 class="text-2xl font-bold text-gray-900">Starter App</h1>
+        </div>
+
+        <div class="flex items-center gap-4">
+          @if (user(); as currentUser) {
+            <div class="flex items-center gap-3">
+              @if (currentUser.photoURL) {
+                <img
+                  [src]="currentUser.photoURL"
+                  [alt]="currentUser.name || 'User'"
+                  class="w-10 h-10 rounded-full"
+                />
+              }
+              <div class="text-sm">
+                <p class="font-medium text-gray-900">
+                  {{ currentUser.name || 'User' }}
+                </p>
+                <p class="text-gray-500">{{ currentUser.email }}</p>
+              </div>
+            </div>
+          }
+
+          <a
+            routerLink="/billing"
+            class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition"
+          >
+            Billing
+          </a>
+
+          <button
+            (click)="logout()"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">Welcome Home! 🎉</h2>
+
+      <p class="text-gray-600 mb-6">
+        You've successfully logged in. This is your protected home page.
+      </p>
+
+      <div class="grid md:grid-cols-3 gap-6 mt-8">
+        <div class="border border-gray-200 rounded-lg p-6">
+          <div class="text-3xl mb-3">📊</div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Dashboard</h3>
+          <p class="text-gray-600 text-sm">View your analytics and insights</p>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-6">
+          <div class="text-3xl mb-3">⚙️</div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Settings</h3>
+          <p class="text-gray-600 text-sm">Customize your preferences</p>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-6">
+          <div class="text-3xl mb-3">👥</div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Profile</h3>
+          <p class="text-gray-600 text-sm">Manage your account details</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

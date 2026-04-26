@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "en-US": {
+      "title": "Starter App",
+      "shortDescription": "Starter App - Short description goes here",
+      "fullDescription": "Starter App - Full description goes here\\n\\nFeatures:\\n• Feature 1\\n• Feature 2\\n• Feature 3",
+      "video": ""
+    }
+  },
+  "releaseNotes": {
+    "en-US": "Initial release with core features"
+  }
+}

@@ -1,0 +1,34 @@
+<html>
+  <body>
+    <script src="./checksum.js" />
+    <script>
+      var body = {
+        request: {
+          requestType: 'NULL',
+          merchantGuid: 'fbbfbfad-efa7-4018-ad47-d75760fe1866',
+          merchantOrderId: 'Sh77',
+          salesWalletGuid: 'cd268538-e183-11e8-8399-fa163e429e83',
+          payeeEmailId: '',
+          payeePhoneNumber: '7777777777',
+          payeeSsoId: '',
+          appliedToNewUsers: 'N',
+          amount: '1',
+          currencyCode: 'INR',
+        },
+        metadata: 'Testing Data',
+        ipAddress: '192.168.40.11',
+        operationType: 'SALES_TO_USER_CREDIT',
+        platformName: 'PayTM',
+      };
+      paytm.genchecksumbystring(
+        JSON.stringify(body),
+        isProduction ? 'MHknxVtVTQilsXuf' : 'CFThhTjhHsWs3!hd',
+        (undefined, CHECKSUMHASH) => {
+          document.getElementById('checksum').innerText = CHECKSUMHASH;
+        }
+      );
+    </script>
+    The checksum is:
+    <span id="checksum"></span>
+  </body>
+</html>

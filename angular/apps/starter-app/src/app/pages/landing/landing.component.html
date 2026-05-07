@@ -26,7 +26,7 @@
         class="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up animation-delay-400"
       >
         <button
-          (click)="openLoginDialog()"
+          (click)="openLogin()"
           class="bg-white text-indigo-600 px-8 py-4 rounded-full font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300"
         >
           Get Started
@@ -74,12 +74,4 @@
       </div>
     </div>
   </div>
-
-  <!-- Login Dialog -->
-  @if (showLoginDialog()) {
-    <wn-login-dialog
-      (close)="closeLoginDialog()"
-      (loginSuccess)="onLoginSuccess()"
-    />
-  }
 </div>

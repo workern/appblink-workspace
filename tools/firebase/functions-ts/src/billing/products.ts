@@ -23,11 +23,11 @@ import {
 import {
   createRazorpayOrderAndFirestoreEntry,
   createRazorpaySubscriptionAndFirestoreEntry
-} from '../payment-gateways/razorpay';
-import { revokeAppProductEntitlement } from '../payment-gateways/common';
+} from './gateways/razorpay';
+import { revokeAppProductEntitlement } from './gateways/common';
 const Razorpay = require('razorpay');
-import { createLemonSqueezyCheckoutAndFirestoreEntry } from '../payment-gateways/lemonsqueezy';
-import { createDodoSubscriptionSession } from '../payment-gateways/dodo-payments';
+import { createLemonSqueezyCheckoutAndFirestoreEntry } from './gateways/lemonsqueezy';
+import { createDodoSubscriptionSession } from './gateways/dodo-payments';
 import { TransactionReason } from '../enums/transactions/transaction-reason';
 import { TransactionType } from '../enums/transactions/transaction-type';
 import { getUser } from '../firebase-utils';

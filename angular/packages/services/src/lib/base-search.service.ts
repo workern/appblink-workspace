@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { FirestoreHelpers } from '@workern/services';
+import { FirestoreHelpers } from './firestore-helpers';
 
 export interface SearchOptions {
   hitsPerPage?: number;

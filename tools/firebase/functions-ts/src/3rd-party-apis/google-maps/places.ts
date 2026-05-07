@@ -2,7 +2,7 @@ import axios from 'axios';
 import { logger } from 'firebase-functions';
 import { SearchResult, SearchResultType } from '../../apps/smart-save/types';
 
-const GOOGLE_PLACES_API_KEY = 'YOUR_GOOGLE_PLACES_API_KEY';
+const GOOGLE_PLACES_API_KEY = 'AIzaSyDKALiD1adXRI-E5AS7AD8t8tNG_mguPOc';
 
 export interface GooglePlaceResult {
   description: string;

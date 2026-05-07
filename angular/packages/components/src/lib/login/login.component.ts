@@ -77,6 +77,8 @@ export class LoginComponent implements OnInit {
   protected readonly resolvedMethods = computed(
     () => this.allowedMethods() ?? ['google', 'phone', 'email']
   );
+  /** Subtitle shown below the sign-in heading (each app can customise this) */
+  subtitle = input<string>('Sign in to get started.');
   /** URL for Terms of Service link */
   termsUrl = input<string>('/terms-and-conditions');
   /** URL for Privacy Policy link */

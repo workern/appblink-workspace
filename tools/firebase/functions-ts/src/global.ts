@@ -57,6 +57,7 @@ export const chargeBeeApiKey = defineSecret('CHARGEBEE_API_KEY');
 export const paypalClientId = defineSecret('PAYPAL_CLIENT_ID');
 export const paypalClientSecret = defineSecret('PAYPAL_CLIENT_SECRET');
 export const dodoApiKey = defineSecret('DODO_API_KEY');
+export const stripeApiKey = defineSecret('STRIPE_API_KEY');
 export const taskIdGeneratationKey = defineSecret('TASK_ID_GENERATION_KEY');
 export const ACR_ACCESS_KEY = defineSecret('ACR_ACCESS_KEY');
 export const ACR_ACCESS_SECRET = defineSecret('ACR_ACCESS_SECRET');
@@ -75,5 +76,5 @@ export const deployOptions = {
   serviceAccount: '524580981259-compute@developer.gserviceaccount.com',
   cors: true,
   region: ['asia-south2'],
-  memory: '512MiB' as any,
+  memory: '512MiB' as any
 };

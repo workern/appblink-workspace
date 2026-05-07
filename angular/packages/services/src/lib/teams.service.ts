@@ -24,7 +24,7 @@ export class TeamsService {
     spaces?: string[] | null;
   }): Promise<InviteMemberResult> {
     return this.fns.firebaseCall<typeof params, InviteMemberResult>(
-      'teams-invitemember',
+      'workspaces-invitemember',
       params
     );
   }
@@ -36,7 +36,7 @@ export class TeamsService {
     targetUid: string;
   }): Promise<void> {
     return this.fns.firebaseCall<typeof params, void>(
-      'teams-removemember',
+      'workspaces-removemember',
       params
     );
   }
@@ -44,13 +44,13 @@ export class TeamsService {
   /**
    * Real-time stream of members for a workspace.
    * Resolves workspaceDocId from workspaceId in the same way the backend does
-   * (replace all slashes with underscores).
+   * (replace all slashes with double dashes).
    */
   watchMembers(
     appId: string,
     workspaceId: string
   ): Observable<WorkspaceMember[]> {
-    const workspaceDocId = workspaceId.replace(/\//g, '_');
+    const workspaceDocId = workspaceId.replace(/\//g, '--');
     const path = `apps/${appId}/workspaces/${workspaceDocId}/members`;
     return this.firestoreService.getCollection<WorkspaceMember>(
       path,

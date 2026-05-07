@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, resource } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import { get } from 'lodash';
-import { AuthService } from '@workern/services';
+import { AuthService } from './auth.service';
 @Injectable({
   providedIn: 'root'
 })

@@ -6,6 +6,7 @@ import 'package:video_compress/video_compress.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:workern_models/media/media_item.dart';
+import 'firebase_usage_tracker.dart';
 
 class MediaUploadResult {
   final String storagePath;
@@ -29,6 +30,7 @@ class MediaUploadResult {
 
 class MediaUploadService {
   final FirebaseStorage _storage;
+  final FirebaseUsageTracker _tracker = FirebaseUsageTracker.instance;
 
   MediaUploadService({FirebaseStorage? storage})
       : _storage = storage ?? FirebaseStorage.instance;
@@ -101,7 +103,9 @@ class MediaUploadService {
       );
 
       final snapshot = await uploadTask;
+      _tracker.recordStorageUpload(count: 1, bytes: compressedBytes.length);
       final downloadUrl = await snapshot.ref.getDownloadURL();
+      _tracker.recordStorageDownload(count: 1);
 
       // Get image dimensions
       final decodedImage = await decodeImageFromList(compressedBytes);
@@ -154,7 +158,10 @@ class MediaUploadService {
       );
 
       final snapshot = await uploadTask;
+      final uploadedBytes = await mediaInfo.file!.length();
+      _tracker.recordStorageUpload(count: 1, bytes: uploadedBytes);
       final downloadUrl = await snapshot.ref.getDownloadURL();
+      _tracker.recordStorageDownload(count: 1);
 
       String? thumbnailUrl;
       if (generateThumbnail) {
@@ -222,7 +229,9 @@ class MediaUploadService {
       );
 
       final snapshot = await uploadTask;
+      _tracker.recordStorageUpload(count: 1, bytes: compressedBytes.length);
       final thumbnailUrl = await snapshot.ref.getDownloadURL();
+      _tracker.recordStorageDownload(count: 1);
 
       debugPrint('✅ Thumbnail uploaded: $thumbPath');
 
@@ -237,6 +246,7 @@ class MediaUploadService {
   Future<void> deleteMedia(String storagePath) async {
     try {
       await _storage.ref().child(storagePath).delete();
+      _tracker.recordStorageDelete(count: 1);
       debugPrint('✅ Deleted media: $storagePath');
     } catch (e) {
       debugPrint('❌ Error deleting media: $e');

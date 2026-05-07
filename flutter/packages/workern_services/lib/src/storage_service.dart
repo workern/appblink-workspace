@@ -1,9 +1,11 @@
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'firebase_usage_tracker.dart';
 
 /// Service for handling Firebase Storage operations
 class StorageService {
   final FirebaseStorage _storage;
+  final FirebaseUsageTracker _tracker = FirebaseUsageTracker.instance;
 
   StorageService({FirebaseStorage? storage})
       : _storage = storage ?? FirebaseStorage.instance;
@@ -35,6 +37,7 @@ class StorageService {
       debugPrint(
           '🔥 StorageService: Calling Firebase Storage ref().getDownloadURL()...');
       final downloadUrl = await _storage.ref(path).getDownloadURL();
+      _tracker.recordStorageDownload(count: 1);
       debugPrint('✅ StorageService: Successfully got download URL');
       debugPrint('   - Original: $storagePath');
       debugPrint('   - Download URL: $downloadUrl');
@@ -90,7 +93,10 @@ class StorageService {
         contentType != null ? SettableMetadata(contentType: contentType) : null;
 
     await ref.putData(data, metadata);
-    return await ref.getDownloadURL();
+    _tracker.recordStorageUpload(count: 1, bytes: data.length);
+    final url = await ref.getDownloadURL();
+    _tracker.recordStorageDownload(count: 1);
+    return url;
   }
 
   /// Delete file from Firebase Storage
@@ -105,6 +111,7 @@ class StorageService {
       }
 
       await _storage.ref(storagePath).delete();
+      _tracker.recordStorageDelete(count: 1);
     } catch (e) {
       debugPrint('Failed to delete file at $path: $e');
       rethrow;

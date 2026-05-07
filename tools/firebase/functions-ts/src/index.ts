@@ -1,19 +1,19 @@
 import 'reflect-metadata';
 import * as authFunctions from './auth';
 import * as marketingFunctions from './marketing';
-import * as paytmFunctions from './payment-gateways/paytm-gateway';
+import * as paytmFunctions from './billing/gateways/paytm-gateway';
 import * as gratificationFunctions from './gratification-app';
-import * as spacesFunctions from './spaces/spaces-app';
 import * as webhookFunctions from './webhook-functions';
-import * as razorpayFunctions from './payment-gateways/razorpay';
+import * as razorpayFunctions from './billing/gateways/razorpay';
 import { oauth2 as oAuth2App } from './oauth2';
 import * as dataFunctions from './data-functions';
-import * as lemonSqueezyFunctions from './payment-gateways/lemonsqueezy';
-import * as revenueCatFunctions from './payment-gateways/revenue-cat';
+import * as lemonSqueezyFunctions from './billing/gateways/lemonsqueezy';
+import * as revenueCatFunctions from './billing/gateways/revenue-cat';
 import * as attributionFunctions from './attribution';
-
 import * as billingFunctions from './billing';
-import * as teamsFunctions from './teams';
+import * as workspacesFunctions from './workspaces';
+import * as applicationUsageFunctions from './applicationusage';
+import * as worktimeFunctions from './worktime';
 
 
 
@@ -21,23 +21,20 @@ import * as teamsFunctions from './teams';
 export const auth = authFunctions;
 
 
+
 // Marketing functions
 export const marketing = marketingFunctions;
 
+// Paytm gateway functions
+export const paytm = paytmFunctions;
 
-
-// Spaces functions
-export const spaces = spacesFunctions;
-
-
-// Webhook
-export const webhook = webhookFunctions;
 
 // Gratification functions
 export const gratification = gratificationFunctions;
 
-// Paytm gateway functions
-export const paytm = paytmFunctions;
+
+// Webhook
+export const webhook = webhookFunctions;
 
 
 // Razorpay payment gateway functions
@@ -52,18 +49,28 @@ export const revenueCat = revenueCatFunctions;
 export const oauth2 = oAuth2App;
 
 
+
 // Data functions
 export const data = dataFunctions;
+
 
 
 // Attribution system
 export const attribution = attributionFunctions;
 
 
+
 // Generic billing app
 export const billing = billingFunctions;
 
+export const workspaces = workspacesFunctions;
 
-// Generic teams management (invite/remove/list members for any workspace-enabled app)
-export const teams = teamsFunctions;
+// Global work-time tracking (VS Code extensions, mobile apps, web)
+export const worktime = worktimeFunctions;
+
+export const applicationusage = applicationUsageFunctions;
+
+
+
+
 

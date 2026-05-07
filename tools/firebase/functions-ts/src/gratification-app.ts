@@ -5,7 +5,6 @@ import {
   DEDUCTION_MULTIPLIER,
   TRANSACTION_PROCESSOR_RAZORPAY_X
 } from './constants';
-import { deleteCronBatch } from './cron-functions';
 import { getAutoId } from './firebase-utils';
 import {
   db,
@@ -20,7 +19,6 @@ import {
 import { RazorpayXTransaction } from './models/transactions/razorpayx-transaction';
 import { createPayoutLink } from './razorpayx-utils';
 import { PaypalPayoutTransaction } from './models/transactions/paypal-payout-transaction';
-import { Task } from './models/tasks/task';
 import { onCall } from 'firebase-functions/v2/https';
 import { Amount } from '@workern/models';
 import { TransactionProcessor } from './models/transactions/transaction-processor';
@@ -192,62 +190,62 @@ export function getPayoutTransactionObject(
   }
 }
 
-export function bonusWorkerFromCron(cronSnapshot) {
-  const data = cronSnapshot.val();
-  return bonusWorker(data.workerToBeBonused, db.doc(data.bonusRef)).then(
-    (result) => {
-      return deleteCronBatch(cronSnapshot);
-    }
-  );
-}
+// export function bonusWorkerFromCron(cronSnapshot) {
+//   const data = cronSnapshot.val();
+//   return bonusWorker(data.workerToBeBonused, db.doc(data.bonusRef)).then(
+//     (result) => {
+//       return deleteCronBatch(cronSnapshot);
+//     }
+//   );
+// }
 
-export function handleBonuses(task: Task) {
-  return db.runTransaction((t) => {
-    const requesterRef = db.collection('users').doc(task.owner.uid);
-    const taskRef = requesterRef
-      .collection('mySpaces')
-      .doc(task.spaceId)
-      .collection('tasks')
-      .doc(task.id);
-    return t.get(requesterRef).then((requesterSnap) => {
-      return t.get(taskRef).then((projectSnapshot) => {
-        const requester = requesterSnap.data();
-        const task: Task = new Task(projectSnapshot.data());
-        let totalAmountRequired = 0;
-        for (const key in task.toBeBonused) {
-          totalAmountRequired +=
-            task.toBeBonused[key].amount * DEDUCTION_MULTIPLIER;
-        }
-        if (requester.balance - totalAmountRequired > -0.01) {
-          t.update(requesterRef, {
-            balance: requester.balance - totalAmountRequired
-          });
-          for (const key in task.toBeBonused) {
-            t.set(
-              db
-                .collection('users')
-                .doc(key)
-                .collection('bonusesReceived')
-                .doc(getAutoId()),
-              {
-                amount: task.toBeBonused[key].amount,
-                isSettled: false,
-                awardedBy: task.owner.uid,
-                awardedForProject: task.id,
-                awardedOn: firestoreWriteTimestamp
-              }
-            );
-          }
-          const amountSpentOnBonusTillNow = task.stats.amountSpentOnBonus || 0;
-          const updateMap = {
-            toBeBonused: {},
-            'stats.amountSpentOnBonus':
-              amountSpentOnBonusTillNow + totalAmountRequired,
-            'stats.amountSpent': task.stats.amountSpent + totalAmountRequired
-          };
-          t.update(taskRef, updateMap);
-        }
-      });
-    });
-  });
-}
+// export function handleBonuses(task: Task) {
+//   return db.runTransaction((t) => {
+//     const requesterRef = db.collection('users').doc(task.owner.uid);
+//     const taskRef = requesterRef
+//       .collection('mySpaces')
+//       .doc(task.spaceId)
+//       .collection('tasks')
+//       .doc(task.id);
+//     return t.get(requesterRef).then((requesterSnap) => {
+//       return t.get(taskRef).then((projectSnapshot) => {
+//         const requester = requesterSnap.data();
+//         const task: Task = new Task(projectSnapshot.data());
+//         let totalAmountRequired = 0;
+//         for (const key in task.toBeBonused) {
+//           totalAmountRequired +=
+//             task.toBeBonused[key].amount * DEDUCTION_MULTIPLIER;
+//         }
+//         if (requester.balance - totalAmountRequired > -0.01) {
+//           t.update(requesterRef, {
+//             balance: requester.balance - totalAmountRequired
+//           });
+//           for (const key in task.toBeBonused) {
+//             t.set(
+//               db
+//                 .collection('users')
+//                 .doc(key)
+//                 .collection('bonusesReceived')
+//                 .doc(getAutoId()),
+//               {
+//                 amount: task.toBeBonused[key].amount,
+//                 isSettled: false,
+//                 awardedBy: task.owner.uid,
+//                 awardedForProject: task.id,
+//                 awardedOn: firestoreWriteTimestamp
+//               }
+//             );
+//           }
+//           const amountSpentOnBonusTillNow = task.stats.amountSpentOnBonus || 0;
+//           const updateMap = {
+//             toBeBonused: {},
+//             'stats.amountSpentOnBonus':
+//               amountSpentOnBonusTillNow + totalAmountRequired,
+//             'stats.amountSpent': task.stats.amountSpent + totalAmountRequired
+//           };
+//           t.update(taskRef, updateMap);
+//         }
+//       });
+//     });
+//   });
+// }

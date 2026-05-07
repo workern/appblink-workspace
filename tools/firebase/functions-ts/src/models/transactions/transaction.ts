@@ -4,9 +4,7 @@ import { TransactionState } from '../../enums/transactions/transaction-state';
 import { TransactionType } from '../../enums/transactions/transaction-type';
 import { firestoreWriteTimestamp, isProduction } from '../../global';
 import { Amount } from '@workern/models';
-import { Task } from '../tasks/task';
 import { TransactionProcessor } from './transaction-processor';
-import { eGiftsAppSpaceId } from '../../apps/egifts-app/constants';
 export class Transaction {
   public id: string;
   public uid: string;
@@ -29,7 +27,6 @@ export class Transaction {
           uid: string;
           message: string;
           processor?: TransactionProcessor;
-          task?: Task;
           reason: TransactionReason;
           createdAt: Timestamp;
           finalizedAt: Timestamp;
@@ -54,9 +51,6 @@ export class Transaction {
       this.createdAt = data.createdAt || Timestamp.now();
       this.finalizedAt = data.finalizedAt || null;
       this.notes = data.notes || {};
-      if (this.notes.task) {
-        this.notes.task = new Task(this.notes.task);
-      }
     }
   }
 
@@ -82,23 +76,7 @@ export class Transaction {
     const task = this.notes.task;
 
     switch (this.notes.source) {
-      case 'workernLeadsApp':
-        redirectHost = `${isProduction ? 'https://workern.com' : 'http://localhost:9002'}`;
-        redirectPath = `/dashboard/${this.notes.productId}?tab=billing`;
-        break;
-      case 'nikatApp':
-        redirectHost = `${isProduction ? 'https://nikat.workern.com' : 'http://localhost:4202'}`;
-        redirectPath = `/order/success/${this.notes.order.id}`;
-        break;
-      case eGiftsAppSpaceId:
-        redirectHost = isProduction
-          ? 'https://egifts.workern.com'
-          : 'http://localhost:4209';
-        redirectPath =
-          this.reason === TransactionReason.CUSTOM_WEBSITE_PURCHASE
-            ? `/v/success?websiteId=${this.notes.websiteId}&bg=${encodeURIComponent(this.notes.bg)}${this.notes.payAsYouWish === 'true' ? `&payAsYouWish=true&amount=${this.amount.value}` : ''}`
-            : ``;
-        break;
+
       case 'workernFreelanceApp':
         redirectHost = isProduction
           ? 'https://offerings.workern.com'

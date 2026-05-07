@@ -1,6 +1,6 @@
 import { https } from 'firebase-functions/v2';
 import { messages } from './constants/messages';
-import { isSpaceMember } from './spaces/spaces-app';
+
 import { error, log } from 'firebase-functions/logger';
 import { CallableRequest } from 'firebase-functions/https';
 
@@ -29,16 +29,16 @@ export async function checkRequest(
       errorMessages.general.incorrectDataSent
     );
   }
-  if (spaceId != null) {
-    const isMember = await isSpaceMember(spaceId, request.auth.uid);
-    log('isMember', isMember);
-    if (!isMember) {
-      throw new https.HttpsError(
-        'permission-denied',
-        errorMessages.general.unAuthorized
-      );
-    }
-  }
+  // if (spaceId != null) {
+  //   const isMember = await isSpaceMember(spaceId, request.auth.uid);
+  //   log('isMember', isMember);
+  //   if (!isMember) {
+  //     throw new https.HttpsError(
+  //       'permission-denied',
+  //       errorMessages.general.unAuthorized
+  //     );
+  //   }
+  // }
 
   return true;
 }

@@ -1,20 +1,25 @@
-import 'dart:io' show HttpClient, HttpClientRequest;
+import 'dart:async' show unawaited;
+import 'dart:convert';
+import 'dart:io' show HttpClient, HttpHeaders;
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_initializer.dart';
+import 'firebase_usage_tracker.dart';
 
 class CloudFunctionsService {
   static const String _region = 'asia-south2';
+
+  final FirebaseUsageTracker _usageTracker = FirebaseUsageTracker.instance;
 
   FirebaseFunctions? _functionsInstance;
 
   FirebaseFunctions get _functions {
     if (_functionsInstance == null) {
       _functionsInstance = FirebaseFunctions.instanceFor(region: _region);
-      debugPrint(
-          '🔌 CloudFunctionsService initialized for region: $_region');
+      debugPrint('🔌 CloudFunctionsService initialized for region: $_region');
       debugPrint(
           '📍 Target: ${FirebaseInitializer.functionsTargetDescription}');
     }
@@ -29,6 +34,7 @@ class CloudFunctionsService {
   ///
   /// Returns: The response data from the function
   Future<dynamic> call(String functionName, [dynamic data]) async {
+    final stopwatch = Stopwatch()..start();
     try {
       debugPrint('☁️ Calling Cloud Function: $functionName');
       debugPrint('📍 Region: asia-south2');
@@ -42,9 +48,26 @@ class CloudFunctionsService {
       final HttpsCallable callable = _functions.httpsCallable(functionName);
       final HttpsCallableResult result = await callable.call(sanitizedData);
 
+      if (!functionName.startsWith('applicationusage-')) {
+        stopwatch.stop();
+        final bytes = _usageTracker.estimateBytes(sanitizedData) +
+            _usageTracker.estimateBytes(result.data);
+        _usageTracker.recordFunctionCall(
+          count: 1,
+          bytes: bytes,
+          functionName: functionName,
+        );
+        _usageTracker.recordFunctionExecution(
+          executionMs: stopwatch.elapsedMilliseconds,
+        );
+      }
+
       debugPrint('✅ Function call successful');
       return result.data;
     } on FirebaseFunctionsException catch (e, stackTrace) {
+      if (stopwatch.isRunning) {
+        stopwatch.stop();
+      }
       debugPrint('❌ FirebaseFunctionsException: ${e.code}');
       debugPrint('❌ Message: ${e.message}');
       debugPrint('❌ Details: ${e.details}');
@@ -56,9 +79,125 @@ class CloudFunctionsService {
 
       throw _handleFunctionException(e);
     } catch (e, stackTrace) {
+      if (stopwatch.isRunning) {
+        stopwatch.stop();
+      }
       debugPrint('❌ Unexpected error calling function: $e');
       debugPrint('❌ Stack Trace:\n$stackTrace');
       throw 'Error calling Cloud Function $functionName: $e';
+    }
+  }
+
+  /// Calls an HTTP onRequest Cloud Function.
+  ///
+  /// This is useful for functions exposed at
+  /// `https://{region}-{projectId}.cloudfunctions.net/{functionName}`.
+  Future<dynamic> callRequest(
+    String functionName, {
+    String method = 'POST',
+    dynamic data,
+    String region = _region,
+    String? projectId,
+    bool includeAuthToken = true,
+    Map<String, String>? headers,
+  }) async {
+    final stopwatch = Stopwatch()..start();
+    final sanitizedData = _sanitizeData(data);
+    final client = HttpClient();
+
+    try {
+      final resolvedProjectId = projectId ?? Firebase.app().options.projectId;
+      if (resolvedProjectId.isEmpty) {
+        throw 'Firebase projectId is not configured';
+      }
+
+      final methodUpper = method.toUpperCase();
+      if (methodUpper != 'GET' && methodUpper != 'POST') {
+        throw 'Unsupported HTTP method: $methodUpper';
+      }
+
+      var url = Uri.parse(
+        'https://$region-$resolvedProjectId.cloudfunctions.net/$functionName',
+      );
+
+      if (methodUpper == 'GET' && sanitizedData is Map) {
+        final query = <String, String>{};
+        sanitizedData.forEach((key, value) {
+          if (value == null) return;
+          query[key.toString()] = value.toString();
+        });
+        url = url.replace(queryParameters: query.isEmpty ? null : query);
+      }
+
+      debugPrint('☁️ Calling request function: $functionName');
+      debugPrint('📍 Region: $region');
+      debugPrint('🔗 URL: $url');
+
+      final request = methodUpper == 'GET'
+          ? await client.getUrl(url)
+          : await client.postUrl(url);
+
+      request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+
+      if (includeAuthToken) {
+        final firebaseUser = FirebaseAuth.instance.currentUser;
+        if (firebaseUser == null) {
+          throw 'Not authenticated';
+        }
+        final idToken = await firebaseUser.getIdToken();
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $idToken');
+      }
+
+      headers?.forEach((key, value) {
+        request.headers.set(key, value);
+      });
+
+      if (methodUpper == 'POST' && sanitizedData != null) {
+        request.write(jsonEncode(sanitizedData));
+      }
+
+      final response = await request.close();
+      final responseBody = await utf8.decoder.bind(response).join();
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw 'HTTP ${response.statusCode}: $responseBody';
+      }
+
+      dynamic decoded;
+      if (responseBody.isEmpty) {
+        decoded = null;
+      } else {
+        try {
+          decoded = jsonDecode(responseBody);
+        } catch (_) {
+          decoded = responseBody;
+        }
+      }
+
+      if (!functionName.startsWith('applicationusage-')) {
+        stopwatch.stop();
+        final bytes = _usageTracker.estimateBytes(sanitizedData) +
+            _usageTracker.estimateBytes(decoded);
+        _usageTracker.recordFunctionCall(
+          count: 1,
+          bytes: bytes,
+          functionName: functionName,
+        );
+        _usageTracker.recordFunctionExecution(
+          executionMs: stopwatch.elapsedMilliseconds,
+        );
+      }
+
+      return decoded;
+    } catch (e, stackTrace) {
+      if (stopwatch.isRunning) {
+        stopwatch.stop();
+      }
+      debugPrint('❌ Error calling request function $functionName: $e');
+      debugPrint('❌ Stack Trace:\n$stackTrace');
+      rethrow;
+    } finally {
+      client.close(force: true);
     }
   }
 
@@ -135,9 +274,18 @@ class CloudFunctionsService {
       'https://$_region-$projectId.cloudfunctions.net/$functionName',
     );
     final client = HttpClient();
-    client
-        .getUrl(url)
-        .then((HttpClientRequest req) => req.close())
-        .catchError((_) {});
+    unawaited(() async {
+      try {
+        final req = await client.getUrl(url);
+        await req.close();
+      } catch (_) {
+      } finally {
+        client.close(force: true);
+      }
+    }());
+  }
+
+  static void configureUsageTracking({required String appId}) {
+    FirebaseUsageTracker.instance.configure(appId: appId);
   }
 }

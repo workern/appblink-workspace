@@ -6,6 +6,7 @@ import {
   ref,
   uploadBytes
 } from '@angular/fire/storage';
+import { FirebaseUsageTrackerService } from './firebase-usage-tracker.service';
 
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
 const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv', '.flv', '.wmv'];
@@ -31,6 +32,7 @@ interface VideoMetadata {
 @Injectable({ providedIn: 'root' })
 export class MediaUploadService {
   private readonly storage = inject(Storage);
+  private readonly usageTracker = inject(FirebaseUsageTrackerService);
 
   async uploadMedia(options: {
     file: File;
@@ -67,6 +69,7 @@ export class MediaUploadService {
   async deleteMedia(storagePath: string): Promise<void> {
     const storageRef = ref(this.storage, storagePath);
     await deleteObject(storageRef);
+    this.usageTracker.recordStorageDelete(1);
   }
 
   private async uploadImage(options: {
@@ -84,8 +87,10 @@ export class MediaUploadService {
     await uploadBytes(storageRef, compressed.file, {
       contentType: compressed.file.type || 'image/jpeg'
     });
+    this.usageTracker.recordStorageUpload(1, compressed.file.size);
 
     const downloadUrl = await getDownloadURL(storageRef);
+    this.usageTracker.recordStorageDownload(1);
 
     return {
       storagePath: fullPath,
@@ -110,8 +115,10 @@ export class MediaUploadService {
     await uploadBytes(storageRef, options.file, {
       contentType: options.file.type || 'video/mp4'
     });
+    this.usageTracker.recordStorageUpload(1, options.file.size);
 
     const downloadUrl = await getDownloadURL(storageRef);
+    this.usageTracker.recordStorageDownload(1);
     const metadata = await this.readVideoMetadata(options.file);
 
     let thumbnailUrl: string | undefined;
@@ -200,8 +207,11 @@ export class MediaUploadService {
       await uploadBytes(storageRef, thumbnailBlob, {
         contentType: 'image/jpeg'
       });
+      this.usageTracker.recordStorageUpload(1, thumbnailBlob.size);
 
-      return await getDownloadURL(storageRef);
+      const thumbnailUrl = await getDownloadURL(storageRef);
+      this.usageTracker.recordStorageDownload(1);
+      return thumbnailUrl;
     } catch {
       return undefined;
     }

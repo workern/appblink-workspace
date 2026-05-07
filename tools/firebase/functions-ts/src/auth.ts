@@ -1,12 +1,10 @@
 import { log } from 'firebase-functions/logger';
 import { functions, db, admin, usingEmulator } from './global';
-import { deleteMemberWork } from './spaces/spaces-app';
 import { FieldValue } from 'firebase-admin/firestore';
-import { acceptPendingInvitesForUser } from './teams/accept-invite';
+import { acceptPendingInvitesForUser } from './workspaces/accept-invite';
 import { z } from 'zod';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/https';
 import { getUserClaims } from './firebase-utils';
-import { Space } from '@workern/models';
 /**
  * Creates a new user document and initializes their workspace when they sign up
  * Sets up default spaces, work history, qualifications, and app-specific configurations
@@ -123,7 +121,8 @@ exports.writeNewUserToFirestore = functions.auth
         uid,
         email,
         userRecord.displayName ?? null,
-        userRecord.photoURL ?? null
+        userRecord.photoURL ?? null,
+        userRecord.phoneNumber ?? null
       ).catch((err) =>
         log('[teams] acceptPendingInvitesForUser error:', err?.message)
       )
@@ -145,28 +144,28 @@ exports.onUserDeleted = functions.auth
     promises.push(db.recursiveDelete(db.collection('users').doc(uid)));
     promises.push(db.collection('usersPublicData').doc(uid).delete());
     promises.push(db.collection('userClaims').doc(uid).delete());
-    promises.push(
-      db
-        .collectionGroup('members')
-        .where('info.uid', '==', uid)
-        .get()
-        .then(async (snaps) => {
-          if (!snaps.empty) {
-            const subPromises = [];
-            snaps.forEach(async (snap) => {
-              subPromises.push(
-                snap.ref.parent.parent.get().then(async (spaceSnap) => {
-                  return deleteMemberWork(
-                    spaceSnap.data() as Space<Date>,
-                    snap.ref.id
-                  );
-                })
-              );
-            });
-            return Promise.all(subPromises);
-          }
-        })
-    );
+    // promises.push(
+    //   db
+    //     .collectionGroup('members')
+    //     .where('info.uid', '==', uid)
+    //     .get()
+    //     .then(async (snaps) => {
+    //       if (!snaps.empty) {
+    //         const subPromises = [];
+    //         snaps.forEach(async (snap) => {
+    //           subPromises.push(
+    //             snap.ref.parent.parent.get().then(async (spaceSnap) => {
+    //               return deleteMemberWork(
+    //                 spaceSnap.data() as Space<Date>,
+    //                 snap.ref.id
+    //               );
+    //             })
+    //           );
+    //         });
+    //         return Promise.all(subPromises);
+    //       }
+    //     })
+    // );
     return Promise.all(promises)
       .then(() => {
         log('User deleted!');

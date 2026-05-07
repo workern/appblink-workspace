@@ -14,7 +14,7 @@ class TeamsService {
 
   /// Converts a workspaceId to the Firestore doc ID (matches backend logic).
   String _toWorkspaceDocId(String workspaceId) =>
-      workspaceId.replaceAll('/', '_');
+      workspaceId.replaceAll('/', '--');
 
   /// Invite a user by email. Caller must be an owner of the workspace.
   Future<Map<String, dynamic>> inviteMember({
@@ -24,7 +24,7 @@ class TeamsService {
     WorkspaceMemberRole role = WorkspaceMemberRole.member,
     List<String>? spaces,
   }) async {
-    final result = await _functions.call('teams-invitemember', {
+    final result = await _functions.call('workspaces-invitemember', {
       'appId': appId,
       'workspaceId': workspaceId,
       'email': email,
@@ -40,7 +40,7 @@ class TeamsService {
     required String workspaceId,
     required String targetUid,
   }) async {
-    await _functions.call('teams-removemember', {
+    await _functions.call('workspaces-removemember', {
       'appId': appId,
       'workspaceId': workspaceId,
       'targetUid': targetUid,

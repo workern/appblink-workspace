@@ -488,9 +488,9 @@
     <div class="relative flex min-h-screen flex-col lg:grid lg:grid-cols-2">
       <!-- Left panel: branding (desktop only) -->
       <div
-        class="relative hidden h-full flex-col bg-zinc-900 p-10 text-white lg:flex"
+        class="relative hidden h-full flex-col bg-primary p-10 text-primary-foreground lg:flex"
       >
-        <div class="absolute inset-0 bg-black/20"></div>
+        <div class="absolute inset-0 bg-primary-foreground/10"></div>
 
         <!-- Logo + App Name -->
         <div class="relative z-20 flex items-center gap-3">
@@ -499,9 +499,10 @@
             [alt]="appName()"
             class="h-10 w-10 rounded-xl object-contain"
           />
-          <span class="text-lg font-semibold tracking-tight text-white">{{
-            appName()
-          }}</span>
+          <span
+            class="text-lg font-semibold tracking-tight text-primary-foreground"
+            >{{ appName() }}</span
+          >
         </div>
 
         <!-- Center panel content -->
@@ -512,21 +513,21 @@
             class="h-14 w-14 rounded-2xl object-contain"
           />
           <h2
-            class="text-4xl font-semibold leading-tight tracking-tight text-zinc-50"
+            class="text-4xl font-semibold leading-tight tracking-tight text-primary-foreground"
           >
             {{ appName() }}
           </h2>
           @if (appTagline()) {
-            <p class="text-base leading-relaxed text-zinc-300">
+            <p class="text-base leading-relaxed text-primary-foreground/80">
               {{ appTagline() }}
             </p>
           }
           @if (features().length) {
-            <ul class="space-y-2.5 text-sm text-zinc-200">
+            <ul class="space-y-2.5 text-sm text-primary-foreground/80">
               @for (feature of features(); track $index) {
                 <li class="flex items-start gap-2">
                   <span
-                    class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-400"
+                    class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-foreground/50"
                   ></span>
                   <span>{{ feature }}</span>
                 </li>
@@ -539,11 +540,11 @@
         @if (brandQuote()) {
           <div class="relative z-20 mt-auto">
             <blockquote class="space-y-3">
-              <p class="text-lg leading-relaxed text-zinc-100">
+              <p class="text-lg leading-relaxed text-primary-foreground/90">
                 &ldquo;{{ brandQuote() }}&rdquo;
               </p>
               @if (brandAuthor()) {
-                <footer class="text-sm text-zinc-400">
+                <footer class="text-sm text-primary-foreground/60">
                   &mdash; {{ brandAuthor() }}
                 </footer>
               }
@@ -556,18 +557,22 @@
       <div class="flex flex-1 flex-col">
         <!-- Mobile branding header (hidden on desktop where left panel shows) -->
         <div
-          class="flex flex-col items-center bg-zinc-900 px-8 py-10 text-white lg:hidden"
+          class="flex flex-col items-center bg-primary px-8 py-10 text-primary-foreground lg:hidden"
         >
           <img
             [src]="logoSrc()"
             [alt]="appName()"
             class="mb-4 h-16 w-16 rounded-2xl object-contain"
           />
-          <h1 class="text-2xl font-semibold tracking-tight text-white">
+          <h1
+            class="text-2xl font-semibold tracking-tight text-primary-foreground"
+          >
             {{ appName() }}
           </h1>
           @if (appTagline()) {
-            <p class="mt-1 text-sm text-zinc-400">{{ appTagline() }}</p>
+            <p class="mt-1 text-sm text-primary-foreground/70">
+              {{ appTagline() }}
+            </p>
           }
         </div>
 
@@ -588,7 +593,7 @@
               </h1>
               @if (!showingOTPForm() && !showingForgotPasswordForm()) {
                 <p class="text-sm text-muted-foreground">
-                  {{ appTagline() || 'Sign in to get started.' }}
+                  {{ appTagline() || subtitle() }}
                 </p>
               }
             </div>
@@ -620,7 +625,7 @@
         </h2>
         @if (!showingOTPForm() && !showingForgotPasswordForm()) {
           <p class="mt-1 text-sm text-muted-foreground">
-            Sign in to get started.
+            {{ subtitle() }}
           </p>
         }
       </div>

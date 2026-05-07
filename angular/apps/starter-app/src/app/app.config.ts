@@ -23,7 +23,7 @@ import { connectAuthEmulator, getAuth, provideAuth } from '@angular/fire/auth';
 import { provideServiceWorker } from '@angular/service-worker';
 import { environment as env } from '../environments/environment';
 import { ROUTER_CONFIG } from './app.routes.config';
-import { provideI18n } from '@workern/services';
+// import { provideI18n } from '@workern/services';
 
 export const appConfig = {
   providers: [
@@ -53,7 +53,7 @@ export const appConfig = {
       return functions;
     }),
     provideAnalytics(() => getAnalytics()),
-    provideI18n(),
+    // provideI18n(),
     provideClientHydration(withEventReplay()),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

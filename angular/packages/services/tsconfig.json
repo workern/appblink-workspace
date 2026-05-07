@@ -13,7 +13,9 @@
     "paths": {
       "@workern/models": ["libs/shared/models/src/index.ts"],
       "@workern/enums": ["libs/shared/models/src/index.ts"],
-      "@workern/services": ["angular/packages/services/src/index.ts"]
+      "@workern/services": ["angular/packages/services/src/index.ts"],
+      "@workern/ts/utils": ["libs/shared/utils/src/index.ts"],
+      "@workern/utils": ["libs/shared/utils/src/index.ts"]
     }
   },
   "angularCompilerOptions": {

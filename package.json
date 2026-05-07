@@ -9,7 +9,8 @@
     "delete-app": "node tools/misc/delete-app.js",
     "emulators": "source tools/firebase/functions-py/venv/bin/activate ; npx gulp kill-ports ; firebase emulators:start --only firestore,functions,auth,ui,storage,extensions --import=tools/firebase/saved-firebase-emulators-data --export-on-exit=tools/firebase/saved-firebase-emulators-data --project workern-app",
     "get:gemini:secret": "firebase functions:secrets:access GEMINI_API_KEY",
-    "update:angular": "npx npm-check-updates -u --filter '@angular/*' --filter '@angular-devkit/*' --filter 'angular-eslint' --filter '@schematics/angular' ; npm install"
+    "update:angular": "npx npm-check-updates -u --filter '@angular/*' --filter '@angular-devkit/*' --filter 'angular-eslint' --filter '@schematics/angular' ; npm install",
+    "starter-app":"nx serve ng-starter-app"
   },
   "keywords": [],
   "author": "",

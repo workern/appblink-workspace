@@ -121,3 +121,8 @@ assets/**/social-media/
 */.kotlin/
 *.vsix
 **/out/
+**/build/
+
+# Firebase config — add your own GoogleService-Info.plist / google-services.json
+**/GoogleService-Info.plist
+**/google-services.json

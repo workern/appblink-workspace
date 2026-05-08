@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:workern_auth/workern_auth.dart';
@@ -8,32 +9,44 @@ import '../screens/explore_screen.dart';
 import 'auth_config.dart';
 import 'app_colors.dart';
 
-GoRouter createRouter(
-  firebase_auth.User? firebaseUser, {
-  bool isLoading = false,
-}) => GoRouter(
-  initialLocation: '/',
-  onException: (context, state, router) {
-    // Silently ignore Firebase Auth callback deep links (reCAPTCHA, email links).
-    // These have a custom URL scheme and are handled by firebase_auth internally;
-    // GoRouter should not try to navigate to them.
-    final uri = state.uri;
-    if (uri.scheme.contains('googleusercontent') ||
-        uri.host == 'firebaseauth') {
-      return;
-    }
-    router.go('/');
-  },
-  redirect: (context, state) {
-    if (isLoading) return null;
-    final isAuthenticated = firebaseUser != null;
-    final loc = state.matchedLocation;
-    if (!isAuthenticated && loc != '/' && loc != '/login') return '/login';
-    if (!isAuthenticated && loc == '/') return '/login';
-    if (isAuthenticated && (loc == '/' || loc == '/login')) return '/home';
-    return null;
-  },
-  routes: [
+/// Notifies GoRouter whenever Firebase auth state changes so the redirect
+/// function is re-evaluated without recreating the entire router.
+class _AuthNotifier extends ChangeNotifier {
+  _AuthNotifier() {
+    firebase_auth.FirebaseAuth.instance
+        .authStateChanges()
+        .listen((_) => notifyListeners());
+  }
+}
+
+/// Stable router — created once per app lifetime.
+/// Reads [FirebaseAuth.instance.currentUser] synchronously inside redirect so
+/// no extra stream subscription is needed at the call site.
+final routerProvider = Provider<GoRouter>((ref) {
+  final notifier = _AuthNotifier();
+  ref.onDispose(notifier.dispose);
+
+  return GoRouter(
+    initialLocation: '/',
+    refreshListenable: notifier,
+    onException: (context, state, router) {
+      final uri = state.uri;
+      if (uri.scheme.contains('googleusercontent') ||
+          uri.host == 'firebaseauth') {
+        return;
+      }
+      router.go('/');
+    },
+    redirect: (context, state) {
+      final user = firebase_auth.FirebaseAuth.instance.currentUser;
+      final isAuthenticated = user != null;
+      final loc = state.matchedLocation;
+      if (!isAuthenticated && loc != '/' && loc != '/login') return '/login';
+      if (!isAuthenticated && loc == '/') return '/login';
+      if (isAuthenticated && (loc == '/' || loc == '/login')) return '/home';
+      return null;
+    },
+    routes: [
     GoRoute(path: '/', redirect: (_, _) => '/login'),
     GoRoute(
       path: '/login',
@@ -79,5 +92,6 @@ GoRouter createRouter(
       ),
     ),
   ],
-);
-// End of file
+  );
+});
+

@@ -61,8 +61,9 @@ Pick your project from the list, then fill in the placeholders across these file
 | `angular/apps/starter-app/src/environments/environment.prod.ts` | Angular prod config |
 | `flutter/apps/starter_app/lib/firebase_options.dart` | Flutter Firebase options |
 | `flutter/apps/starter_app/android/app/google-services.json` | Android Firebase config |
+| `flutter/apps/starter_app/ios/Runner/GoogleService-Info.plist` | iOS Firebase config |
 
-> You can also download a fresh `google-services.json` directly from the Firebase Console for your Android app.
+> Download `GoogleService-Info.plist` from the Firebase Console → your iOS app → **Download GoogleService-Info.plist**. Place it at `flutter/apps/starter_app/ios/Runner/GoogleService-Info.plist`. This file is gitignored and must never be committed.
 
 ### 3. Run the web app
 

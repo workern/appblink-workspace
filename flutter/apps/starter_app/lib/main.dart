@@ -5,12 +5,12 @@ import 'config/auth_config.dart';
 import 'firebase_options.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workern_notifications/workern_notifications.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:workern_services/workern_services.dart';
 import 'package:workern_billing/workern_billing.dart';
 import 'services/starter_app_notification_handler.dart';
 import 'package:workern_auth/workern_auth.dart' as app_auth;
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'config/app_router.dart' show routerProvider;
 
 // TODO: Replace with your actual RevenueCat API keys from https://app.revenuecat.com
 // TODO: Replace 'your-app-pro' with your app's entitlement identifier
@@ -21,20 +21,25 @@ const _billingConfig = WorkernBillingConfig(
 );
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  // Keep the native splash visible while we initialize.
+  binding.deferFirstFrame();
   try {
-    await FirebaseInitializer.initialize(
-      FirebaseInitConfig(
-        firebaseOptions: DefaultFirebaseOptions.currentPlatform,
-        googleClientId: GOOGLE_CLIENT_ID,
-        backgroundMessageHandler: workernFirebaseMessagingBackgroundHandler,
-        useEmulators: false,
+    await Future.wait([
+      FirebaseInitializer.initialize(
+        FirebaseInitConfig(
+          firebaseOptions: DefaultFirebaseOptions.currentPlatform,
+          googleClientId: GOOGLE_CLIENT_ID,
+          backgroundMessageHandler: workernFirebaseMessagingBackgroundHandler,
+          useEmulators: false,
+        ),
       ),
-    );
-    // Configure RevenueCat billing
-    await WorkernBilling.initialize(_billingConfig);
+      WorkernBilling.initialize(_billingConfig),
+    ]);
   } catch (e) {
     debugPrint('❌ Initialization error: $e');
+  } finally {
+    binding.allowFirstFrame();
   }
   runApp(const ProviderScope(child: StarterApp()));
 }
@@ -79,7 +84,9 @@ class StarterApp extends ConsumerWidget {
   const StarterApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) => _buildApp(ref);
+
+  Widget _buildApp(WidgetRef ref) {
     // Watch notification service provider - auto-initializes on user sign-in
     ref.watch(notificationServiceProvider);
     // Sync RevenueCat with Firebase user (logIn / logOut)
@@ -94,10 +101,6 @@ class StarterApp extends ConsumerWidget {
         ref.read(workernPendingSharedMediaProvider.notifier).set(file);
       });
     });
-
-    final firebaseUser = ref.watch(firebaseUserProvider);
-    final isLoading =
-        firebaseUser == null && FirebaseAuth.instance.currentUser == null;
 
     return ShadApp.custom(
       themeMode: ThemeMode.system,
@@ -115,7 +118,7 @@ class StarterApp extends ConsumerWidget {
           title: 'Starter App',
           theme: appTheme,
           darkTheme: appDarkTheme,
-          routerConfig: createRouter(firebaseUser, isLoading: isLoading),
+          routerConfig: ref.watch(routerProvider),
           builder: (context, child) => ShadAppBuilder(child: child!),
         );
       },

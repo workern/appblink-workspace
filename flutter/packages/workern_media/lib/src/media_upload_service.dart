@@ -6,7 +6,7 @@ import 'package:video_compress/video_compress.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:workern_models/media/media_item.dart';
-import 'firebase_usage_tracker.dart';
+import 'package:workern_services/workern_services.dart';
 
 class MediaUploadResult {
   final String storagePath;
@@ -33,7 +33,7 @@ class MediaUploadService {
   final FirebaseUsageTracker _tracker = FirebaseUsageTracker.instance;
 
   MediaUploadService({FirebaseStorage? storage})
-      : _storage = storage ?? FirebaseStorage.instance;
+    : _storage = storage ?? FirebaseStorage.instance;
 
   /// Uploads an image or video to Firebase Storage with compression
   ///
@@ -48,10 +48,22 @@ class MediaUploadService {
     bool generateThumbnail = true,
   }) async {
     final extension = path.extension(file.path).toLowerCase();
-    final isVideo =
-        ['.mp4', '.mov', '.avi', '.mkv', '.flv', '.wmv'].contains(extension);
-    final isImage =
-        ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'].contains(extension);
+    final isVideo = [
+      '.mp4',
+      '.mov',
+      '.avi',
+      '.mkv',
+      '.flv',
+      '.wmv',
+    ].contains(extension);
+    final isImage = [
+      '.jpg',
+      '.jpeg',
+      '.png',
+      '.gif',
+      '.bmp',
+      '.webp',
+    ].contains(extension);
 
     if (!isVideo && !isImage) {
       throw Exception('Unsupported file type: $extension');

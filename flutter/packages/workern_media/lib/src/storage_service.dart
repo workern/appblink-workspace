@@ -1,6 +1,6 @@
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
-import 'firebase_usage_tracker.dart';
+import 'package:workern_services/workern_services.dart';
 
 /// Service for handling Firebase Storage operations
 class StorageService {
@@ -8,7 +8,7 @@ class StorageService {
   final FirebaseUsageTracker _tracker = FirebaseUsageTracker.instance;
 
   StorageService({FirebaseStorage? storage})
-      : _storage = storage ?? FirebaseStorage.instance;
+    : _storage = storage ?? FirebaseStorage.instance;
 
   /// Get download URL from Firebase Storage path
   ///
@@ -28,14 +28,16 @@ class StorageService {
         // Remove leading '/' from path
         path = uri.path.substring(1);
         debugPrint(
-            '🔥 StorageService: Extracted path from gs:// format: $path');
+          '🔥 StorageService: Extracted path from gs:// format: $path',
+        );
       } else {
         debugPrint('🔥 StorageService: Using path as-is (no gs:// prefix)');
       }
 
       // Get download URL from Firebase Storage
       debugPrint(
-          '🔥 StorageService: Calling Firebase Storage ref().getDownloadURL()...');
+        '🔥 StorageService: Calling Firebase Storage ref().getDownloadURL()...',
+      );
       final downloadUrl = await _storage.ref(path).getDownloadURL();
       _tracker.recordStorageDownload(count: 1);
       debugPrint('✅ StorageService: Successfully got download URL');
@@ -44,7 +46,8 @@ class StorageService {
       return downloadUrl;
     } catch (e, stackTrace) {
       debugPrint(
-          '❌ StorageService: Failed to get download URL for $storagePath');
+        '❌ StorageService: Failed to get download URL for $storagePath',
+      );
       debugPrint('   - Error: $e');
       debugPrint('   - StackTrace: $stackTrace');
       // Return original path as fallback
@@ -61,7 +64,8 @@ class StorageService {
   }) async {
     if (storagePath == null) {
       debugPrint(
-          '🔥 StorageService: storagePath is null, returning fallback: $fallbackUrl');
+        '🔥 StorageService: storagePath is null, returning fallback: $fallbackUrl',
+      );
       return fallbackUrl;
     }
 
@@ -69,7 +73,8 @@ class StorageService {
       return await getDownloadUrl(storagePath);
     } catch (e) {
       debugPrint(
-          '❌ StorageService: getDownloadUrl threw exception, using fallback: $fallbackUrl');
+        '❌ StorageService: getDownloadUrl threw exception, using fallback: $fallbackUrl',
+      );
       debugPrint('   - Error: $e');
       debugPrint('Failed to get download URL, using fallback: $e');
       return fallbackUrl;
@@ -89,8 +94,9 @@ class StorageService {
     String? contentType,
   }) async {
     final ref = _storage.ref(path);
-    final metadata =
-        contentType != null ? SettableMetadata(contentType: contentType) : null;
+    final metadata = contentType != null
+        ? SettableMetadata(contentType: contentType)
+        : null;
 
     await ref.putData(data, metadata);
     _tracker.recordStorageUpload(count: 1, bytes: data.length);

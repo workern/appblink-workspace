@@ -22,12 +22,8 @@ dependencies:
     path: ../workern_auth
   workern_models:
     path: ../workern_models
-  flutter_image_compress: ^2.3.0
-  video_compress: ^3.1.3
-  path: ^1.9.0
   flutter_sharing_intent: ^2.0.4
   flutter_riverpod: ^3.1.0
-  app_tracking_transparency: ^2.0.6+1
 
 dev_dependencies:
   flutter_test:

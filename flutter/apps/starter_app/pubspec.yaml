@@ -34,6 +34,10 @@ dependencies:
   workern_widgets:
     path: ../../packages/workern_widgets
 
+  # Media Package (image upload, video player, storage) — requires camera/photo permissions
+  workern_media:
+    path: ../../packages/workern_media
+
   # Notifications Package
   workern_notifications:
     path: ../../packages/workern_notifications

@@ -27,24 +27,11 @@ dependencies:
   workern_utils:
     path: ../workern_utils
 
-  # Google Places autocomplete
-  google_places_flutter: ^2.1.1
-
   # Shadcn UI components
   shadcn_ui: ^0.50.2
 
   # HTTP client for API requests
   http: ^1.2.0
-
-  # Image picker for document uploads
-  image_picker: ^1.1.2
-
-  # Firebase Storage for file uploads
-  firebase_storage: ^13.0.6
-
-  # Video player
-  video_player: ^2.10.1
-  chewie: ^1.13.0
 
   # Cached network images
   cached_network_image: ^3.4.1

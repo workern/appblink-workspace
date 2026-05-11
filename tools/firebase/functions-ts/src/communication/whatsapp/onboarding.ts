@@ -83,7 +83,7 @@ const disconnectSchema = z.object({
 export const connectbusiness = onCall(
   {
     ...deployOptions,
-     secrets: [whatsappAccessToken, metaAppSecret, metaAppId] 
+    secrets: [whatsappAccessToken, metaAppSecret, metaAppId]
   },
   async (request) => {
     await checkRequest(request, connectSchema, true);

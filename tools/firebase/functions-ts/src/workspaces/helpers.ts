@@ -1,3 +1,4 @@
+import { WriteBatch } from 'firebase-admin/firestore';
 import { db } from '../global';
 
 /**
@@ -43,4 +44,77 @@ export function membershipIndexRef(
 /** Pending invite doc for users who don't have a Firebase account yet. */
 export function pendingInviteRef(appId: string) {
   return db.collection('apps').doc(appId).collection('invites');
+}
+
+/**
+ * Adds the three workspace-owner documents to an existing Firestore WriteBatch.
+ * Call this when creating a new resource that owns its own workspace
+ * (e.g. an NSM shop, a PromptKul project).
+ *
+ * Written paths (idempotent — uses merge:true):
+ *   apps/{appId}/workspaces/{workspaceId}                       ← workspace doc
+ *   apps/{appId}/workspaces/{workspaceId}/members/{owner.uid}   ← owner member
+ *   users/{owner.uid}/mySpaces/{appId}/memberships/{workspaceId}← personal index
+ */
+export function addWorkspaceOwnerToBatch(
+  batch: WriteBatch,
+  appId: string,
+  workspaceId: string,
+  owner: {
+    uid: string;
+    email?: string;
+    displayName?: string;
+    photoUrl?: string;
+  },
+  workspaceName: string
+): void {
+  const now = new Date().toISOString();
+  const ownerCapabilities = [
+    'manage_workspace',
+    'manage_members',
+    'manage_billing',
+    'manage_workspace_content'
+  ];
+
+  batch.set(
+    workspaceRef(appId, workspaceId),
+    {
+      workspaceId,
+      name: workspaceName,
+      ownerId: owner.uid,
+      createdAt: now,
+      updatedAt: now
+    },
+    { merge: true }
+  );
+
+  batch.set(
+    memberRef(appId, workspaceId, owner.uid),
+    {
+      uid: owner.uid,
+      role: 'owner',
+      functionalRoles: [],
+      capabilities: ownerCapabilities,
+      spaces: null,
+      joinedAt: now,
+      ...(owner.email ? { email: owner.email } : {}),
+      ...(owner.displayName ? { displayName: owner.displayName } : {}),
+      ...(owner.photoUrl ? { photoUrl: owner.photoUrl } : {})
+    },
+    { merge: true }
+  );
+
+  batch.set(
+    membershipIndexRef(appId, owner.uid, workspaceId),
+    {
+      workspaceId,
+      name: workspaceName,
+      role: 'owner',
+      functionalRoles: [],
+      capabilities: ownerCapabilities,
+      spaces: null,
+      updatedAt: now
+    },
+    { merge: true }
+  );
 }

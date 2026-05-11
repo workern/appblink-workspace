@@ -121,6 +121,7 @@ export async function acceptPendingInvitesForUser(
       functionalRoles?: string[];
       capabilities?: string[];
       spaces: string[] | null;
+      extraFields?: Record<string, unknown>;
     };
 
     const {
@@ -131,7 +132,8 @@ export async function acceptPendingInvitesForUser(
       role,
       functionalRoles = [],
       capabilities = deriveCapabilities(role, functionalRoles),
-      spaces
+      spaces,
+      extraFields
     } = invite;
 
     // Write member doc
@@ -145,7 +147,8 @@ export async function acceptPendingInvitesForUser(
       functionalRoles,
       capabilities,
       spaces,
-      joinedAt: now
+      joinedAt: now,
+      ...(extraFields ?? {})
     });
 
     // Write membership index so the app can discover this workspace
@@ -320,7 +323,11 @@ export const acceptinvite = onRequest(
       tx.update(inviteRef, { status: 'accepted', updatedAt: now });
     });
 
-    logger.info('workspaces-acceptinvite: accepted', { uid, workspaceId, appId });
+    logger.info('workspaces-acceptinvite: accepted', {
+      uid,
+      workspaceId,
+      appId
+    });
     res.json({ status: 'accepted', workspaceId });
   }
 );

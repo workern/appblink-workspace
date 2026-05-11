@@ -85,7 +85,21 @@ export class FirebaseFunctionsService {
       };
 
       if (includeAuthToken) {
-        const firebaseUser = this.auth.currentUser;
+        // auth.currentUser may be null briefly after onAuthStateChanged fires.
+        // Wait up to 3s for it to be populated before failing.
+        let firebaseUser = this.auth.currentUser;
+        if (!firebaseUser) {
+          firebaseUser = await new Promise((resolve) => {
+            const unsub = this.auth.onAuthStateChanged((u) => {
+              unsub();
+              resolve(u);
+            });
+            setTimeout(() => {
+              unsub();
+              resolve(null);
+            }, 3000);
+          });
+        }
         if (!firebaseUser) {
           throw new Error('Not authenticated');
         }

@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, resource } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import { get } from 'lodash';
-import { AuthService } from './auth.service';
+import { AuthService } from '@workern/services';
 @Injectable({
   providedIn: 'root'
 })
@@ -13,14 +13,6 @@ export class ClaimsService {
   claims = computed(() => this.idTokenResult()?.claims || {});
 
   isAdmin = computed(() => !!this.claims()['admin']);
-
-  canViewSangrahShopsAdmin = computed(() => {
-    return this.isAdmin() || !!get(this.claims(), 'admin.sangrahApp.shops');
-  });
-
-  canViewSangrahItemsAdmin = computed(() => {
-    return this.isAdmin() || !!get(this.claims(), 'admin.sangrahApp.items');
-  });
 
   idToken$ = resource({
     params: () => ({ user: this.authService.currentUser() }),

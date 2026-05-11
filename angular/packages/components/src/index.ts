@@ -18,6 +18,7 @@ export * from './lib/workern-select/workern-select.component';
 export * from './lib/workern-switch/workern-switch.component';
 export * from './lib/currency-text-field/currency-text-field.component';
 export * from './lib/workern-slider/workern-slider.component';
+export * from './lib/whatsapp-connect/whatsapp-connect.component';
 export * from './lib/payment-waiting/payment-waiting.component';
 export * from './lib/payment-dialog/payment-dialog';
 export * from './lib/billing-product-dialog/billing-product-dialog';
@@ -42,3 +43,7 @@ export * from './lib/app-footer/app-footer.component';
 
 // i18n — Translation key constants (namespace: "components")
 export * from './lib/i18n/translation-keys';
+
+// Onboarding shared components
+export * from './lib/onboarding-stepper/onboarding-stepper.component';
+export * from './lib/working-hours-editor/working-hours-editor.component';

@@ -522,9 +522,9 @@
               {{ appTagline() }}
             </p>
           }
-          @if (features().length) {
+          @if (features()?.length) {
             <ul class="space-y-2.5 text-sm text-primary-foreground/80">
-              @for (feature of features(); track $index) {
+              @for (feature of features() ?? []; track $index) {
                 <li class="flex items-start gap-2">
                   <span
                     class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-foreground/50"

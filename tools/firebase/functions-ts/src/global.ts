@@ -63,6 +63,8 @@ export const ACR_ACCESS_KEY = defineSecret('ACR_ACCESS_KEY');
 export const ACR_ACCESS_SECRET = defineSecret('ACR_ACCESS_SECRET');
 export const ACR_ACCESS_TOKEN = defineSecret('ACR_ACCESS_TOKEN');
 export const lemonSqueezyApiKey = defineSecret('LEMON_SQUEEZY_API_KEY');
+export const metaAppSecret = defineSecret('META_APP_SECRET');
+export const metaAppId = defineSecret('META_APP_ID');
 export const revenueCatWebhookAuthorizationHeaderValue = defineSecret(
   'REVENUE_CAT_WEBHOOK_AUTHORIZATION_HEADER_VALUE'
 );

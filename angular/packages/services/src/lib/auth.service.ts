@@ -87,13 +87,13 @@ export class AuthService {
     }
   });
   spaceRef = computed(() => {
-    if (this.userDocRef()) {
-      return doc(
-        this.userDocRef() as DocumentReference,
-        'mySpaces',
-        this.gms.spaceId()
-      );
-    } else {
+    // New workspace path: apps/{appKeyName}/workspaces/{workspaceId}
+    const workspaceId = this.gms.workspaceId();
+    const appKeyName = this.gms.appKeyName();
+    if (workspaceId && appKeyName) {
+      return doc(this.db, `apps/${appKeyName}/workspaces/${workspaceId}`);
+    }
+else{
       return null;
     }
   });

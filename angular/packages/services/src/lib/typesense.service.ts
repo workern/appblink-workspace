@@ -13,6 +13,7 @@ export class TypesenseService extends BaseSearchService {
   gms = inject(GlobalManagerService);
 
   appName = computed(() => this.gms.appKeyName());
+  functionsInitialSlug = computed(() => this.gms.config().functionsInitialSlug ?? this.appName());
   clients$ = resource({
     params: () => ({
       uid: this.auth.uid(),
@@ -47,7 +48,7 @@ export class TypesenseService extends BaseSearchService {
           .firebaseCall<
             { apiKey: string; expiresAt: number },
             { data: { apiKey: string } }
-          >(`${this.appName()}-typesense-getApiKey`)
+          >(`${this.functionsInitialSlug()}-typesense-getapikey`)
           .then((response) => {
             return response.data;
           });

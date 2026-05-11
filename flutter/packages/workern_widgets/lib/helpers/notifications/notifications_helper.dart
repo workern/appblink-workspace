@@ -14,7 +14,7 @@ class NotificationsHelper {
   /// Parameters:
   /// - context: BuildContext for navigation
   /// - userId: User ID to fetch notifications for
-  /// - spaceId: Space ID to fetch notifications for (e.g., 'nikatApp', shop ID, etc.)
+  /// - spaceId: Space ID to fetch notifications for (e.g., 'nikat', shop ID, etc.)
   /// - useBottomSheet: If true, shows as bottom sheet; if false, shows as full page
   /// - onNotificationTap: Optional callback function called when a notification is tapped
   static Future<void> openNotifications({

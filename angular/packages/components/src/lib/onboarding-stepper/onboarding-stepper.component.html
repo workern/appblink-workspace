@@ -1,0 +1,11 @@
+<div class="w-full bg-white border-b border-gray-100 px-6 py-4">
+  <div class="flex items-center justify-between mb-3">
+    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+      Step {{ currentStep() }} of {{ totalSteps() }}
+    </span>
+    <span class="text-xs font-semibold text-blue-600">
+      {{ stepLabel() }}
+    </span>
+  </div>
+  <hlm-progress [value]="progressPercent()" class="h-1.5" />
+</div>

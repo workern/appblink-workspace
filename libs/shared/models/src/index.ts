@@ -30,4 +30,4 @@ export * from './lib/interfaces/update-order-status-request.model';
 export * from './lib/interfaces/save-nest/user-query.model';
 export * from './lib/interfaces/expired-product.model';
 export * from './lib/interfaces/firebase-usage.model';
-export * from './lib/interfaces/nikat/whatsapp-config.model';
+export * from './lib/interfaces/communication/whatsapp-config.model';

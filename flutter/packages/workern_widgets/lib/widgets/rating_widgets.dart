@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:workern_models/rating/rating.dart';
+import 'package:workern_models/common/rating.dart';
 
 /// Displays star rating with count
 class RatingDisplay extends StatelessWidget {

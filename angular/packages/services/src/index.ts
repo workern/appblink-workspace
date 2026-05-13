@@ -23,6 +23,7 @@ export * from './lib/user-agent.service';
 export * from './lib/firebase-ai.service';
 export * from './lib/firebase-usage-tracker.service';
 export * from './lib/teams.service';
+export * from '../../../apps/deskflow-pro/src/app/services/deskflow-pro.service';
 export * from './lib/ui-library/ui-component.interface';
 export * from './lib/ui-library/ui-adapter.service';
 export * from './lib/i18n';

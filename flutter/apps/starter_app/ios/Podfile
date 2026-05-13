@@ -47,5 +47,7 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
     workern_apply_common_build_settings(target)
     workern_apply_firebase_functions_fix(target)
+    workern_apply_ccache(target)
   end
+  workern_fix_script_phase_warnings(installer)
 end

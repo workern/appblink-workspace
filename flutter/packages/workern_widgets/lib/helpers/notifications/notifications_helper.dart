@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:workern_models/notification.dart';
+import 'package:workern_models/communication/notification/notification.dart';
 import 'package:workern_widgets/screens/notifications_screen.dart';
 
 // Import WorkernNotificationService from workern_notifications

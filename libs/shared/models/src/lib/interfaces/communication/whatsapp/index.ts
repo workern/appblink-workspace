@@ -1,0 +1,1 @@
+export * from './whatsapp-config.model';

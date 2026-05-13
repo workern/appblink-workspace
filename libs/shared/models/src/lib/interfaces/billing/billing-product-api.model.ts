@@ -1,4 +1,4 @@
-import { GatewayOrderCreationResult } from '../gateway';
+import { GatewayOrderCreationResult } from './gateway';
 import { TransactionProcessorID } from '../transaction/transaction-processor-id';
 import { PaymentType } from './payment-type';
 import { PurchasableProduct } from './purchasable-product.model';

@@ -5,3 +5,5 @@ export * from './purchasable-product.model';
 export * from './billing-product-api.model';
 export * from './user-subscription.model';
 export * from './billing-entitlement.model';
+export * from './gateway';
+export * from './offer';

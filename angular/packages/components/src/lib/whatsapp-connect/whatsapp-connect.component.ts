@@ -52,8 +52,8 @@ export class WhatsAppConnectComponent implements OnInit {
   private auth = inject(AuthService);
   private readonly platformId = inject(PLATFORM_ID);
 
-  /** The app ID used for the Firestore path. Defaults to NIKAT. */
-  readonly appId = input<APPID>(APPID.NIKAT);
+  /** The app ID used for the Firestore path. */
+  readonly appId = input.required<APPID>();
 
   protected readonly config = signal<WhatsAppConfig | null>(null);
   protected readonly isLoading = signal(false);

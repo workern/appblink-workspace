@@ -1,4 +1,4 @@
-import { Amount } from '../amount';
+import { Amount } from '../common';
 
 export type SubscriptionStatus =
   | 'created' // enrollment created, mandate not yet set up

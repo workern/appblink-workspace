@@ -1,6 +1,5 @@
+import { Amount, Base } from '../common';
 import { APPID } from '../../enums';
-import { Amount } from '../amount';
-import { Base } from '../base.model';
 import { TransactionProcessorID } from '../transaction/transaction-processor-id';
 import { BillingIntervalUnit } from './billing-interval-unit';
 import { PaymentType } from './payment-type';

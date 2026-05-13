@@ -1,5 +1,5 @@
+import { Base } from '../common';
 import { APPID } from '../../enums';
-import { Base } from '../base.model';
 
 /**
  * Top-level entitlement document at: entitlements/{entitlementId}

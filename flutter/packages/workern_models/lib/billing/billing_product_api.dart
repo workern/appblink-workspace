@@ -1,5 +1,5 @@
 import 'purchasable_product.dart';
-import 'transaction_processor_id.dart';
+import '../transaction/transaction_processor_id.dart';
 import 'payment_type.dart';
 
 class GetProductsForAppRequest {

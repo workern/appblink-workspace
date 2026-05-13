@@ -1,5 +1,5 @@
 import { VerificationStatus } from './verification-status.model';
-import { KycDocument } from '../kyc-document.model';
+import { KycDocument } from '../user/kyc-document.model';
 
 /**
  * Person who handled the verification (approved or rejected)

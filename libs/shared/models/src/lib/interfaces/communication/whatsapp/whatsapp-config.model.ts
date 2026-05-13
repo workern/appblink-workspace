@@ -1,4 +1,4 @@
-import { Base } from '../../base.model';
+import { Base } from '../../common';
 
 /**
  * Stored at: users/{shopOwnerId}/mySpaces/${APPID.NIKAT}/whatsappConfig

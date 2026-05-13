@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:workern_utils/workern_utils.dart';
-import '../../base.dart';
+import '../../common/base.dart';
 
 /// Stored at: users/{shopOwnerId}/mySpaces/nikat/whatsappConfig
 ///
@@ -71,8 +71,8 @@ class WhatsAppConfig extends Base {
     'id': id,
     'createdAt': Timestamp.fromDate(createdAt),
     'updatedAt': Timestamp.fromDate(updatedAt),
-    'owner': owner.toJson(),
-    'space': space.toJson(),
+    'owner': owner?.toJson(),
+    'space': space?.toJson(),
     'wabaId': wabaId,
     'phoneNumberId': phoneNumberId,
     'displayPhoneNumber': displayPhoneNumber,

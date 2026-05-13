@@ -1,9 +1,9 @@
-import 'package:workern_models/amount.dart';
-import 'package:workern_models/base.dart';
+import '../common/amount.dart';
+import '../common/base.dart';
 import 'billing_interval_unit.dart';
 import 'payment_type.dart';
 import 'product_status.dart';
-import 'transaction_processor_id.dart';
+import '../transaction/transaction_processor_id.dart';
 
 class ProductGatewayPrice {
   final Amount amount;

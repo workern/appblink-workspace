@@ -1,0 +1,1 @@
+export 'offer.dart';

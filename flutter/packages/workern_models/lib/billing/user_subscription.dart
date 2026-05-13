@@ -1,4 +1,4 @@
-import 'package:workern_models/amount.dart';
+import '../common/amount.dart';
 
 /// Lightweight product snapshot stored inside the subscription doc.
 class SubscriptionProductSnapshot {

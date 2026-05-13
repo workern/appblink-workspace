@@ -72,7 +72,7 @@ Get app IDs from the `APPID` enum, not hardcoded strings. Update `tools/firebase
 
 - All Firestore models extend `BaseModel` (`libs/shared/models/src/lib/interfaces/base.model.ts` / `flutter/packages/workern_models/lib/base_model.dart`) — gives `id`, `createdAt`, `updatedAt`.
 - Use enums for status/type fields — never hardcoded strings. Capitalize enum values.
-
+- **App-specific models/interfaces must go in the `apps/` subfolder**: `libs/shared/models/src/lib/apps/{app-name}/` (TypeScript) and `flutter/packages/workern_models/lib/apps/{app_name}/` (Dart). Never place app-specific types in the root `interfaces/`, `models/`, or `enums/` folders — those are for truly cross-app shared types only.
 ## File Size Limits
 
 - Angular `.html`: max ~200 lines — extract sub-components.

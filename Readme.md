@@ -1,7 +1,9 @@
-
 # AppBlink Workspace
 
-> A production-ready monorepo for shipping full-stack apps — **Angular** web, **Flutter** mobile, and **Firebase** backend — all in one place.
+> Ship full-stack apps faster. Angular web, Flutter mobile, and Firebase backend — production-ready, in one monorepo.
+
+<!-- Replace the line below with your actual screenshot or demo GIF -->
+![AppBlink demo screenshot](https://via.placeholder.com/900x500?text=Add+a+screenshot+or+demo+GIF+here)
 
 ![Angular](https://img.shields.io/badge/Angular-21+-DD0031?logo=angular&logoColor=white)
 ![Flutter](https://img.shields.io/badge/Flutter-stable-02569B?logo=flutter&logoColor=white)
@@ -9,19 +11,28 @@
 ![NX](https://img.shields.io/badge/NX-monorepo-143055?logo=nx&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Riverpod](https://img.shields.io/badge/Riverpod-3-00BCD4?logo=flutter&logoColor=white)
+[![VS Code Extension](https://img.shields.io/visual-studio-marketplace/v/workern.appblink?label=VS%20Code%20Extension&logo=visualstudiocode&logoColor=white&color=007ACC)](https://marketplace.visualstudio.com/items?itemName=workern.appblink)
+
+If this saves you time, please **⭐ star the repo** — it helps others find it.
 
 ---
 
-## Recommended: AppBlink VS Code Extension
+## Why we built this
 
-> **For the best development experience, install the [AppBlink extension](https://marketplace.visualstudio.com/items?itemName=workern.appblink) for VS Code.**
+We got tired of rebuilding the same Angular + Flutter + Firebase architecture from scratch for every client project. AppBlink Workspace is the monorepo we wished existed: auth, billing, notifications, CI, emulators, and 50+ UI components — all wired up and ready to ship from day one.
 
-The AppBlink extension is purpose-built for this workspace. It gives you:
+---
 
-- One-click project scaffolding, code generation, and feature wiring across Angular and Flutter
-- Intelligent context-aware suggestions that understand this monorepo's structure
-- Streamlined Firebase configuration, emulator management, and deployment workflows
-- Integrated AI assistance trained on this workspace's conventions and patterns
+## VS Code Extension
+
+[![Install AppBlink for VS Code](https://img.shields.io/visual-studio-marketplace/v/workern.appblink?label=Install+for+VS+Code&color=007ACC)](https://marketplace.visualstudio.com/items?itemName=workern.appblink)
+
+The **[AppBlink VS Code extension](https://marketplace.visualstudio.com/items?itemName=workern.appblink)** is purpose-built for this workspace:
+
+- One-click scaffolding, code generation, and feature wiring across Angular and Flutter
+- Context-aware suggestions that understand this monorepo's structure
+- Streamlined Firebase configuration, emulator management, and deployment
+- Integrated AI assistance trained on this workspace's conventions
 
 ---
 
@@ -37,92 +48,6 @@ The AppBlink extension is purpose-built for this workspace. It gives you:
 | Monorepo tooling | NX 22 |
 
 All Firebase config files ship with **placeholders only** — no real credentials are ever committed.
-
----
-
-## Features
-
-### Angular Web App (`ng-starter-app`)
-- **Angular 21** with Server-Side Rendering (SSR) and hydration
-- **Progressive Web App** (PWA) with service worker and offline support
-- **Tailwind CSS v4** with a design system and utility classes
-- **i18n / localization** with `@ngx-translate` and per-component translation files
-- **Authentication** — sign-in, sign-up, magic link, social login flows
-- **Billing & payments** — subscription plans, payment dialogs, order status
-- **Onboarding stepper** — guided multi-step user onboarding
-- **SEO service** — meta tags, Open Graph, canonical URLs
-- **Media upload** — image/file upload with Firebase Storage
-- **Google Maps & Places** integration
-- **PWA install prompt** and app update notifications
-- **Dynamic forms** — schema-driven form rendering
-- **Search** — Algolia and Typesense integration
-
-### Angular Packages
-| Package | Contents |
-|---------|----------|
-| `ng-components` | Billing, auth UI, profile, payments, dynamic forms, language switcher, WhatsApp connect, working hours editor, and more |
-| `ng-services` | Auth, Firestore, Storage, Analytics, SEO, i18n, billing, media upload, location, Places, Algolia, Typesense, Razorpay, PWA, Snackbar, and more |
-| `ng-guards` | Route guards for auth, roles, and feature flags |
-| `ng-pipes` | Custom Angular pipes for formatting and transformation |
-| `ui-helm` | 50+ headless Spartan/shadcn-style UI components: accordion, avatar, badge, breadcrumb, button, calendar, carousel, checkbox, combobox, date picker, dialog, dropdown, input, pagination, select, sidebar, table, tabs, toast, and more |
-
-### Flutter Mobile App (`starter_app`)
-- **Flutter stable** with a clean architecture and Riverpod state management
-- **shadcn_ui** component library for a consistent, polished UI
-- **Firebase Auth** — authentication flows out of the box
-- **Push notifications** with Firebase Cloud Messaging
-- **go_router** for declarative, nested navigation
-- **Native splash screen** and launcher icons pre-configured
-
-### Flutter Packages (13 packages)
-| Package | Purpose |
-|---------|---------|
-| `workern_auth` | Authentication — Firebase Auth, session management |
-| `workern_services` | Firestore, Storage, Analytics, App Check, Remote Config, Cloud Functions |
-| `workern_models` | Shared data models with Equatable and Firestore serialization |
-| `workern_widgets` | Reusable UI widgets and shared layout components |
-| `workern_ai` | AI-powered features and integrations |
-| `workern_billing` | In-app purchases and subscription billing |
-| `workern_media` | Image upload, video player, camera/photo library access |
-| `workern_notifications` | Push notifications with FCM |
-| `workern_localization` | i18n and multi-language support |
-| `workern_location` | Device location and geolocation services |
-| `workern_referral` | Referral system and invite flows |
-| `workern_tracking` | Analytics and event tracking |
-| `workern_utils` | Shared utilities and helpers |
-
-### Firebase Backend
-- **TypeScript Cloud Functions** — auth triggers, billing webhooks, notifications, data functions, OAuth2, marketing attribution, phone utilities, and more
-- **Python Cloud Functions** — Python-based serverless workloads
-- **Firestore** — rules, indexes, and helpers pre-configured
-- **Firebase Storage** — CORS config and security rules
-- **Realtime Database** — rules included
-- **Firebase Extensions** — Firestore auth claims, email sending, invite-to-space email
-- **Firebase Emulators** — full local dev environment with persisted data (Auth, Firestore, Functions, Storage)
-
-### Payment Providers (Cloud Functions)
-Chargebee · Razorpay · LemonSqueezy · Dodo Payments · RazorpayX
-
-### Communication Integrations
-SendGrid · Nodemailer · Zeptomail · Firebase Cloud Messaging
-
-### Third-party Integrations
-Google Analytics (gtag) · Algolia · Typesense · Sentry · Google Maps · Google Places · Gemini AI (Firebase AI) · Google APIs
-
----
-
-## Prerequisites
-
-| Tool | Version |
-|------|---------|
-| Node.js | 20+ |
-| npm | 10+ |
-| Flutter | stable channel |
-| Firebase CLI | latest |
-
-```bash
-npm install -g firebase-tools
-```
 
 ---
 
@@ -176,6 +101,92 @@ npm run emulators
 ```
 
 This starts Auth, Firestore, Functions, Storage, and Extensions locally with data persistence between sessions.
+
+---
+
+## Features
+
+### Angular Web App (`ng-starter-app`)
+- **Angular 21** with Server-Side Rendering (SSR) and hydration
+- **Progressive Web App** (PWA) with service worker and offline support
+- **Tailwind CSS v4** with a full design system
+- **i18n / localization** with `@ngx-translate` and per-component translation files
+- **Authentication** — sign-in, sign-up, magic link, social login flows
+- **Billing & payments** — subscription plans, payment dialogs, order status
+- **Onboarding stepper** — guided multi-step user onboarding
+- **SEO service** — meta tags, Open Graph, canonical URLs
+- **Media upload** — image/file upload with Firebase Storage
+- **Google Maps & Places** integration
+- **PWA install prompt** and app update notifications
+- **Dynamic forms** — schema-driven form rendering
+- **Search** — Algolia and Typesense integration
+
+### Angular Packages
+| Package | Contents |
+|---------|----------|
+| `ng-components` | Billing, auth UI, profile, payments, dynamic forms, language switcher, WhatsApp connect, working hours editor, and more |
+| `ng-services` | Auth, Firestore, Storage, Analytics, SEO, i18n, billing, media upload, location, Places, Algolia, Typesense, Razorpay, PWA, Snackbar, and more |
+| `ng-guards` | Route guards for auth, roles, and feature flags |
+| `ng-pipes` | Custom Angular pipes for formatting and transformation |
+| `ui-helm` | 50+ headless Spartan/shadcn-style UI components: accordion, avatar, badge, breadcrumb, button, calendar, carousel, checkbox, combobox, date picker, dialog, dropdown, input, pagination, select, sidebar, table, tabs, toast, and more |
+
+### Flutter Mobile App (`starter_app`)
+- **Flutter stable** with clean architecture and Riverpod state management
+- **shadcn_ui** component library for a consistent, polished UI
+- **Firebase Auth** — authentication flows out of the box
+- **Push notifications** with Firebase Cloud Messaging
+- **go_router** for declarative, nested navigation
+- **Native splash screen** and launcher icons pre-configured
+
+### Flutter Packages (13 packages)
+| Package | Purpose |
+|---------|---------|
+| `workern_auth` | Authentication — Firebase Auth, session management |
+| `workern_services` | Firestore, Storage, Analytics, App Check, Remote Config, Cloud Functions |
+| `workern_models` | Shared data models with Equatable and Firestore serialization |
+| `workern_widgets` | Reusable UI widgets and shared layout components |
+| `workern_ai` | AI-powered features and integrations |
+| `workern_billing` | In-app purchases and subscription billing |
+| `workern_media` | Image upload, video player, camera/photo library access |
+| `workern_notifications` | Push notifications with FCM |
+| `workern_localization` | i18n and multi-language support |
+| `workern_location` | Device location and geolocation services |
+| `workern_referral` | Referral system and invite flows |
+| `workern_tracking` | Analytics and event tracking |
+| `workern_utils` | Shared utilities and helpers |
+
+### Firebase Backend
+- **TypeScript Cloud Functions** — auth triggers, billing webhooks, notifications, data functions, OAuth2, marketing attribution, phone utilities, and more
+- **Python Cloud Functions** — Python-based serverless workloads
+- **Firestore** — rules, indexes, and helpers pre-configured
+- **Firebase Storage** — CORS config and security rules
+- **Realtime Database** — rules included
+- **Firebase Extensions** — Firestore auth claims, email sending, invite-to-space email
+- **Firebase Emulators** — full local dev environment with persisted data (Auth, Firestore, Functions, Storage)
+
+### Payment Providers
+Chargebee · Razorpay · LemonSqueezy · Dodo Payments · RazorpayX
+
+### Communication Integrations
+SendGrid · Nodemailer · Zeptomail · Firebase Cloud Messaging
+
+### Third-party Integrations
+Google Analytics · Algolia · Typesense · Sentry · Google Maps · Google Places · Gemini AI (Firebase AI) · Google APIs
+
+---
+
+## Prerequisites
+
+| Tool | Version |
+|------|---------|
+| Node.js | 20+ |
+| npm | 10+ |
+| Flutter | stable channel |
+| Firebase CLI | latest |
+
+```bash
+npm install -g firebase-tools
+```
 
 ---
 
@@ -256,6 +267,21 @@ Before pushing your own fork or changes:
 
 ---
 
+## Contributing
+
+Issues and pull requests are welcome! If you're using AppBlink Workspace in a project, we'd love to hear about it — open a discussion or drop a note in the issues tab.
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feat/my-feature`)
+3. Commit your changes
+4. Open a pull request
+
+---
+
 ## License
 
 MIT — use freely for your own projects.
+
+---
+
+> If AppBlink Workspace saved you hours of setup, consider giving it a ⭐ — it helps others find the project.

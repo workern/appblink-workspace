@@ -450,3 +450,366 @@ lucideSettings,
 lucideLogOut
 } from '@ng-icons/lucide';
 <ng-icon hlm name="lucideStore" size="sm" />
+
+## Component Usage Examples
+
+The following patterns are extracted from actual usage in this repo.
+
+---
+
+### Icon (`@spartan/components/icon`)
+
+Use `HlmIcon` (single import) when you only need one or a few icons. Use spread `...HlmIconImports` when the template uses icons in multiple places.
+
+**TypeScript**
+```ts
+// Single icon helper
+import { HlmIcon } from '@spartan/components/icon';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideArrowLeft } from '@ng-icons/lucide';
+
+@Component({
+  imports: [NgIcon, HlmIcon],
+  providers: [provideIcons({ lucideArrowLeft })],
+})
+
+// Multiple icons — use spread form
+import { HlmIconImports } from '@spartan/components/icon';
+import { provideIcons } from '@ng-icons/core';
+import { lucideHome, lucideSettings, lucideLogOut } from '@ng-icons/lucide';
+
+@Component({
+  imports: [...HlmIconImports],
+  providers: [provideIcons({ lucideHome, lucideSettings, lucideLogOut })],
+})
+```
+
+**HTML**
+```html
+<ng-icon hlm name="lucideArrowLeft" size="sm" />
+<ng-icon hlm name="lucideHome" size="md" />
+<!-- size options: "xs" | "sm" | "md" | "lg" | "xl" -->
+```
+
+---
+
+### Button (`@spartan/components/button`)
+
+```ts
+import { HlmButton } from '@spartan/components/button';
+// or spread: import { HlmButtonImports } from '@spartan/components/button';
+```
+
+```html
+<button hlmBtn>Default</button>
+<button hlmBtn variant="outline">Outline</button>
+<button hlmBtn variant="ghost">Ghost</button>
+<button hlmBtn variant="destructive">Delete</button>
+<button hlmBtn variant="secondary">Secondary</button>
+<button hlmBtn size="icon"><ng-icon hlm name="lucidePlus" /></button>
+<button hlmBtn [disabled]="isLoading()">
+  @if (isLoading()) { <hlm-spinner class="mr-2" size="sm" /> }
+  Save
+</button>
+```
+
+---
+
+### Badge (`@spartan/components/badge`)
+
+```ts
+import { HlmBadge } from '@spartan/components/badge';
+// or spread: import { HlmBadgeImports } from '@spartan/components/badge';
+```
+
+```html
+<span hlmBadge>Default</span>
+<span hlmBadge variant="secondary">Secondary</span>
+<span hlmBadge variant="destructive">Error</span>
+<span hlmBadge variant="outline">Outline</span>
+<!-- Dynamic variant -->
+<span hlmBadge [variant]="statusBadgeVariant(task.status)">{{ task.status }}</span>
+```
+
+---
+
+### Card (`@spartan/components/card`)
+
+```ts
+import { HlmCard, HlmCardContent, HlmCardHeader, HlmCardTitle, HlmCardDescription } from '@spartan/components/card';
+// or spread: import { HlmCardImports } from '@spartan/components/card';
+```
+
+```html
+<section hlmCard>
+  <div hlmCardHeader>
+    <h3 hlmCardTitle>Title</h3>
+    <p hlmCardDescription>Description text</p>
+  </div>
+  <div hlmCardContent>
+    Content goes here
+  </div>
+</section>
+
+<!-- Card as a list item -->
+<div section hlmCard class="member-card">
+  ...
+</div>
+```
+
+---
+
+### Input & Label (`@spartan/components/input`, `@spartan/components/label`)
+
+```ts
+import { HlmInput } from '@spartan/components/input';
+import { HlmLabelImports } from '@spartan/components/label';
+// or: import { HlmInputImports } from '@spartan/components/input';
+```
+
+```html
+<label hlmLabel for="email" class="mb-2 block">Email</label>
+<input hlmInput id="email" type="email" placeholder="you@example.com" class="w-full" />
+```
+
+---
+
+### Spinner (`@spartan/components/spinner`)
+
+```ts
+import { HlmSpinner } from '@spartan/components/spinner';
+// or spread: import { HlmSpinnerImports } from '@spartan/components/spinner';
+```
+
+```html
+<hlm-spinner size="sm" />
+<hlm-spinner class="mr-2 h-4 w-4" aria-hidden="true" />
+<!-- Conditional spinner in a button -->
+@if (isSaving()) {
+  <hlm-spinner class="mr-1.5 h-3.5 w-3.5" />
+}
+```
+
+---
+
+### Skeleton (`@spartan/components/skeleton`)
+
+```ts
+import { HlmSkeletonImports } from '@spartan/components/skeleton';
+```
+
+```html
+<!-- Spread import required for skeleton — no single-class export -->
+<span hlmSkeleton class="h-4 w-3/4"></span>
+<span hlmSkeleton class="h-3 w-full"></span>
+<span hlmSkeleton class="h-5 w-20 rounded-full"></span>
+<span hlmSkeleton class="w-2.5 h-2.5 rounded-full shrink-0"></span>
+```
+
+---
+
+### Separator (`@spartan/components/separator`)
+
+```ts
+import { HlmSeparator } from '@spartan/components/separator';
+// or spread: import { HlmSeparatorImports } from '@spartan/components/separator';
+```
+
+```html
+<hlm-separator />
+```
+
+---
+
+### Avatar (`@spartan/components/avatar`)
+
+```ts
+import { HlmAvatarImports } from '@spartan/components/avatar';
+```
+
+```html
+<hlm-avatar size="default">
+  @if (user.photoUrl) {
+    <img hlmAvatarImage [src]="user.photoUrl" [alt]="user.displayName ?? 'user'" />
+  }
+  <span hlmAvatarFallback>{{ initials(user) }}</span>
+</hlm-avatar>
+
+<!-- Custom size via class -->
+<hlm-avatar class="size-14 shrink-0">
+  <img hlmAvatarImage [src]="photoUrl" alt="profile" />
+  <span hlmAvatarFallback class="bg-primary/10 text-primary">{{ initials }}</span>
+</hlm-avatar>
+```
+
+---
+
+### Dialog (`@spartan/components/dialog`)
+
+Use `*hlmDialogPortal` on `<hlm-dialog-content>` to render into the overlay. Control open/close via `[state]` binding.
+
+```ts
+import { HlmDialogImports } from '@spartan/components/dialog';
+```
+
+```html
+<hlm-dialog
+  [state]="isOpen() ? 'open' : 'closed'"
+  (stateChanged)="$event === 'closed' && onClose()"
+>
+  <hlm-dialog-content *hlmDialogPortal class="w-full max-w-md p-6 space-y-4">
+    <hlm-dialog-header>
+      <h2 hlmDialogTitle>Dialog Title</h2>
+    </hlm-dialog-header>
+
+    <!-- content -->
+
+    <hlm-dialog-footer class="justify-end gap-2 pt-2">
+      <button hlmBtn variant="ghost" (click)="onClose()">Cancel</button>
+      <button hlmBtn (click)="onConfirm()">Confirm</button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>
+```
+
+**Programmatic dialog via `HlmDialogService`:**
+```ts
+import { HlmDialogService } from '@spartan/components/dialog';
+
+private readonly _dialogService = inject(HlmDialogService);
+
+openDialog() {
+  this._dialogService.open(MyDialogContentComponent, { data: { ... } });
+}
+```
+
+---
+
+### Alert Dialog (`@spartan/components/alert-dialog`)
+
+Use for destructive confirmations. Content is rendered lazily via `<ng-template hlmAlertDialogPortal>`.
+
+```ts
+import { HlmAlertDialogImports } from '@spartan/components/alert-dialog';
+```
+
+```html
+<hlm-alert-dialog
+  [state]="showConfirm() ? 'open' : 'closed'"
+  (closed)="showConfirm.set(false)"
+>
+  <ng-template hlmAlertDialogPortal>
+    <hlm-alert-dialog-content>
+      <hlm-alert-dialog-header>
+        <h2 hlmAlertDialogTitle>Are you sure?</h2>
+        <p hlmAlertDialogDescription>This action cannot be undone.</p>
+      </hlm-alert-dialog-header>
+      <hlm-alert-dialog-footer>
+        <button hlmAlertDialogCancel (click)="showConfirm.set(false)">Cancel</button>
+        <button hlmAlertDialogAction variant="destructive" (click)="onConfirm()">Delete</button>
+      </hlm-alert-dialog-footer>
+    </hlm-alert-dialog-content>
+  </ng-template>
+</hlm-alert-dialog>
+```
+
+---
+
+### Sheet (`@spartan/components/sheet`)
+
+Slide-in panel. Use `*hlmSheetPortal` on `<hlm-sheet-content>`. Control via `[state]`.
+
+```ts
+import { HlmSheetImports } from '@spartan/components/sheet';
+```
+
+```html
+<hlm-sheet
+  [state]="showSheet() ? 'open' : 'closed'"
+  side="right"
+  (stateChanged)="onSheetStateChanged($event)"
+>
+  <hlm-sheet-content *hlmSheetPortal>
+    <div hlmSheetHeader>
+      <h3 hlmSheetTitle>Sheet Title</h3>
+      <p hlmSheetDescription>Supporting description text.</p>
+    </div>
+
+    <!-- form / content -->
+
+    <div hlmSheetFooter>
+      <button hlmBtn variant="outline" (click)="showSheet.set(false)">Cancel</button>
+      <button hlmBtn (click)="onSubmit()">Submit</button>
+    </div>
+  </hlm-sheet-content>
+</hlm-sheet>
+```
+
+---
+
+### Select (`@spartan/components/select`)
+
+`<brn-select>` is the brain (from `@spartan-ng/brain`); `hlm-select-*` are the styled wrappers. Use `[ngModel]` / `(ngModelChange)` for two-way binding.
+
+```ts
+import { HlmSelectImports } from '@spartan/components/select';
+import { BrnSelectImports } from '@spartan-ng/brain/select';
+```
+
+```html
+<brn-select [ngModel]="selectedRole()" (ngModelChange)="selectedRole.set($event)">
+  <hlm-select-trigger class="w-full">
+    <hlm-select-value />
+  </hlm-select-trigger>
+  <hlm-select-content>
+    <hlm-option value="member">Member</hlm-option>
+    <hlm-option value="owner">Owner</hlm-option>
+  </hlm-select-content>
+</brn-select>
+```
+
+---
+
+### Tabs (`@spartan/components/tabs`)
+
+```ts
+import { HlmTabsImports } from '@spartan/components/tabs';
+```
+
+```html
+<hlm-tabs tab="plan">
+  <hlm-tabs-list>
+    <button hlmTabsTrigger="plan">Plan</button>
+    <button hlmTabsTrigger="history">History</button>
+  </hlm-tabs-list>
+
+  <div hlmTabsContent="plan">
+    <!-- plan content -->
+  </div>
+  <div hlmTabsContent="history">
+    <!-- history content -->
+  </div>
+</hlm-tabs>
+```
+
+---
+
+### Import pattern summary
+
+| Component | Single import | Spread import |
+|---|---|---|
+| Button | `HlmButton` | `HlmButtonImports` |
+| Badge | `HlmBadge` | `HlmBadgeImports` |
+| Card | `HlmCard, HlmCardContent, …` | `HlmCardImports` |
+| Input | `HlmInput` | `HlmInputImports` |
+| Label | `HlmLabel` | `HlmLabelImports` |
+| Icon | `HlmIcon` | `HlmIconImports` |
+| Spinner | `HlmSpinner` | `HlmSpinnerImports` |
+| Skeleton | — | `HlmSkeletonImports` |
+| Separator | `HlmSeparator` | `HlmSeparatorImports` |
+| Avatar | — | `HlmAvatarImports` |
+| Dialog | — | `HlmDialogImports` |
+| Alert Dialog | — | `HlmAlertDialogImports` |
+| Sheet | — | `HlmSheetImports` |
+| Select | — | `HlmSelectImports` |
+| Tabs | — | `HlmTabsImports` |

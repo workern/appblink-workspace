@@ -102,13 +102,17 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
               icon: Icons.mic_rounded,
               tooltip: 'Voice search',
               color: t.textMuted,
-              onTap: () {/* TODO: voice */},
+              onTap: () {
+                /* TODO: voice */
+              },
             ),
             _SearchAction(
               icon: Icons.camera_alt_rounded,
               tooltip: 'Visual search',
               color: t.textMuted,
-              onTap: () {/* TODO: camera */},
+              onTap: () {
+                /* TODO: camera */
+              },
             ),
             const SizedBox(width: 4),
           ],

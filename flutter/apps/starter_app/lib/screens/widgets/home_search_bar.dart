@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../config/app_tokens.dart';
-import '../../config/app_colors.dart';
 
 /// AI-native search input following Design V2 guidelines.
 ///

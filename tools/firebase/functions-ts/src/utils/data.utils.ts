@@ -1,5 +1,5 @@
 import { https } from 'firebase-functions/v2';
-import { messages } from './constants/messages';
+import { messages } from '../constants/messages';
 
 import { error, log } from 'firebase-functions/logger';
 import { CallableRequest } from 'firebase-functions/https';

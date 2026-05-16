@@ -9,7 +9,7 @@ import {
   TRANSACTION_STATE_PENDING,
   TRANSACTION_STATE_SUCCESSFUL,
   WITHDRAWLMULTIPLIER,
-} from './constants';
+} from '../constants';
 import {
   db,
   transactionsByIdCollection,
@@ -18,7 +18,7 @@ import {
   razorpayxPayoutKeySecret,
   razorpayxPayoutLinksCollection,
   isProduction,
-} from './global';
+} from '../global';
 import {
   PayoutLink,
   PayoutLinkStatus,

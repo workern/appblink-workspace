@@ -1,7 +1,7 @@
 import { onCall } from 'firebase-functions/https';
 import { graphApiRequest } from './common';
 import { z } from 'zod';
-import { checkRequest } from '../../data-utils';
+import { checkRequest } from '../../utils';
 // Send Order Details Message
 export const sendOrderDetails = onCall(async (request) => {
   const schema = z.object({

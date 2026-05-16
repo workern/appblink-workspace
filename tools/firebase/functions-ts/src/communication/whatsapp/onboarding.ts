@@ -21,7 +21,7 @@
 
 import { HttpsError, onCall } from 'firebase-functions/https';
 import { z } from 'zod';
-import { checkRequest } from '../../data-utils';
+import { checkRequest } from '../../utils';
 import {
   db,
   deployOptions,

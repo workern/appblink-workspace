@@ -3,7 +3,7 @@ import { logger } from 'firebase-functions';
 import { SaveType, SearchResult } from '@workern/models';
 import { db } from '../../global';
 import { MediaItem } from './types';
-import { getAutoId } from '../../firebase-utils';
+import { getAutoId } from '../../utils';
 import {
   NormalizedStoryResult,
   StoryMention,

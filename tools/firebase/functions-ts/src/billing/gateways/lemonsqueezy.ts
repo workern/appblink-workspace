@@ -29,8 +29,8 @@ import {
 } from './common';
 import { Amount } from '@workern/models';
 import crypto from 'crypto';
-import { getAutoId } from '../../firebase-utils';
-import { TransactionProcessorID } from '../../enums/transactions/transaction-processor-id';
+import { getAutoId } from '../../utils';
+import { TransactionProcessorID } from '@workern/models';
 import { GatewayOrderAndFirestoreEntryResponse } from './types';
 // Store ID and Variant ID from Lemon Squeezy dashboard
 const LEMONSQUEEZY_STORE_ID = isProduction ? '119118' : '119118'; // Replace with your store ID
@@ -174,7 +174,7 @@ function getLemonSqueezyTransaction(
   },
   uid: string,
   type = TransactionType.CREDIT,
-  reason = TransactionReason.CUSTOM_WEBSITE_PURCHASE
+  reason = TransactionReason.APP_PRODUCT_PURCHASE
 ): Transaction {
   const transactionId = getAutoId();
 

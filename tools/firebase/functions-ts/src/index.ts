@@ -18,10 +18,8 @@ import * as applicationUsageFunctions from './applicationusage';
 import * as worktimeFunctions from './worktime';
 
 
-
 // Auth functions
 export const auth = authFunctions;
-
 
 
 // Marketing functions
@@ -29,7 +27,6 @@ export const marketing = marketingFunctions;
 
 // Paytm gateway functions
 export const paytm = paytmFunctions;
-
 
 
 // Gratification functions
@@ -42,18 +39,16 @@ export const webhook = webhookFunctions;
 // Razorpay payment gateway functions
 export const razorpay = razorpayFunctions;
 
-export const lemonSqueezy = lemonSqueezyFunctions;
+export const lemonsqueezy = lemonSqueezyFunctions;
 
 // RevenueCat webhook (App Store + Play Store subscription lifecycle)
-export const revenueCat = revenueCatFunctions;
+export const revenuecat = revenueCatFunctions;
 
 // OAuth2 functions
 export const oauth2 = oAuth2App;
 
-
 // Data functions
 export const data = dataFunctions;
-
 
 // Attribution system
 export const attribution = attributionFunctions;

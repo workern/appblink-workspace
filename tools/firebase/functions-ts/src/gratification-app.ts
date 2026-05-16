@@ -5,7 +5,7 @@ import {
   DEDUCTION_MULTIPLIER,
   TRANSACTION_PROCESSOR_RAZORPAY_X
 } from './constants';
-import { getAutoId } from './firebase-utils';
+import { getAutoId, createPayoutLink, checkRequest } from './utils';
 import {
   db,
   transactionsByIdCollection,
@@ -17,7 +17,7 @@ import {
   razorpayxAccountNumber
 } from './global';
 import { RazorpayXTransaction } from './models/transactions/razorpayx-transaction';
-import { createPayoutLink } from './razorpayx-utils';
+
 import { PaypalPayoutTransaction } from './models/transactions/paypal-payout-transaction';
 import { onCall } from 'firebase-functions/v2/https';
 import { Amount } from '@workern/models';
@@ -25,7 +25,7 @@ import { TransactionProcessor } from './models/transactions/transaction-processo
 import { TransactionState } from './enums/transactions/transaction-state';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { checkRequest } from './data-utils';
+
 import { UserRecord } from 'firebase-admin/auth';
 exports.create = onCall(
   {

@@ -1,4 +1,4 @@
-import { db } from './global';
+import { db } from '../global';
 
 export function saveErrorToFirestore(error: any) {
   return db

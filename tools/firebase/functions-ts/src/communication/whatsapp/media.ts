@@ -1,7 +1,7 @@
 import { onCall } from 'firebase-functions/https';
 import { graphApiRequest } from './common';
 import { z } from 'zod';
-import { checkRequest } from '../../data-utils';
+import { checkRequest } from '../../utils';
 import axios from 'axios';
 import { whatsappAccessToken } from './constants';
 import { logger } from 'firebase-functions';

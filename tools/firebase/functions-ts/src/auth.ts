@@ -4,7 +4,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { acceptPendingInvitesForUser } from './workspaces/accept-invite';
 import { z } from 'zod';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/https';
-import { getUserClaims } from './firebase-utils';
+import { getUserClaims } from './utils';
 /**
  * Creates a new user document and initializes their workspace when they sign up
  * Sets up default spaces, work history, qualifications, and app-specific configurations

@@ -92,8 +92,6 @@ flutter/packages/**/pubspec.lock
 tools/firebase/functions-ts/lib
 firebase-export-*/
 .env
-.env.local
-.secret.local
 secure/
 
 # Generated store backup history (do not commit)
@@ -121,8 +119,9 @@ assets/**/social-media/
 */.kotlin/
 *.vsix
 **/out/
-**/build/
+tools/github/n8n
 
-# Firebase config — add your own GoogleService-Info.plist / google-services.json
-**/GoogleService-Info.plist
-**/google-services.json
+# Flutter — machine-specific and auto-generated files
+**/android/local.properties
+**/GeneratedPluginRegistrant.java
+**/GeneratedPluginRegistrant.swift

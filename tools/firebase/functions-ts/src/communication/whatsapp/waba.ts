@@ -1,6 +1,6 @@
 import { onCall } from 'firebase-functions/https';
 import { z } from 'zod';
-import { checkRequest } from '../../data-utils';
+import { checkRequest } from '../../utils';
 import { graphApiRequest } from './common';
 
 // Zod schemas for request validation

@@ -1,9 +1,8 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import axios from 'axios';
 import { dodoApiKey, isProduction } from '../../global';
-import { checkRequest } from '../../data-utils';
+import { checkRequest, getUser } from '../../utils';
 import { z } from 'zod';
-import { getUser } from '../../firebase-utils';
 
 // Initialize Dodo API client
 const DODO_API_BASE_URL = isProduction

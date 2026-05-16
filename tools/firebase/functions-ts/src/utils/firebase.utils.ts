@@ -1,5 +1,5 @@
 import { log } from 'firebase-functions/logger';
-import { admin, db } from './global';
+import { admin, db } from '../global';
 export function getAutoId() {
   return db.collection('users').doc().id;
 }

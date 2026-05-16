@@ -1,7 +1,6 @@
 import { log } from 'firebase-functions/logger';
 import { db, defaultSuccessResult, deployOptions } from './global';
-import { sendMail } from './notification-utils';
-import { handlePayoutLinkStatus, handlePayoutStatus } from './razorpayx-utils';
+import { sendMail, handlePayoutLinkStatus, handlePayoutStatus } from './utils';
 import { onRequest } from 'firebase-functions/v2/https';
 
 exports.onRazorpayxEvent = onRequest(deployOptions, (req, res) => {

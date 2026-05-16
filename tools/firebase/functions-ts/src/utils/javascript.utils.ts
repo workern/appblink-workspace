@@ -1,4 +1,4 @@
-import { format } from './ui-utils';
+import { format } from './ui.utils';
 import { set, forEach } from 'lodash';
 export function isObjectEmpty(obj) {
   for (const key in obj) {

@@ -1,6 +1,6 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
-import { checkRequest } from '../data-utils';
+import { checkRequest, getUser } from '../utils';
 import {
   db,
   deployOptions,
@@ -30,7 +30,7 @@ import { createLemonSqueezyCheckoutAndFirestoreEntry } from './gateways/lemonsqu
 import { createDodoSubscriptionSession } from './gateways/dodo-payments';
 import { TransactionReason } from '../enums/transactions/transaction-reason';
 import { TransactionType } from '../enums/transactions/transaction-type';
-import { getUser } from '../firebase-utils';
+
 import { FieldValue } from 'firebase-admin/firestore';
 
 const gatewaySchema = z.enum(TransactionProcessorID);

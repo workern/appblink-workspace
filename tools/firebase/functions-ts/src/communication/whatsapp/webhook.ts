@@ -1,7 +1,7 @@
 import { onCall, onRequest } from 'firebase-functions/https';
 import { z } from 'zod';
 import * as crypto from 'crypto';
-import { checkRequest } from '../../data-utils';
+import { checkRequest } from '../../utils';
 import {
   getConversationSnapByPhoneNumber,
   getMessageRef,

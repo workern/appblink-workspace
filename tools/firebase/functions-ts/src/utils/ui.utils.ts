@@ -3,7 +3,7 @@ import {
   TASK_RESPONSE_STATE_APPROVED,
   TASK_RESPONSE_STATE_PENDING,
   TASK_RESPONSE_STATE_REJECTED
-} from './constants';
+} from '../constants';
 
 export function nth(d) {
   if (d > 3 && d < 21) return 'th';

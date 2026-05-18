@@ -33,7 +33,6 @@ class WorkernReferralService {
       // Initialize Branch SDK
       await FlutterBranchSdk.init(
         enableLogging: config.enableLogging,
-        disableTracking: false,
       );
 
       if (config.enableLogging) {
@@ -113,19 +112,27 @@ class WorkernReferralService {
       // Add custom metadata
       if (customData != null) {
         customData.forEach((key, value) {
-          buo.contentMetadata.addCustomMetadata(key, value);
+          buo.contentMetadata?.addCustomMetadata(key, value);
         });
       }
 
       // Create link properties
-      final lp = BranchLinkProperties(
-        alias: customAlias,
-        channel: channel ?? 'referral',
-        feature: 'invite',
-        campaign: campaign ?? 'user_referral',
-        stage: 'invite',
-        tags: ['referral', config.appId],
-      );
+      final lp = customAlias != null
+          ? BranchLinkProperties(
+              alias: customAlias,
+              channel: channel ?? 'referral',
+              feature: 'invite',
+              campaign: campaign ?? 'user_referral',
+              stage: 'invite',
+              tags: ['referral', config.appId],
+            )
+          : BranchLinkProperties(
+              channel: channel ?? 'referral',
+              feature: 'invite',
+              campaign: campaign ?? 'user_referral',
+              stage: 'invite',
+              tags: ['referral', config.appId],
+            );
 
       // Add control parameters for deep linking
       lp.addControlParam('\$desktop_url', config.deepLinkDomain ?? '');
@@ -384,7 +391,7 @@ class WorkernReferralService {
       properties.forEach((key, value) {
         event.addCustomData(key, value.toString());
       });
-      await FlutterBranchSdk.trackContentWithoutBuo(branchEvent: event);
+      FlutterBranchSdk.trackContentWithoutBuo(branchEvent: event);
     } catch (e) {
       debugPrint('Error tracking event: $e');
     }
@@ -393,7 +400,7 @@ class WorkernReferralService {
   /// Set user identity in Branch
   Future<void> setUserIdentity(String userId) async {
     try {
-      await FlutterBranchSdk.setIdentity(userId);
+      FlutterBranchSdk.setIdentity(userId);
     } catch (e) {
       debugPrint('Error setting user identity: $e');
     }
@@ -402,7 +409,7 @@ class WorkernReferralService {
   /// Clear user identity (logout)
   Future<void> clearUserIdentity() async {
     try {
-      await FlutterBranchSdk.logout();
+      FlutterBranchSdk.logout();
     } catch (e) {
       debugPrint('Error clearing user identity: $e');
     }

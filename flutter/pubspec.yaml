@@ -1,0 +1,82 @@
+name: workern_flutter_workspace
+description: Melos workspace root for Workern Flutter monorepo.
+publish_to: none
+
+environment:
+  sdk: ^3.11.0
+
+workspace:
+  - apps/starter_app
+  - packages/workern_ai
+  - packages/workern_auth
+  - packages/workern_billing
+  - packages/workern_localization
+  - packages/workern_location
+  - packages/workern_media
+  - packages/workern_models
+  - packages/workern_notifications
+  - packages/workern_services
+  - packages/workern_tracking
+  - packages/workern_referral
+  - packages/workern_utils
+  - packages/workern_widgets
+
+dev_dependencies:
+  melos: ^7.7.0
+
+melos:
+  repository: https://github.com/appblink/appblink-workspace
+
+  command:
+    bootstrap:
+      runPubGetInParallel: true
+
+  scripts:
+    analyze:
+      run: flutter analyze --no-fatal-infos
+      exec:
+        concurrency: 4
+      description: Run flutter analyze across all packages
+
+    test:
+      run: flutter test
+      exec:
+        concurrency: 3
+        failFast: true
+      packageFilters:
+        dirExists: test
+      description: Run flutter test in all packages containing a test directory
+
+    format:
+      run: dart format .
+      exec:
+        concurrency: 6
+      description: Format all Dart files
+
+    build:
+      run: dart run build_runner build --delete-conflicting-outputs
+      exec:
+        concurrency: 1
+      packageFilters:
+        dependsOn: build_runner
+      description: Run build_runner in packages that depend on it
+
+    build:watch:
+      run: dart run build_runner watch --delete-conflicting-outputs
+      exec:
+        concurrency: 1
+      packageFilters:
+        dependsOn: build_runner
+      description: Watch mode for build_runner in packages that depend on it
+
+    clean:
+      run: flutter clean
+      exec:
+        concurrency: 6
+      description: Run flutter clean in all packages
+
+    fix:
+      run: dart fix --apply
+      exec:
+        concurrency: 4
+      description: Apply dart fixes across all packages

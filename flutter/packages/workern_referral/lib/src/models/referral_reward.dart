@@ -1,8 +1,4 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-part 'referral_reward.freezed.dart';
-part 'referral_reward.g.dart';
 
 enum RewardType {
   referralSignup,
@@ -17,26 +13,60 @@ enum RewardStatus {
   expired,
 }
 
-@freezed
-class ReferralReward with _$ReferralReward {
-  const factory ReferralReward({
-    required String id,
-    required String userId,
-    required RewardType type,
-    required int amount,
-    required String currency,
-    @Default(RewardStatus.pending) RewardStatus status,
-    String? referralId,
-    String? referredUserId,
-    String? description,
-    DateTime? createdAt,
-    DateTime? claimedAt,
-    DateTime? expiresAt,
-    Map<String, dynamic>? metadata,
-  }) = _ReferralReward;
+class ReferralReward {
+  final String id;
+  final String userId;
+  final RewardType type;
+  final int amount;
+  final String currency;
+  final RewardStatus status;
+  final String? referralId;
+  final String? referredUserId;
+  final String? description;
+  final DateTime? createdAt;
+  final DateTime? claimedAt;
+  final DateTime? expiresAt;
+  final Map<String, dynamic>? metadata;
 
-  factory ReferralReward.fromJson(Map<String, dynamic> json) =>
-      _$ReferralRewardFromJson(json);
+  const ReferralReward({
+    required this.id,
+    required this.userId,
+    required this.type,
+    required this.amount,
+    required this.currency,
+    this.status = RewardStatus.pending,
+    this.referralId,
+    this.referredUserId,
+    this.description,
+    this.createdAt,
+    this.claimedAt,
+    this.expiresAt,
+    this.metadata,
+  });
+
+  factory ReferralReward.fromJson(Map<String, dynamic> json) => ReferralReward(
+        id: json['id'] as String,
+        userId: json['userId'] as String,
+        type: RewardType.values.firstWhere((e) => e.name == json['type'],
+            orElse: () => RewardType.custom),
+        amount: json['amount'] as int,
+        currency: json['currency'] as String,
+        status: RewardStatus.values.firstWhere((e) => e.name == json['status'],
+            orElse: () => RewardStatus.pending),
+        referralId: json['referralId'] as String?,
+        referredUserId: json['referredUserId'] as String?,
+        description: json['description'] as String?,
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'] as String)
+            : null,
+        claimedAt: json['claimedAt'] != null
+            ? DateTime.parse(json['claimedAt'] as String)
+            : null,
+        expiresAt: json['expiresAt'] != null
+            ? DateTime.parse(json['expiresAt'] as String)
+            : null,
+        metadata: json['metadata'] as Map<String, dynamic>?,
+      );
 
   factory ReferralReward.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -65,6 +95,22 @@ class ReferralReward with _$ReferralReward {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'userId': userId,
+        'type': type.name,
+        'amount': amount,
+        'currency': currency,
+        'status': status.name,
+        if (referralId != null) 'referralId': referralId,
+        if (referredUserId != null) 'referredUserId': referredUserId,
+        if (description != null) 'description': description,
+        if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+        if (claimedAt != null) 'claimedAt': claimedAt!.toIso8601String(),
+        if (expiresAt != null) 'expiresAt': expiresAt!.toIso8601String(),
+        if (metadata != null) 'metadata': metadata,
+      };
+
   Map<String, dynamic> toFirestore() {
     return {
       'userId': userId,
@@ -83,4 +129,56 @@ class ReferralReward with _$ReferralReward {
       if (metadata != null) 'metadata': metadata,
     };
   }
+
+  ReferralReward copyWith({
+    String? id,
+    String? userId,
+    RewardType? type,
+    int? amount,
+    String? currency,
+    RewardStatus? status,
+    String? referralId,
+    String? referredUserId,
+    String? description,
+    DateTime? createdAt,
+    DateTime? claimedAt,
+    DateTime? expiresAt,
+    Map<String, dynamic>? metadata,
+  }) =>
+      ReferralReward(
+        id: id ?? this.id,
+        userId: userId ?? this.userId,
+        type: type ?? this.type,
+        amount: amount ?? this.amount,
+        currency: currency ?? this.currency,
+        status: status ?? this.status,
+        referralId: referralId ?? this.referralId,
+        referredUserId: referredUserId ?? this.referredUserId,
+        description: description ?? this.description,
+        createdAt: createdAt ?? this.createdAt,
+        claimedAt: claimedAt ?? this.claimedAt,
+        expiresAt: expiresAt ?? this.expiresAt,
+        metadata: metadata ?? this.metadata,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ReferralReward &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          userId == other.userId &&
+          type == other.type &&
+          amount == other.amount &&
+          currency == other.currency &&
+          status == other.status;
+
+  @override
+  int get hashCode =>
+      Object.hash(id, userId, type, amount, currency, status);
+
+  @override
+  String toString() =>
+      'ReferralReward(id: $id, userId: $userId, type: $type, amount: $amount, currency: $currency, status: $status)';
 }
+

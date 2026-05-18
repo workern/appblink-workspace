@@ -494,15 +494,33 @@
 
         <!-- Logo + App Name -->
         <div class="relative z-20 flex items-center gap-3">
-          <img
-            [src]="logoSrc()"
-            [alt]="appName()"
-            class="h-10 w-10 rounded-xl object-contain"
-          />
-          <span
-            class="text-lg font-semibold tracking-tight text-primary-foreground"
-            >{{ appName() }}</span
-          >
+          @if (logoHref()) {
+            <a
+              [routerLink]="logoHref()"
+              class="flex items-center gap-3 no-underline"
+              aria-label="Go to home page"
+            >
+              <img
+                [src]="logoSrc()"
+                [alt]="appName()"
+                class="h-10 w-10 rounded-xl object-contain"
+              />
+              <span
+                class="text-lg font-semibold tracking-tight text-primary-foreground"
+                >{{ appName() }}</span
+              >
+            </a>
+          } @else {
+            <img
+              [src]="logoSrc()"
+              [alt]="appName()"
+              class="h-10 w-10 rounded-xl object-contain"
+            />
+            <span
+              class="text-lg font-semibold tracking-tight text-primary-foreground"
+              >{{ appName() }}</span
+            >
+          }
         </div>
 
         <!-- Center panel content -->

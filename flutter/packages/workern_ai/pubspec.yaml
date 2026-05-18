@@ -2,6 +2,7 @@ name: workern_ai
 description: Unified AI services package for Workern apps supporting text and image generation with Firebase AI (Gemini models)
 version: 1.0.0
 publish_to: 'none'
+resolution: workspace
 
 environment:
   sdk: ^3.11.0

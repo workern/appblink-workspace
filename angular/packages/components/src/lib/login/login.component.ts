@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '@workern/services';
 import { SnackbarService } from '@workern/services';
 import { GlobalManagerService } from '@workern/services';
@@ -46,7 +46,8 @@ import {
     HlmCardImports,
     HlmSeparatorImports,
     BrnInputOtpImports,
-    CountryCodeSelectorComponent
+    CountryCodeSelectorComponent,
+    RouterLink
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
@@ -77,6 +78,8 @@ export class LoginComponent implements OnInit {
   protected readonly resolvedMethods = computed(
     () => this.allowedMethods() ?? ['google', 'phone', 'email']
   );
+  /** Optional URL the top-left logo/name links to (e.g. landing page) */
+  logoHref = input<string>('');
   /** Subtitle shown below the sign-in heading (each app can customise this) */
   subtitle = input<string>('Sign in to get started.');
   /** URL for Terms of Service link */

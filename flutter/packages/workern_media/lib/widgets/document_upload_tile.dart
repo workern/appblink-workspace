@@ -60,7 +60,6 @@ class DocumentUploadTile extends StatefulWidget {
 }
 
 class _DocumentUploadTileState extends State<DocumentUploadTile> {
-  File? _selectedFile;
   bool _isUploading = false;
   String? _uploadedUrl;
 
@@ -99,7 +98,6 @@ class _DocumentUploadTileState extends State<DocumentUploadTile> {
 
     final file = File(image.path);
     setState(() {
-      _selectedFile = file;
       _isUploading = true;
     });
 

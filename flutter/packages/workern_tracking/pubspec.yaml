@@ -2,6 +2,7 @@ name: workern_tracking
 description: App Tracking Transparency (ATT) consent service for iOS. Requires NSUserTrackingUsageDescription in Info.plist. Import only when your app uses ad tracking.
 version: 1.0.0
 publish_to: 'none'
+resolution: workspace
 
 environment:
   sdk: ^3.11.0
@@ -16,4 +17,4 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0

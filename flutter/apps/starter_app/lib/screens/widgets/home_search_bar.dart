@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/app_tokens.dart';
-
+                  
 /// AI-native search input following Design V2 guidelines.
 ///
 /// - Placeholder copy: "Ask anything or search..."

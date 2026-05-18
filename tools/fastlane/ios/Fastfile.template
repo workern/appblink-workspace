@@ -9,21 +9,53 @@ platform :ios do
   lane :create_store_entry do
     api_key = connect_api_key
     metadata_json = load_metadata
-    lang = (metadata_json['metadata']&.keys&.first || 'en-US')
+    lang = (metadata_json['metadata']&.keys&.first || 'en-GB')
     version = pubspec_version
     app_info = metadata_json['appStoreInfo'] || {}
     app_name = app_info['name'] || CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
     bundle_id = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
     sku = bundle_id.tr('.', '_')
     produce(
-      api_key: api_key,
       app_identifier: bundle_id,
       app_name: app_name,
       language: lang,
       app_version: version,
-      sku: sku
+      sku: sku,
+      platform: 'ios',
+      enable_services: {
+        push_notification:  "on", # Remote push notifications
+        associated_domains: "on", # Universal links / deep linking
+       # in_app_purchase:    "on"  # Purchases / subscriptions
+      }
+    )
+    # sign_in_with_apple cannot be set via produce (uses old Portal API) — use modify_services instead
+    modify_services(
+      app_identifier: bundle_id,
+      services: {
+        sign_in_with_apple: "on"
+      }
     )
   end
+  desc "Print the numeric App Store ID (Adam ID) for the app — useful for deep links, affiliate links, etc."
+  lane :get_store_id do
+    api_key = connect_api_key
+    bundle_id = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+
+    require 'spaceship'
+    token = Spaceship::ConnectAPI::Token.create(
+      key_id:    api_key[:key_id],
+      issuer_id: api_key[:issuer_id],
+      key:       api_key[:key]
+    )
+    Spaceship::ConnectAPI.token = token
+
+    app = Spaceship::ConnectAPI::App.find(bundle_id)
+    UI.user_error!("App '#{bundle_id}' not found in App Store Connect") unless app
+
+    UI.success("App Store ID (Adam ID) for #{bundle_id}: #{app.id}")
+    app.id
+  end
+
   desc "Rebuild archive with Flutter (fast, for code changes)"
   lane :flutter_archive do
     flutter_root = File.expand_path('../..', __dir__)
@@ -137,7 +169,7 @@ platform :ios do
       token = Spaceship::ConnectAPI::Token.create(
         key_id:    api_key[:key_id],
         issuer_id: api_key[:issuer_id],
-        filepath:  api_key[:key_filepath]
+        key:       api_key[:key]
       )
       Spaceship::ConnectAPI.token = token
       bundle_id = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
@@ -259,7 +291,7 @@ platform :ios do
       token = Spaceship::ConnectAPI::Token.create(
         key_id:    api_key[:key_id],
         issuer_id: api_key[:issuer_id],
-        filepath:  api_key[:key_filepath]
+        key:       api_key[:key]
       )
       Spaceship::ConnectAPI.token = token
       app = Spaceship::ConnectAPI::App.find(CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier))

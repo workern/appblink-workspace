@@ -1,7 +1,7 @@
 name: starter_app
 description: 'A starter Flutter app with Firebase, login, notifications, reusable widgets.'
 publish_to: 'none'
-
+resolution: workspace
 version: 1.0.0+3
 
 environment:

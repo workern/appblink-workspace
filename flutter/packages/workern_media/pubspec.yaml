@@ -2,6 +2,7 @@ name: workern_media
 description: Media widgets and services (image upload, video player, storage) that require camera/photo library permissions. Import only when your app uses these features.
 version: 1.0.0
 publish_to: 'none'
+resolution: workspace
 
 environment:
   sdk: ^3.11.0

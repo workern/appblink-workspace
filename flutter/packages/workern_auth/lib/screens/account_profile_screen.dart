@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:workern_services/workern_services.dart';
 import 'package:workern_widgets/workern_widgets.dart';
 import '../providers/auth_provider.dart';
-import '../services/auth_service.dart';
 
 /// A reusable account/profile screen for all Workern apps.
 ///

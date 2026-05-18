@@ -2,6 +2,7 @@ name: workern_localization
 description: Shared localization setup for Workern apps — supported locales, delegates, and context extension.
 version: 1.0.0
 publish_to: 'none'
+resolution: workspace
 
 environment:
   sdk: ^3.11.0

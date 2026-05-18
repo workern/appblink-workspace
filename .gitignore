@@ -87,6 +87,11 @@ App_Resources*/
 **/.DS_Store
 .flutter-plugins-dependencies
 **/.flutter-plugins-dependencies
+# Flutter - generated files
+**/*.iml
+flutter/.idea/
+flutter/build/
+flutter/**/build/
 # Flutter packages - ignore pubspec.lock in packages (not apps)
 flutter/packages/**/pubspec.lock
 tools/firebase/functions-ts/lib

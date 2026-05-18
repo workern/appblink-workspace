@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/referral_config.dart';
+import '../providers/referral_providers.dart';
 
 /// Card displaying user's referral statistics
 class ReferralStatsCard extends ConsumerWidget {

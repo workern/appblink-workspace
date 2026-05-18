@@ -66,7 +66,6 @@ class _LocationSearchBottomSheetState extends State<LocationSearchBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     // Calculate height: 50% of screen height when keyboard is visible
     // This keeps the bottom sheet at a reasonable size as shown in the UI
     final sheetHeight = screenHeight * 0.60;
@@ -120,82 +119,76 @@ class _LocationSearchBottomSheetState extends State<LocationSearchBottomSheet> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _predictions.isEmpty && _searchController.text.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.search,
-                                size: 64, color: Colors.grey[300]),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Search for a location',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _predictions.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No results found',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: _predictions.length,
-                            separatorBuilder: (context, index) => const Divider(
-                              height: 1,
-                              indent: 72,
-                            ),
-                            itemBuilder: (context, index) {
-                              final place = _predictions[index];
-                              return ListTile(
-                                leading: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.location_on_outlined,
-                                    color: Colors.grey[600],
-                                    size: 20,
-                                  ),
-                                ),
-                                title: Text(
-                                  place['mainText'] ?? place['description'],
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                subtitle: place['secondaryText'] != null
-                                    ? Text(
-                                        place['secondaryText'],
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[600],
-                                        ),
-                                      )
-                                    : null,
-                                onTap: () {
-                                  Navigator.pop(context, {
-                                    'placeId': place['placeId'],
-                                    'description': place['description'],
-                                    'mainText': place['mainText'],
-                                    'secondaryText': place['secondaryText'],
-                                  });
-                                },
-                              );
-                            },
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search, size: 64, color: Colors.grey[300]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Search for a location',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
                           ),
+                        ),
+                      ],
+                    ),
+                  )
+                : _predictions.isEmpty
+                ? Center(
+                    child: Text(
+                      'No results found',
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: _predictions.length,
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1, indent: 72),
+                    itemBuilder: (context, index) {
+                      final place = _predictions[index];
+                      return ListTile(
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.location_on_outlined,
+                            color: Colors.grey[600],
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          place['mainText'] ?? place['description'],
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: place['secondaryText'] != null
+                            ? Text(
+                                place['secondaryText'],
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              )
+                            : null,
+                        onTap: () {
+                          Navigator.pop(context, {
+                            'placeId': place['placeId'],
+                            'description': place['description'],
+                            'mainText': place['mainText'],
+                            'secondaryText': place['secondaryText'],
+                          });
+                        },
+                      );
+                    },
+                  ),
           ),
         ],
       ),

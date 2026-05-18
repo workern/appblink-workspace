@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workern_auth/workern_auth.dart';
 import 'adaptive_dialog.dart';
 
 /// A customizable app bar widget that shows app name, auth actions, and notifications
@@ -246,13 +245,7 @@ class WorkernAppBar extends ConsumerWidget implements PreferredSizeWidget {
       isDestructive: true,
     );
     if (confirmed) {
-      if (onLogout != null) {
-        onLogout!.call();
-      } else {
-        // Use workern_auth's authServiceProvider when onLogout is null
-        final authService = ref.read(authServiceProvider);
-        await authService.signOut();
-      }
+      onLogout?.call();
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/referral_config.dart';
+import '../providers/referral_providers.dart';
 
 /// Button to share referral link
 class ReferralButton extends ConsumerWidget {

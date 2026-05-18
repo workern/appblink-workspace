@@ -8,3 +8,4 @@ export 'transaction/index.dart';
 export 'verification/index.dart';
 export 'workspaces/index.dart';
 export 'apps/index.dart';
+export 'media/index.dart';

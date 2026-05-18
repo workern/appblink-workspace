@@ -33,6 +33,9 @@ export * from './lib/ui-input/ui-input.component';
 export * from './lib/ui-card/ui-card.component';
 export * from './lib/ui-dropdown/ui-dropdown.component';
 export * from './lib/language-switcher/language-switcher.component';
+
+// Legal Pages
+export * from './lib/legal-page/legal-page.component';
 export * from './lib/app-header/app-header.component';
 
 // Account profile screen (reusable across all apps)

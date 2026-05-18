@@ -86,6 +86,59 @@ def workern_apply_firebase_functions_fix(target)
   end
 end
 
+# Use precompiled Firestore XCFrameworks instead of building ~500k lines of C++ from source.
+# Reduces cold Xcode build time from ~240s → ~45s locally and ~551s → ~174s on CI.
+# See: https://github.com/invertase/firestore-ios-sdk-frameworks
+#
+# Version is auto-detected by reading pubspec.lock → finding firebase_core in the pub cache
+# → calling its bundled firebase_sdk_version! helper. No manual version pinning needed.
+FIREBASE_IOS_SDK_VERSION_FALLBACK = '12.12.0'.freeze
+
+def workern_detect_firebase_sdk_version
+  # Podfiles live at <app>/ios/Podfile; pubspec.lock is one level up.
+  pubspec_lock_path = File.expand_path('../pubspec.lock', Dir.pwd)
+
+  unless File.exist?(pubspec_lock_path)
+    warn "[workern] pubspec.lock not found at #{pubspec_lock_path}, using fallback #{FIREBASE_IOS_SDK_VERSION_FALLBACK}"
+    return FIREBASE_IOS_SDK_VERSION_FALLBACK
+  end
+
+  # Extract the resolved firebase_core version from pubspec.lock.
+  content = File.read(pubspec_lock_path)
+  match = content.match(/^  firebase_core:\n(?:.*\n)*?.*version: "([^"]+)"/)
+  unless match
+    warn "[workern] firebase_core not found in pubspec.lock, using fallback #{FIREBASE_IOS_SDK_VERSION_FALLBACK}"
+    return FIREBASE_IOS_SDK_VERSION_FALLBACK
+  end
+  firebase_core_version = match[1]
+
+  # firebase_core ships a firebase_sdk_version.rb in its ios/ directory that exposes
+  # firebase_sdk_version!, the authoritative Firebase iOS SDK version for that release.
+  pub_cache = ENV.fetch('PUB_CACHE', File.join(Dir.home, '.pub-cache'))
+  sdk_version_rb = File.join(pub_cache, 'hosted', 'pub.dev',
+                             "firebase_core-#{firebase_core_version}",
+                             'ios', 'firebase_sdk_version.rb')
+
+  unless File.exist?(sdk_version_rb)
+    warn "[workern] #{sdk_version_rb} not found, using fallback #{FIREBASE_IOS_SDK_VERSION_FALLBACK}"
+    return FIREBASE_IOS_SDK_VERSION_FALLBACK
+  end
+
+  require sdk_version_rb
+  version = firebase_sdk_version!
+  puts "[workern] FirebaseFirestore binary tag: #{version} (firebase_core #{firebase_core_version})"
+  version
+rescue => e
+  warn "[workern] Could not detect Firebase iOS SDK version (#{e.message}), using fallback #{FIREBASE_IOS_SDK_VERSION_FALLBACK}"
+  FIREBASE_IOS_SDK_VERSION_FALLBACK
+end
+
+def workern_install_firestore_binary
+  pod 'FirebaseFirestore',
+      :git => 'https://github.com/invertase/firestore-ios-sdk-frameworks.git',
+      :tag => workern_detect_firebase_sdk_version
+end
+
 # Route C/C++ compilation through ccache so compiled object files are cached on disk.
 # On repeat cold builds (after flutter clean, DerivedData wipe, or CI), gRPC-C++,
 # abseil, and BoringSSL are served from cache instead of recompiled from source.
@@ -101,9 +154,11 @@ def workern_apply_ccache(target)
   return unless File.exist?(ccache_cc)
 
   target.build_configurations.each do |config|
-    config.build_settings['CC']  = ccache_cc
-    config.build_settings['CXX'] = ccache_cxx
-    config.build_settings['LD']  = ccache_cc
-    config.build_settings['LDPLUSPLUS'] = ccache_cxx
+    config.build_settings['CC']   = ccache_cc
+    config.build_settings['CXX']  = ccache_cxx
+    # Route Objective-C / Objective-C++ through ccache too (most pod sources are .m)
+    config.build_settings['OBJC']    = ccache_cc
+    config.build_settings['OBJCXX']  = ccache_cxx
+    # Do NOT set LD/LDPLUSPLUS — ccache is a compiler cache, not a linker wrapper
   end
 end

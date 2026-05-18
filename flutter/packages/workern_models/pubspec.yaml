@@ -1,7 +1,7 @@
 name: workern_models
 description: 'Common data models and utilities for Workern Flutter applications.'
 publish_to: 'none'
-
+resolution: workspace
 version: 1.0.0+1
 
 environment:

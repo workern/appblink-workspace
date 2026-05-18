@@ -33,6 +33,16 @@ export class FirebaseFunctionsService {
     projectId?: string
   ): string {
     const resolvedProjectId = this.getProjectId(projectId);
+    // When connectFunctionsEmulator() has been called, the SDK stores the
+    // emulator origin (e.g. "http://localhost:5001") on the Functions instance.
+    const emulatorOrigin = (this.fns as any).emulatorOrigin as
+      | string
+      | null
+      | undefined;
+    if (emulatorOrigin) {
+      // Emulator HTTP-function URL: http://localhost:5001/{projectId}/{region}/{functionName}
+      return `${emulatorOrigin}/${resolvedProjectId}/${region}/${functionName}`;
+    }
     return `https://${region}-${resolvedProjectId}.cloudfunctions.net/${functionName}`;
   }
 

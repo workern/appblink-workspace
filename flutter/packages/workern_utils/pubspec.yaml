@@ -1,6 +1,7 @@
 name: workern_utils
 description: 'Utility functions and helpers for Workern Flutter applications.'
 publish_to: 'none'
+resolution: workspace
 
 version: 1.0.0+1
 

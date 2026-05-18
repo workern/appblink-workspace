@@ -24,8 +24,10 @@ import {
 import {
   Auth,
   GoogleAuthProvider,
+  ApplicationVerifier,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithCredential,
   signOut,
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -92,8 +94,7 @@ export class AuthService {
     const appKeyName = this.gms.appKeyName();
     if (workspaceId && appKeyName) {
       return doc(this.db, `apps/${appKeyName}/workspaces/${workspaceId}`);
-    }
-else{
+    } else {
       return null;
     }
   });
@@ -113,6 +114,11 @@ else{
 
   private recaptchaVerifier?: RecaptchaVerifier;
   private confirmationResult?: ConfirmationResult;
+
+  /** True when connectAuthEmulator() has been called (set by app.config.ts in dev). */
+  private get isEmulatorActive(): boolean {
+    return !!(this.auth as any).emulatorConfig;
+  }
 
   constructor() {
     onAuthStateChanged(this.auth, async (user) => {
@@ -146,17 +152,21 @@ else{
       const userAppDocRef = doc(this.db, 'users', uid);
       const docSnap = await getDoc(userAppDocRef);
 
-      let userProfile: User | null = null;
+      let userProfile: User;
       if (docSnap.exists()) {
         userProfile = docSnap.data() as User;
         userProfile.photoURL = photoURL;
       } else {
-        console.log(
-          'No such user document! A new one will be created on first data save.'
-        );
-        // Create a base user profile from auth info if it doesn't exist
-        // userProfile = { uid: authUser.uid, ... };
-        return;
+        // New user — build a base profile from Auth info and persist it
+        const authUser = this.auth.currentUser;
+        userProfile = {
+          uid,
+          name: authUser?.displayName ?? null,
+          email: authUser?.email ?? null,
+          mobile: authUser?.phoneNumber ?? '',
+          photoURL: photoURL || authUser?.photoURL || null
+        };
+        await setDoc(userAppDocRef, userProfile);
       }
 
       this.currentUser.set(userProfile);
@@ -175,21 +185,26 @@ else{
   }
 
   async loginWithGoogleProvider(): Promise<void> {
-    const provider = new GoogleAuthProvider();
-    provider.addScope('profile');
-    provider.addScope('email');
-
     try {
+      if (this.isEmulatorActive) {
+        // signInWithPopup is unreliable against the Auth emulator — use a fake
+        // credential. The emulator accepts any non-empty ID token string.
+        const credential = GoogleAuthProvider.credential(
+          JSON.stringify({
+            sub: 'emulator-google-user',
+            email: 'dev@example.com',
+            email_verified: true,
+            name: 'Dev User (Emulator)'
+          })
+        );
+        await signInWithCredential(this.auth, credential);
+        return;
+      }
+
+      const provider = new GoogleAuthProvider();
+      provider.addScope('profile');
+      provider.addScope('email');
       await signInWithPopup(this.auth, provider);
-      await new Promise<void>((resolve) => {
-        const unsubscribe = onAuthStateChanged(this.auth, (user) => {
-          if (user) {
-            console.log('Google login successful:', user);
-            unsubscribe();
-            resolve();
-          }
-        });
-      });
     } catch (error) {
       console.error('Google login failed:', error);
       throw new Error('Google login failed. Please try again.');
@@ -212,26 +227,34 @@ else{
     recaptchaContainer: HTMLElement
   ): Promise<ConfirmationResult> {
     try {
-      // Create reCAPTCHA verifier
-      this.recaptchaVerifier = new RecaptchaVerifier(
-        this.auth,
-        recaptchaContainer,
-        {
-          size: 'invisible',
-          callback: () => {
-            console.log('reCAPTCHA solved');
-          },
-          'expired-callback': () => {
-            console.log('reCAPTCHA expired');
+      let verifier: ApplicationVerifier;
+
+      if (this.isEmulatorActive) {
+        // RecaptchaVerifier makes a real network call to google.com/recaptcha
+        // which fails in emulator mode. The Auth emulator bypasses token
+        // validation entirely — any non-empty string is accepted.
+        verifier = {
+          type: 'recaptcha',
+          verify: () => Promise.resolve('fake-recaptcha-token-emulator')
+        };
+      } else {
+        this.recaptchaVerifier = new RecaptchaVerifier(
+          this.auth,
+          recaptchaContainer,
+          {
+            size: 'invisible',
+            callback: () => console.log('reCAPTCHA solved'),
+            'expired-callback': () => console.log('reCAPTCHA expired')
           }
-        }
-      );
+        );
+        verifier = this.recaptchaVerifier;
+      }
 
       // Send OTP — phoneNumber must already include the country code (e.g. +919876543210)
       this.confirmationResult = await signInWithPhoneNumber(
         this.auth,
         phoneNumber,
-        this.recaptchaVerifier
+        verifier
       );
 
       return this.confirmationResult;

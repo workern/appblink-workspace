@@ -1,25 +1,65 @@
 @let field = $any(this.field()); @let desc = descriptor(); @let label =
 $any(desc).displayName || $any(desc).name; @let showField =
 !$any(desc).show||$any(desc).show(); @if(showField){ @switch (desc.type) { @case
-('text') {
-
+('text') { @let errMsg = (field().touched() && field().errors().length > 0) ?
+($any(field().errors()[0])?.message || '') : '';
 <wn-text-field
   [label]="label"
-  hint=""
+  [hint]="$any(desc).placeholder || ''"
+  [type]="$any(desc).inputType || 'text'"
+  [error]="errMsg"
   primaryColor="#ec4899"
   [formField]="field"
   [descriptor]="desc"
 />
-} @case ('number') {
+} @case ('number') { @let errMsg = (field().touched() && field().errors().length
+> 0) ? ($any(field().errors()[0])?.message || '') : '';
 <wn-text-field
   [label]="label"
-  hint=""
+  [hint]="$any(desc).placeholder || ''"
   type="text"
+  [error]="errMsg"
   primaryColor="#ec4899"
   [formField]="field"
 />
+} @case ('phone') { @let errMsg = phoneError($any(field), $any(desc).name,
+desc);
+<wn-phone-input
+  [label]="label"
+  [placeholder]="$any(desc).placeholder || ''"
+  [required]="$any(desc).required || false"
+  [error]="errMsg"
+  [formField]="field"
+  (selectedCountryChange)="onPhoneCountryChange($any(desc).name, $event)"
+/>
 } @case ('checkbox') {
-<wn-checkbox [label]="label" primaryColor="#ec4899" [formField]="field" />
+<wn-checkbox
+  [label]="label"
+  [description]="$any(desc).description || ''"
+  primaryColor="#ec4899"
+  [checked]="field().value()"
+  (checkedChange)="field().value.set($event)"
+/>
+} @case ('select') { @let errMsg = (field().touched() && field().errors().length
+> 0) ? ($any(field().errors()[0])?.message || '') : '';
+<workern-select
+  [label]="label"
+  [options]="$any(desc).options"
+  [placeholder]="$any(desc).placeholder || 'Select...'"
+  [required]="$any(desc).required || false"
+  [error]="errMsg"
+  primaryColor="#ec4899"
+  [value]="field().value()"
+  (valueChange)="field().value.set($event)"
+/>
+} @case ('switch') {
+<wn-switch
+  [title]="label"
+  [subtitle]="$any(desc).subtitle || ''"
+  activeColor="#ec4899"
+  [checked]="field().value()"
+  (checkedChange)="field().value.set($event)"
+/>
 } @case ('date') {
 <input
   type="date"
@@ -111,14 +151,14 @@ $any(desc).displayName || $any(desc).name; @let showField =
   }
 </div>
 } @case ('object') {
-<div
-  class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200"
->
+<div class="space-y-4">
   @for (prop of desc.properties; track $index) { @let showNestedField =
-  !$any(prop).show||$any(prop).show(); @if(showNestedField){
-  <div [class.md:col-span-2]="$any(prop).separateRow">
-    <wn-dynamic-form [descriptor]="prop" [field]="field[prop.name]" />
-  </div>
+  !$any(prop).show || $any(prop).show(); @if (showNestedField) {
+  <wn-dynamic-form
+    [descriptor]="prop"
+    [field]="field[prop.name]"
+    [phoneCountrySignals]="phoneCountrySignals()"
+  />
   } }
 </div>
 } @case ('array') {

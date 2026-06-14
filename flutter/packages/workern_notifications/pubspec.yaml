@@ -3,7 +3,6 @@ description: Reusable FCM notification service for Workern apps
 version: 1.0.0
 publish_to: 'none'
 resolution: workspace
-
 environment:
   sdk: ^3.11.0
   flutter: '>=3.0.0'

@@ -2,17 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  inject,
   input,
+  output,
   signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { switchMap } from 'rxjs/operators';
 
-import { WorkspaceMember, WorkspaceMemberRole } from '@workern/models';
-import { AuthService, SnackbarService, TeamsService } from '@workern/services';
+import { SpaceMember } from '@workern/models';
 
 import { HlmAvatarImports } from '@spartan/components/avatar';
 import { HlmBadgeImports } from '@spartan/components/badge';
@@ -37,167 +34,158 @@ import {
 } from '@ng-icons/lucide';
 import { provideIcons } from '@ng-icons/core';
 
+export interface MemberRoleOption {
+  value: string;
+  label: string;
+}
+
 @Component({
   selector: 'wn-workspace-teams',
   standalone: true,
-
-  imports:[],
-  // imports: [
-  //   CommonModule,
-  //   FormsModule,
-  //   HlmAvatarImports,
-  //   HlmBadgeImports,
-  //   HlmButtonImports,
-  //   HlmCardImports,
-  //   HlmInputImports,
-  //   HlmLabelImports,
-  //   HlmSeparatorImports,
-  //   HlmSkeletonImports,
-  //   HlmAlertDialogImports,
-  //   HlmSheetImports,
-  //   HlmSelectImports,
-  //   BrnSelectImports,
-  //   ...HlmIconImports
-  // ],
-  // viewProviders: [
-  //   provideIcons({
-  //     lucideUserPlus,
-  //     lucideUserMinus,
-  //     lucideUsers,
-  //     lucideCrown,
-  //     lucideUser,
-  //     lucideX
-  //   })
-  // ],
+  imports: [
+    CommonModule,
+    FormsModule,
+    HlmAvatarImports,
+    HlmBadgeImports,
+    HlmButtonImports,
+    HlmCardImports,
+    HlmInputImports,
+    HlmLabelImports,
+    HlmSeparatorImports,
+    HlmSkeletonImports,
+    HlmAlertDialogImports,
+    HlmSheetImports,
+    HlmSelectImports,
+    BrnSelectImports,
+    ...HlmIconImports
+  ],
+  viewProviders: [
+    provideIcons({
+      lucideUserPlus,
+      lucideUserMinus,
+      lucideUsers,
+      lucideCrown,
+      lucideUser,
+      lucideX
+    })
+  ],
   templateUrl: './workspace-teams.component.html',
   styleUrl: './workspace-teams.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WorkspaceTeamsComponent {
-  // private readonly teamsService = inject(TeamsService);
-  // private readonly authService = inject(AuthService);
-  // private readonly snackbar = inject(SnackbarService);
+  readonly members = input.required<any[]>();
+  readonly availableRoles = input.required<MemberRoleOption[]>();
+  readonly currentUid = input.required<string>();
+  readonly isLoading = input<boolean>(false);
+  readonly ownerRoleValue = input<string>('OWNER');
+  readonly roleField = input<string>('role');
+  readonly isInviting = input<boolean>(false);
+  readonly isRemoving = input<boolean>(false);
 
-  // readonly appId = input.required<string>();
-  // readonly workspaceId = input.required<string>();
+  readonly invite = output<{ email: string; role: string }>();
+  readonly updateRole = output<{ targetUid: string; newRole: string }>();
+  readonly remove = output<string>();
 
-  // private readonly params = computed(() => ({
-  //   appId: this.appId(),
-  //   workspaceId: this.workspaceId()
-  // }));
+  protected memberRole(member: any): string {
+    return member[this.roleField()] || member.role;
+  }
 
-  // readonly members = toSignal(
-  //   toObservable(this.params).pipe(
-  //     switchMap(({ appId, workspaceId }) =>
-  //       this.teamsService.watchMembers(appId, workspaceId)
-  //     )
-  //   ),
-  //   { initialValue: null }
-  // );
+  protected readonly isCurrentUserOwner = computed(() => {
+    const uid = this.currentUid();
+    const list = this.members();
+    if (!list || !uid) return false;
+    return list.some((m: any) => this.memberId(m) === uid && this.memberRole(m) === this.ownerRoleValue());
+  });
 
-  // protected readonly isLoading = computed(() => this.members() === null);
+  // ── Invite sheet ──────────────────────────────────────────────
+  protected readonly showInviteSheet = signal(false);
+  protected readonly inviteEmail = signal('');
+  protected readonly inviteRole = signal<string>('');
 
-  // protected readonly currentUid = computed(
-  //   () => this.authService.currentUser()?.uid ?? ''
-  // );
+  // ── Remove dialog ─────────────────────────────────────────────
+  protected readonly memberToRemove = signal<any | null>(null);
 
-  // protected readonly isCurrentUserOwner = computed(() => {
-  //   const uid = this.currentUid();
-  //   const list = this.members();
-  //   if (!list || !uid) return false;
-  //   return list.some((m) => m.uid === uid && m.role === 'owner');
-  // });
+  protected openInviteSheet(): void {
+    this.inviteEmail.set('');
+    const roles = this.availableRoles();
+    this.inviteRole.set(roles.length > 0 ? roles[roles.length - 1].value : '');
+    this.showInviteSheet.set(true);
+  }
 
-  // // ── Invite sheet ──────────────────────────────────────────────
-  // protected readonly showInviteSheet = signal(false);
-  // protected readonly inviteEmail = signal('');
-  // protected readonly inviteRole = signal<WorkspaceMemberRole>('member');
-  // protected readonly isInviting = signal(false);
+  protected submitInvite(): void {
+    const email = this.inviteEmail().trim();
+    if (!email) return;
+    this.invite.emit({ email, role: this.inviteRole() });
+    this.showInviteSheet.set(false);
+  }
 
-  // // ── Remove dialog ─────────────────────────────────────────────
-  // protected readonly memberToRemove = signal<WorkspaceMember | null>(null);
-  // protected readonly isRemoving = signal(false);
+  protected confirmRemove(member: any): void {
+    this.memberToRemove.set(member);
+  }
 
-  // protected openInviteSheet(): void {
-  //   this.inviteEmail.set('');
-  //   this.inviteRole.set('member');
-  //   this.showInviteSheet.set(true);
-  // }
+  protected cancelRemove(): void {
+    this.memberToRemove.set(null);
+  }
 
-  // protected async submitInvite(): Promise<void> {
-  //   const email = this.inviteEmail().trim();
-  //   if (!email) return;
-  //   this.isInviting.set(true);
-  //   try {
-  //     await this.teamsService.inviteMember({
-  //       appId: this.appId(),
-  //       workspaceId: this.workspaceId(),
-  //       email,
-  //       role: this.inviteRole()
-  //     });
-  //     this.snackbar.success('Invite sent!');
-  //     this.showInviteSheet.set(false);
-  //   } catch (err: any) {
-  //     this.snackbar.error(err?.message ?? 'Failed to send invite');
-  //   } finally {
-  //     this.isInviting.set(false);
-  //   }
-  // }
+  protected onSheetStateChanged(state: string): void {
+    if (state === 'closed') {
+      this.showInviteSheet.set(false);
+    }
+  }
 
-  // protected confirmRemove(member: WorkspaceMember): void {
-  //   this.memberToRemove.set(member);
-  // }
+  protected executeRemove(): void {
+    const member = this.memberToRemove();
+    if (!member) return;
+    this.remove.emit(this.memberId(member));
+    this.memberToRemove.set(null);
+  }
 
-  // protected cancelRemove(): void {
-  //   this.memberToRemove.set(null);
-  // }
+  protected changeRole(member: any, newRole: string): void {
+     if(this.memberRole(member) !== newRole) {
+         this.updateRole.emit({ targetUid: this.memberId(member), newRole });
+     }
+  }
 
-  // protected onSheetStateChanged(state: string): void {
-  //   if (state === 'closed') {
-  //     this.showInviteSheet.set(false);
-  //   }
-  // }
+  protected getRoleLabel(roleValue: string): string {
+    const role = this.availableRoles().find(r => r.value === roleValue);
+    return role ? role.label : roleValue;
+  }
 
-  // protected async executeRemove(): Promise<void> {
-  //   const member = this.memberToRemove();
-  //   if (!member) return;
-  //   this.isRemoving.set(true);
-  //   try {
-  //     await this.teamsService.removeMember({
-  //       appId: this.appId(),
-  //       workspaceId: this.workspaceId(),
-  //       targetUid: member.uid
-  //     });
-  //     const isSelf = member.uid === this.currentUid();
-  //     this.snackbar.success(
-  //       isSelf ? 'You have left the workspace' : 'Member removed'
-  //     );
-  //   } catch (err: any) {
-  //     this.snackbar.error(err?.message ?? 'Failed to remove member');
-  //   } finally {
-  //     this.isRemoving.set(false);
-  //     this.memberToRemove.set(null);
-  //   }
-  // }
+  protected memberId(member: any): string {
+    return member.uid ?? member.id ?? '?';
+  }
 
-  // protected initials(member: WorkspaceMember): string {
-  //   const name = member.displayName ?? member.email ?? '?';
-  //   return name.slice(0, 2).toUpperCase();
-  // }
+  protected memberName(member: any): string {
+    return member.displayName ?? member.info?.name ?? this.memberEmail(member) ?? this.memberId(member);
+  }
 
-  // protected isOwner(member: WorkspaceMember): boolean {
-  //   return member.role === 'owner';
-  // }
+  protected memberEmail(member: any): string | undefined {
+    return member.email ?? member.info?.email;
+  }
 
-  // protected isSelf(member: WorkspaceMember): boolean {
-  //   return member.uid === this.currentUid();
-  // }
+  protected memberPhoto(member: any): string | undefined {
+    return member.photoUrl ?? member.info?.photoURL ?? member.info?.photoUrl;
+  }
 
-  // protected canActOn(member: WorkspaceMember): boolean {
-  //   return this.isCurrentUserOwner() || this.isSelf(member);
-  // }
+  protected initials(member: any): string {
+    const name = this.memberName(member);
+    return name.slice(0, 2).toUpperCase();
+  }
 
-  // protected actionLabel(member: WorkspaceMember): string {
-  //   return this.isSelf(member) ? 'Leave' : 'Remove';
-  // }
+  protected isOwner(member: any): boolean {
+    return this.memberRole(member) === this.ownerRoleValue();
+  }
+
+  protected isSelf(member: any): boolean {
+    return this.memberId(member) === this.currentUid();
+  }
+
+  protected canActOn(member: any): boolean {
+    return this.isCurrentUserOwner() || this.isSelf(member);
+  }
+
+  protected actionLabel(member: any): string {
+    return this.isSelf(member) ? 'Leave' : 'Remove';
+  }
 }

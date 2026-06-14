@@ -1,4 +1,4 @@
-<!-- <div class="teams-page">
+<div class="teams-page">
 
   <div class="teams-header">
     <div class="teams-header-left">
@@ -30,9 +30,7 @@
 
   <hlm-separator class="my-4" />
 
- 
   @if (isLoading()) {
-   
     <div class="member-list">
       @for (i of [1, 2, 3]; track i) {
         <div class="member-row">
@@ -46,7 +44,6 @@
       }
     </div>
   } @else if (!members()?.length) {
-
     <div class="empty-state">
       <ng-icon name="lucideUsers" size="48" class="empty-icon" />
       <p class="empty-title">No members yet</p>
@@ -62,35 +59,32 @@
     </div>
   } @else {
     <div class="member-list">
-      @for (member of members(); track member.uid) {
+      @for (member of members(); track memberId(member)) {
         <div section hlmCard class="member-card">
           <div class="member-row">
-          
             <hlm-avatar size="default">
-              @if (member.photoUrl) {
+              @if (memberPhoto(member)) {
                 <img
                   hlmAvatarImage
-                  [src]="member.photoUrl"
-                  [alt]="member.displayName ?? member.email ?? 'member'"
+                  [src]="memberPhoto(member)"
+                  [alt]="memberName(member)"
                 />
               }
               <span hlmAvatarFallback>{{ initials(member) }}</span>
             </hlm-avatar>
 
-     
             <div class="member-info">
               <p class="member-name">
-                {{ member.displayName ?? member.email ?? member.uid }}
+                {{ memberName(member) }}
                 @if (isSelf(member)) {
                   <span class="self-label">(you)</span>
                 }
               </p>
-              @if (member.displayName && member.email) {
-                <p class="member-email">{{ member.email }}</p>
+              @if (memberEmail(member)) {
+                <p class="member-email">{{ memberEmail(member) }}</p>
               }
             </div>
 
-  
             <div class="member-actions">
               @if (isOwner(member)) {
                 <span hlmBadge variant="default" class="role-badge">
@@ -98,13 +92,28 @@
                   Owner
                 </span>
               } @else {
-                <span hlmBadge variant="secondary" class="role-badge">
-                  <ng-icon name="lucideUser" size="12" class="mr-1" />
-                  Member
-                </span>
+                 @if (isCurrentUserOwner() && !isSelf(member)) {
+                     <brn-select class="mr-2"
+                        [ngModel]="memberRole(member)"
+                        (ngModelChange)="changeRole(member, $event)"
+                      >
+                        <hlm-select-trigger class="w-[130px]">
+                          <hlm-select-value />
+                        </hlm-select-trigger>
+                        <hlm-select-content>
+                          @for (role of availableRoles(); track role.value) {
+                            <hlm-select-item [value]="role.value">{{ role.label }}</hlm-select-item>
+                          }
+                        </hlm-select-content>
+                      </brn-select>
+                 } @else {
+                     <span hlmBadge variant="secondary" class="role-badge mr-2">
+                        <ng-icon name="lucideUser" size="12" class="mr-1" />
+                        {{ getRoleLabel(memberRole(member)) }}
+                      </span>
+                 }
               }
 
-      
               @if (canActOn(member) && !isOwner(member)) {
                 <button
                   hlmBtn
@@ -114,7 +123,7 @@
                   [attr.aria-label]="
                     actionLabel(member) +
                     ' ' +
-                    (member.displayName ?? member.email)
+                    memberName(member)
                   "
                   (click)="confirmRemove(member)"
                 >
@@ -128,7 +137,6 @@
     </div>
   }
 </div>
-
 
 <hlm-sheet
   [state]="showInviteSheet() ? 'open' : 'closed'"
@@ -168,8 +176,9 @@
             <hlm-select-value />
           </hlm-select-trigger>
           <hlm-select-content>
-            <hlm-option value="member">Member</hlm-option>
-            <hlm-option value="owner">Owner</hlm-option>
+             @for (role of availableRoles(); track role.value) {
+                <hlm-select-item [value]="role.value">{{ role.label }}</hlm-select-item>
+             }
           </hlm-select-content>
         </brn-select>
       </div>
@@ -190,7 +199,6 @@
   </hlm-sheet-content>
 </hlm-sheet>
 
-
 <hlm-alert-dialog
   [state]="memberToRemove() ? 'open' : 'closed'"
   (closed)="cancelRemove()"
@@ -210,7 +218,7 @@
             You will lose access to this workspace immediately.
           } @else if (memberToRemove()) {
             <strong>{{
-              memberToRemove()!.displayName ?? memberToRemove()!.email
+              memberName(memberToRemove()!)
             }}</strong>
             will lose access to this workspace immediately.
           }
@@ -235,4 +243,4 @@
       </hlm-alert-dialog-footer>
     </hlm-alert-dialog-content>
   </ng-template>
-</hlm-alert-dialog> -->
+</hlm-alert-dialog>

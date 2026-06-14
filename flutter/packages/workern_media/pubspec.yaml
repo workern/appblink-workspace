@@ -3,7 +3,6 @@ description: Media widgets and services (image upload, video player, storage) th
 version: 1.0.0
 publish_to: 'none'
 resolution: workspace
-
 environment:
   sdk: ^3.11.0
 

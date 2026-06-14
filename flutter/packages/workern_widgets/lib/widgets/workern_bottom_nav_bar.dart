@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 /// A bottom navigation bar for Workern apps backed by the Material 3
@@ -15,6 +16,7 @@ import 'package:flutter/material.dart';
 ///     WorkernNavItem(icon: Icons.explore_rounded, label: 'Explore'),
 ///   ],
 ///   onTap: (i) => shell.goBranch(i),
+///   useGlass: true,
 /// )
 /// ```
 class WorkernBottomNavBar extends StatelessWidget {
@@ -23,6 +25,7 @@ class WorkernBottomNavBar extends StatelessWidget {
     required this.currentIndex,
     required this.items,
     required this.onTap,
+    this.useGlass = false,
   });
 
   /// Index of the currently active tab.
@@ -34,26 +37,57 @@ class WorkernBottomNavBar extends StatelessWidget {
   /// Called when the user taps a tab with its index.
   final ValueChanged<int> onTap;
 
+  /// If true, applies a glassmorphic effect.
+  final bool useGlass;
+
   @override
   Widget build(BuildContext context) {
-    final dividerColor = Theme.of(context).colorScheme.outlineVariant;
+    final cs = Theme.of(context).colorScheme;
+    final dividerColor = cs.outlineVariant;
+
+    final Widget bar = NavigationBar(
+      backgroundColor: useGlass ? cs.surface.withValues(alpha: 0.7) : null,
+      elevation: useGlass ? 0 : null,
+      selectedIndex: currentIndex,
+      onDestinationSelected: onTap,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      destinations: items
+          .map(
+            (item) => NavigationDestination(
+              icon: Icon(item.icon),
+              selectedIcon: item.selectedIcon != null
+                  ? Icon(item.selectedIcon)
+                  : null,
+              label: item.label,
+            ),
+          )
+          .toList(),
+    );
+
+    if (useGlass) {
+      return ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: dividerColor.withValues(alpha: 0.4),
+              ),
+              bar,
+            ],
+          ),
+        ),
+      );
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Divider(height: 1, thickness: 1, color: dividerColor),
-        NavigationBar(
-          selectedIndex: currentIndex,
-          onDestinationSelected: onTap,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: items
-              .map(
-                (item) => NavigationDestination(
-                  icon: Icon(item.icon),
-                  label: item.label,
-                ),
-              )
-              .toList(),
-        ),
+        bar,
       ],
     );
   }
@@ -69,11 +103,15 @@ class WorkernNavItem {
   const WorkernNavItem({
     required this.icon,
     required this.label,
+    this.selectedIcon,
     this.externalPath,
   });
 
   final IconData icon;
   final String label;
+
+  /// Optional icon to show when the tab is selected.
+  final IconData? selectedIcon;
 
   /// If non-null, tapping this tab navigates to this path via `context.go`
   /// instead of switching the shell branch.

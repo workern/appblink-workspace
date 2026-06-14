@@ -1,0 +1,12 @@
+name: workern_dev_tools
+description: Dev-only utilities for Workern Flutter apps — theme switcher, palette tester, etc.
+version: 1.0.0
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter

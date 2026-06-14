@@ -8,11 +8,23 @@ class LocationProvider extends ChangeNotifier {
   Position? _currentPosition;
   bool _isLoading = false;
   String? _errorMessage;
+  LocationFailureReason? _lastFailureReason;
+  String? _currentLocationName;
 
   Position? get currentPosition => _currentPosition;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasLocation => _currentPosition != null;
+
+  /// The reason the most recent [getCurrentLocation] call failed, or null if
+  /// it succeeded. Useful for showing targeted error UI (e.g. link to Settings
+  /// when permission is permanently denied).
+  LocationFailureReason? get lastFailureReason => _lastFailureReason;
+
+  /// Human-readable locality name obtained via reverse-geocoding the current
+  /// position. Updated asynchronously after [getCurrentLocation] succeeds.
+  /// Null until the first successful reverse-geocode.
+  String? get currentLocationName => _currentLocationName;
 
   /// Get latitude from current position
   double? get latitude => _currentPosition?.latitude;
@@ -37,10 +49,21 @@ class LocationProvider extends ChangeNotifier {
       // Get current position (throws LocationException on failure)
       final position = await _locationService.getCurrentPosition();
       _currentPosition = position;
+      _lastFailureReason = null;
       _isLoading = false;
       notifyListeners();
+      // Reverse-geocode asynchronously so it doesn't delay shop loading.
+      _locationService
+          .getLocalityName(position.latitude, position.longitude)
+          .then((name) {
+            if (name != null && name.isNotEmpty) {
+              _currentLocationName = name;
+              notifyListeners();
+            }
+          });
       return position;
     } on LocationException catch (e) {
+      _lastFailureReason = e.reason;
       _errorMessage = e.message ?? 'Could not get location.';
       _isLoading = false;
       notifyListeners();
@@ -60,6 +83,14 @@ class LocationProvider extends ChangeNotifier {
   /// Check if location services are enabled
   Future<bool> isLocationServiceEnabled() async =>
       _locationService.isLocationServiceEnabled();
+
+  /// Opens the device app-settings page so the user can grant location
+  /// permission that was previously denied (permanently).
+  Future<bool> openAppSettings() async => Geolocator.openAppSettings();
+
+  /// Opens the device location-settings page so the user can enable GPS.
+  Future<bool> openLocationSettings() async =>
+      Geolocator.openLocationSettings();
 
   /// Refresh location
   Future<void> refreshLocation() async {

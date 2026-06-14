@@ -3,7 +3,6 @@ description: A reusable billing package for in-app purchases on Play Store and A
 version: 1.0.0
 publish_to: none
 resolution: workspace
-
 environment:
   sdk: ^3.11.0
   flutter: '>=3.0.0'
@@ -12,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   purchases_flutter: ^9.15.1
-  flutter_riverpod: ^3.0.0
+  flutter_riverpod: ^3.1.0
   workern_models:
     path: ../workern_models
   workern_services:

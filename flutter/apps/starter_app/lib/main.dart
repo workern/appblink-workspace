@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workern_notifications/workern_notifications.dart';
 import 'package:workern_services/workern_services.dart';
+import 'package:workern_share_intent/workern_share_intent.dart';
 import 'package:workern_billing/workern_billing.dart';
 import 'services/starter_app_notification_handler.dart';
 import 'package:workern_auth/workern_auth.dart' as app_auth;

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   input,
   output,
   signal
@@ -15,13 +16,7 @@ import { LanguageSwitcherComponent } from '../language-switcher/language-switche
 
 @Component({
   selector: 'workern-app-header',
-  imports: [
-    CommonModule,
-    RouterLink,
-    NgIcon,
-    HlmIcon,
-    ...HlmButtonImports,
-  ],
+  imports: [CommonModule, RouterLink, NgIcon, HlmIcon, ...HlmButtonImports],
   providers: [
     provideIcons({
       lucideLogOut,
@@ -43,7 +38,13 @@ export class WorkernAppHeaderComponent {
 
   public readonly isLoggedIn = input<boolean>(false);
   public readonly showAvatar = input<boolean>(true);
+  public readonly showSignIn = input<boolean>(true);
   public readonly billingRoute = input<string>('/billing');
+  public readonly logoRoute = input<string | null>(null);
+
+  protected readonly logoNavigable = computed(
+    () => !!this.logoRoute() && !this.isLoggedIn()
+  );
 
   public readonly signInClick = output<void>();
   public readonly logoutClick = output<void>();

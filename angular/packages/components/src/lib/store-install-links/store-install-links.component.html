@@ -15,6 +15,7 @@
       <div class="flex flex-col gap-2 sm:flex-row">
         @if (playStoreUrl()) {
           <a
+            (click)="onStoreClick('android')"
             class="inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             [attr.href]="playStoreUrl()"
             target="_blank"
@@ -42,6 +43,7 @@
 
         @if (appStoreUrl()) {
           <a
+            (click)="onStoreClick('ios')"
             class="inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             [attr.href]="appStoreUrl()"
             target="_blank"

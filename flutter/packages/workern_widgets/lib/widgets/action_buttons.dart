@@ -81,9 +81,9 @@ class WorkernPrimaryButton extends StatelessWidget {
         decoration: ShadDecoration(
           border: ShadBorder.all(radius: BorderRadius.circular(borderRadius)),
         ),
-        leading: isLoading
+        child: isLoading
             ? SizedBox.square(
-                dimension: 16,
+                dimension: 18,
                 child:
                     loadingIcon ??
                     CircularProgressIndicator(
@@ -91,11 +91,10 @@ class WorkernPrimaryButton extends StatelessWidget {
                       color: Colors.white.withOpacity(0.7),
                     ),
               )
-            : null,
-        child: Text(
-          label,
-          style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
-        ),
+            : Text(
+                label,
+                style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+              ),
       ),
     );
   }
@@ -188,19 +187,18 @@ class WorkernSecondaryButton extends StatelessWidget {
             radius: BorderRadius.circular(borderRadius),
           ),
         ),
-        leading: isLoading
+        child: isLoading
             ? SizedBox.square(
-                dimension: 16,
+                dimension: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   color: borderColor,
                 ),
               )
-            : null,
-        child: Text(
-          label,
-          style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
-        ),
+            : Text(
+                label,
+                style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+              ),
       ),
     );
   }
@@ -270,19 +268,18 @@ class WorkernDangerButton extends StatelessWidget {
         decoration: ShadDecoration(
           border: ShadBorder.all(radius: BorderRadius.circular(borderRadius)),
         ),
-        leading: isLoading
+        child: isLoading
             ? SizedBox.square(
-                dimension: 16,
+                dimension: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   color: Colors.white.withOpacity(0.7),
                 ),
               )
-            : null,
-        child: Text(
-          label,
-          style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
-        ),
+            : Text(
+                label,
+                style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+              ),
       ),
     );
   }

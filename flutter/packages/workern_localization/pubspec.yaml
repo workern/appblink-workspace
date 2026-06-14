@@ -3,7 +3,6 @@ description: Shared localization setup for Workern apps — supported locales, d
 version: 1.0.0
 publish_to: 'none'
 resolution: workspace
-
 environment:
   sdk: ^3.11.0
 

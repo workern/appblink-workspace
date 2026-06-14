@@ -208,13 +208,11 @@ class _StepperButtonsState extends State<StepperButtons> {
 
           // Continue Button
           Expanded(
-            child: WorkernSecondaryButton(
+            child: WorkernPrimaryButton(
               label: widget.continueLabel,
-              onPressed: widget.continueEnabled && !widget.isLoading
-                  ? _onContinuePressed
-                  : null,
-              borderColor: widget.primaryColor,
-              textColor: widget.primaryColor,
+              onPressed: _onContinuePressed,
+              primaryColor: widget.primaryColor,
+              enabled: widget.continueEnabled,
               height: widget.buttonHeight,
               borderRadius: widget.borderRadius,
               isLoading:

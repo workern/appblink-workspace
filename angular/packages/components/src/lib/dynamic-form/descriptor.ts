@@ -22,11 +22,20 @@ export interface BaseLeafFieldDescriptor {
   readonly separateRow?: boolean;
 }
 
+export interface FieldOption {
+  readonly value: string;
+  readonly label: string;
+}
+
 export interface TextFieldDescriptor extends BaseLeafFieldDescriptor {
   readonly type: 'text';
   readonly initialValue: string;
   readonly maxLength?: number;
   readonly minLength?: number;
+  readonly pattern?: RegExp;
+  readonly patternMessage?: string;
+  readonly inputType?: 'text' | 'tel' | 'email' | 'url' | 'password';
+  readonly placeholder?: string;
 }
 
 export interface NumberFieldDescriptor extends BaseLeafFieldDescriptor {
@@ -34,11 +43,26 @@ export interface NumberFieldDescriptor extends BaseLeafFieldDescriptor {
   readonly initialValue: number;
   readonly min?: number;
   readonly max?: number;
+  readonly placeholder?: string;
 }
 
 export interface CheckboxFieldDescriptor extends BaseLeafFieldDescriptor {
   readonly type: 'checkbox';
   readonly initialValue: boolean;
+  readonly description?: string;
+}
+
+export interface SelectFieldDescriptor extends BaseLeafFieldDescriptor {
+  readonly type: 'select';
+  readonly initialValue: string;
+  readonly options: FieldOption[];
+  readonly placeholder?: string;
+}
+
+export interface SwitchFieldDescriptor extends BaseLeafFieldDescriptor {
+  readonly type: 'switch';
+  readonly initialValue: boolean;
+  readonly subtitle?: string;
 }
 
 export interface ImageFieldDescriptor extends BaseLeafFieldDescriptor {
@@ -62,4 +86,15 @@ export type LeafFieldDescriptor =
   | CheckboxFieldDescriptor
   | ImageFieldDescriptor
   | DateFieldDescriptor
-  | NumberFieldDescriptor;
+  | NumberFieldDescriptor
+  | SelectFieldDescriptor
+  | SwitchFieldDescriptor
+  | PhoneFieldDescriptor;
+
+export interface PhoneFieldDescriptor extends BaseLeafFieldDescriptor {
+  readonly type: 'phone';
+  readonly initialValue: string;
+  readonly placeholder?: string;
+  readonly pattern?: RegExp;
+  readonly patternMessage?: string;
+}

@@ -253,36 +253,22 @@
           (ngSubmit)="loginWithPhone()"
           class="space-y-4"
         >
-          <div>
-            <label hlmLabel for="phone" class="mb-2 block">Phone Number</label>
-            <div class="flex gap-2">
-              <wn-country-code-selector
-                [value]="selectedCountry()"
-                (countrySelected)="selectCountry($event)"
-              />
-              <input
-                hlmInput
-                type="tel"
-                id="phone"
-                formControlName="phone"
-                placeholder="Enter your phone number"
-                class="flex-1"
-              />
-            </div>
-            @if (
+          <wn-phone-input
+            label="Phone Number"
+            placeholder="Enter your phone number"
+            formControlName="phone"
+            (selectedCountryChange)="selectCountry($event)"
+            [error]="
               phoneForm.get('phone')?.invalid &&
               (phoneForm.get('phone')?.dirty || phoneForm.get('phone')?.touched)
-            ) {
-              <p class="mt-1 text-xs text-destructive">
-                @if (phoneForm.get('phone')?.errors?.['required']) {
-                  Phone number is required.
-                }
-                @if (phoneForm.get('phone')?.errors?.['pattern']) {
-                  Please enter a valid 10-digit phone number.
-                }
-              </p>
-            }
-          </div>
+                ? phoneForm.get('phone')?.errors?.['required']
+                  ? 'Phone number is required.'
+                  : phoneForm.get('phone')?.errors?.['phoneInvalid']
+                    ? 'Please enter a valid phone number.'
+                    : ''
+                : ''
+            "
+          />
           <button
             hlmBtn
             type="submit"
@@ -455,11 +441,11 @@
         @if (emailMode() === 'signup') {
           <p class="mt-4 text-center text-xs text-muted-foreground">
             By creating an account, you agree to our
-            <a [href]="termsUrl()" class="text-primary hover:underline"
+            <a [routerLink]="termsUrl()" class="text-primary hover:underline"
               >Terms of Service</a
             >
             and
-            <a [href]="privacyUrl()" class="text-primary hover:underline"
+            <a [routerLink]="privacyUrl()" class="text-primary hover:underline"
               >Privacy Policy</a
             >
           </p>
@@ -470,11 +456,11 @@
     @if (!showingPhoneForm() && !showingEmailForm()) {
       <p class="mt-6 text-center text-xs text-muted-foreground">
         By continuing, you agree to our
-        <a [href]="termsUrl()" class="text-primary hover:underline"
+        <a [routerLink]="termsUrl()" class="text-primary hover:underline"
           >Terms of Service</a
         >
         and
-        <a [href]="privacyUrl()" class="text-primary hover:underline"
+        <a [routerLink]="privacyUrl()" class="text-primary hover:underline"
           >Privacy Policy</a
         >
       </p>

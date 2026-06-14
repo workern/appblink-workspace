@@ -17,6 +17,7 @@ import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '@workern/services';
 import { SnackbarService } from '@workern/services';
 import { GlobalManagerService } from '@workern/services';
+import { GtagService } from '@workern/services';
 import { HlmButtonImports } from '@spartan/components/button';
 import { HlmInputImports } from '@spartan/components/input';
 import { HlmLabelImports } from '@spartan/components/label';
@@ -25,7 +26,7 @@ import { HlmInputOtpImports } from '@spartan/components/input-otp';
 import { HlmCardImports } from '@spartan/components/card';
 import { HlmSeparatorImports } from '@spartan/components/separator';
 import { BrnInputOtpImports } from '@spartan-ng/brain/input-otp';
-import { CountryCodeSelectorComponent } from '../country-code-selector/country-code-selector.component';
+import { WorkernPhoneInputComponent } from '../workern-phone-input/workern-phone-input.component';
 import {
   COUNTRY_DIAL_CODES,
   CountryDialCode,
@@ -46,7 +47,7 @@ import {
     HlmCardImports,
     HlmSeparatorImports,
     BrnInputOtpImports,
-    CountryCodeSelectorComponent,
+    WorkernPhoneInputComponent,
     RouterLink
   ],
   templateUrl: './login.component.html',
@@ -89,6 +90,7 @@ export class LoginComponent implements OnInit {
 
   private authService = inject(AuthService);
   private snackbarService = inject(SnackbarService);
+  private gtagService = inject(GtagService);
 
   private fb = inject(FormBuilder);
   private router = inject(Router);
@@ -112,7 +114,7 @@ export class LoginComponent implements OnInit {
   selectedCountry = signal<CountryDialCode>(DEFAULT_COUNTRY);
 
   phoneForm = this.fb.group({
-    phone: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]]
+    phone: ['', [Validators.required]]
   });
 
   otpForm = this.fb.group({
@@ -138,6 +140,10 @@ export class LoginComponent implements OnInit {
 
     try {
       await this.authService.loginWithGoogleProvider();
+      this.gtagService.sendEvent('sign_in_complete', {
+        auth_method: 'google',
+        app: this.appName()
+      });
       this.loginSuccess.emit();
       this.navigateAfterLogin();
     } catch (error) {
@@ -185,6 +191,7 @@ export class LoginComponent implements OnInit {
     this.showingOTPForm.set(false);
     this.showingPhoneForm.set(true);
     this.otpForm.reset();
+    this.phoneForm.get('phone')!.enable({ emitEvent: false });
   }
 
   private updateEmailFormValidation() {
@@ -200,13 +207,14 @@ export class LoginComponent implements OnInit {
   }
 
   async loginWithPhone() {
-    if (this.phoneForm.invalid) return;
+    if (this.phoneForm.get('phone')!.invalid) return;
     this.loginStatus.set('in-progress');
     this.selectedMethod.set('phone');
     this.isLoading.set(true);
+    this.phoneForm.get('phone')!.disable({ emitEvent: false });
 
     try {
-      const phoneNumber = this.phoneForm.value.phone!;
+      const phoneNumber = this.phoneForm.getRawValue().phone!;
       const fullPhoneNumber = `${this.selectedCountry().dialCode}${phoneNumber}`;
       const result = await this.authService.loginWithPhoneNumber(
         fullPhoneNumber,
@@ -219,6 +227,7 @@ export class LoginComponent implements OnInit {
     } catch (error) {
       console.error('Phone login failed:', error);
       this.snackbarService.error('Failed to send OTP. Please try again.');
+      this.phoneForm.get('phone')!.enable({ emitEvent: false });
     } finally {
       this.isLoading.set(false);
       this.selectedMethod.set(null);
@@ -226,15 +235,19 @@ export class LoginComponent implements OnInit {
   }
 
   async verifyOTP() {
-    if (this.otpForm.invalid) return;
+    if (this.otpForm.get('otp')!.invalid) return;
 
     this.selectedMethod.set('otp');
     this.isLoading.set(true);
 
     try {
-      const otp = this.otpForm.value.otp!;
+      const otp = this.otpForm.get('otp')!.value!;
       await this.authService.verifyOTP(otp);
 
+      this.gtagService.sendEvent('sign_in_complete', {
+        auth_method: 'phone_otp',
+        app: this.appName()
+      });
       this.loginSuccess.emit();
       this.navigateAfterLogin();
     } catch (error) {
@@ -252,6 +265,7 @@ export class LoginComponent implements OnInit {
     this.showingOTPForm.set(false);
     this.showingPhoneForm.set(true);
     this.otpForm.reset();
+    this.phoneForm.get('phone')!.enable({ emitEvent: false });
   }
 
   goBackToPhone() {
@@ -266,6 +280,26 @@ export class LoginComponent implements OnInit {
     if (returnUrl) {
       this.returnUrl.set(returnUrl);
     }
+
+    // Auto-submit OTP when all 6 digits are entered
+    this.otpForm.get('otp')!.valueChanges.subscribe((value) => {
+      if (value?.length === 6 && this.otpForm.get('otp')!.valid) {
+        this.verifyOTP();
+      }
+    });
+
+    // Auto-send OTP for fixed-length countries when the expected digit count is reached
+    this.phoneForm.get('phone')!.valueChanges.subscribe((value) => {
+      const country = this.selectedCountry();
+      if (
+        country.isFixedLength &&
+        country.mobileLength !== undefined &&
+        value?.length === country.mobileLength &&
+        this.phoneForm.get('phone')!.valid
+      ) {
+        this.loginWithPhone();
+      }
+    });
   }
 
   async loginWithEmail() {
@@ -276,11 +310,20 @@ export class LoginComponent implements OnInit {
 
     try {
       const { name, email, password } = this.emailForm.value;
+      const isSignup = this.emailMode() === 'signup';
 
-      if (this.emailMode() === 'signup') {
+      if (isSignup) {
         await this.authService.signUpWithEmail(email!, password!, name!);
+        this.gtagService.sendEvent('sign_up_complete', {
+          auth_method: 'email',
+          app: this.appName()
+        });
       } else {
         await this.authService.signInWithEmail(email!, password!);
+        this.gtagService.sendEvent('sign_in_complete', {
+          auth_method: 'email',
+          app: this.appName()
+        });
       }
 
       this.loginSuccess.emit();

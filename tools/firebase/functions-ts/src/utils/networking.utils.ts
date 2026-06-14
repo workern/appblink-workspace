@@ -1,13 +1,14 @@
 import axios from 'axios';
 import { CallableRequest, Request } from 'firebase-functions/https';
 import { log } from 'firebase-functions/logger';
+import { IP_DATA_API_KEY } from '../global';
 
 export async function getIpData(ip) {
   const baseUrl = 'https://api.ipdata.co/';
   try {
     const response = await axios.get(`${baseUrl}${ip}`, {
       params: {
-        'api-key': 'eda19b75bb5c0ce1f1844ecd1330441bc4b9779194e76f30b573a3c9'
+        'api-key': IP_DATA_API_KEY.value()
       }
     });
     const result = response.data;
@@ -44,7 +45,7 @@ export async function getCurrencyDataByIp(
   try {
     const response = await axios.get(url, {
       params: {
-        'api-key': 'eda19b75bb5c0ce1f1844ecd1330441bc4b9779194e76f30b573a3c9'
+        'api-key': IP_DATA_API_KEY.value()
       }
     });
     return response.data; // { name, code, symbol, native, plural }

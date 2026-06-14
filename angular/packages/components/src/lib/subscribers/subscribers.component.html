@@ -1,0 +1,122 @@
+<!-- Header row: title + counts + consent toggle -->
+<div class="flex items-start justify-between gap-4 mb-4">
+  <div>
+    <h2 class="text-base font-semibold text-foreground">Audience</h2>
+    <p class="text-sm text-muted-foreground mt-0.5">
+      {{ totalCount() }} total &middot;
+      <span class="text-primary font-medium">{{ consentedCount() }}</span>
+      can receive campaigns
+    </p>
+  </div>
+
+  <!-- Opted-in only toggle -->
+  <label class="flex items-center gap-2 cursor-pointer select-none">
+    <span class="text-sm text-muted-foreground whitespace-nowrap">Opted-in only</span>
+    <hlm-switch
+      [checked]="consentOnly()"
+      (checkedChange)="toggleConsentFilter($event)"
+    />
+  </label>
+</div>
+
+<!-- Consent info banner (shown only when not filtering and there are non-consented) -->
+@if (!consentOnly() && consentedCount() < totalCount() && totalCount() > 0) {
+  <div
+    class="flex items-start gap-2.5 rounded-xl border border-border bg-secondary/30 px-4 py-3 mb-4 text-sm text-muted-foreground"
+  >
+    <ng-icon name="lucideInfo" class="mt-0.5 shrink-0 text-secondary-foreground" size="15" />
+    <span>
+      {{ totalCount() - consentedCount() }}
+      subscriber{{ totalCount() - consentedCount() === 1 ? '' : 's' }}
+      haven't opted-in to campaigns. Only
+      <strong class="text-foreground">{{ consentedCount() }}</strong>
+      can be messaged.
+    </span>
+  </div>
+}
+
+<!-- Loading skeletons -->
+@if (isLoading()) {
+  <div class="space-y-4">
+    @for (_ of [1, 2, 3, 4]; track $index) {
+      <div class="flex items-center gap-3">
+        <hlm-skeleton class="h-10 w-10 rounded-full shrink-0" />
+        <div class="flex-1 space-y-2">
+          <hlm-skeleton class="h-3.5 w-36 rounded" />
+          <hlm-skeleton class="h-3 w-24 rounded" />
+        </div>
+        <hlm-skeleton class="h-5 w-16 rounded-md" />
+      </div>
+    }
+  </div>
+}
+
+<!-- Empty state -->
+@else if (subscribers().length === 0) {
+  <div class="flex flex-col items-center justify-center py-16 text-center gap-3">
+    <div class="rounded-full bg-muted p-4">
+      <ng-icon
+        [name]="consentOnly() ? 'lucideCheckCircle' : 'lucideUsers'"
+        class="text-muted-foreground"
+        size="28"
+      />
+    </div>
+    <p class="text-sm font-medium text-muted-foreground">
+      {{ consentOnly() ? 'No opted-in subscribers yet' : 'No subscribers yet' }}
+    </p>
+    <p class="text-xs text-muted-foreground/70 max-w-xs">
+      @if (consentOnly()) {
+        Subscribers appear here once customers opt-in via the Nikat app.
+      } @else {
+        Customers who place orders or explicitly subscribe appear here automatically.
+      }
+    </p>
+  </div>
+}
+
+<!-- Subscriber list -->
+@else {
+  <div class="divide-y divide-border">
+    @for (sub of subscribers(); track sub.userId) {
+      <div class="flex items-center gap-3 py-3">
+        <!-- Avatar -->
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold"
+        >
+          {{ getInitials(sub.displayName) }}
+        </div>
+
+        <!-- Name + phone -->
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-semibold text-foreground">
+            {{ sub.displayName }}
+          </p>
+          @if (sub.phone) {
+            <p class="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+              <ng-icon name="lucidePhone" size="11" />
+              {{ sub.phone }}
+            </p>
+          }
+        </div>
+
+        <!-- Source badge -->
+        <span
+          class="shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold"
+          [class]="isExplicit(sub.source)
+            ? 'bg-primary/10 text-primary'
+            : 'bg-accent text-accent-foreground'"
+        >
+          {{ isExplicit(sub.source) ? 'Subscribed' : 'Ordered' }}
+        </span>
+
+        <!-- Consent indicator -->
+        <ng-icon
+          [name]="sub.consentGiven ? 'lucideCheckCircle' : 'lucideCircle'"
+          [class]="sub.consentGiven ? 'text-green-600' : 'text-border'"
+          size="18"
+          class="shrink-0"
+        />
+      </div>
+    }
+  </div>
+}

@@ -1,34 +1,66 @@
 <header
-  class="relative z-50 bg-white/85 backdrop-blur-lg border-b border-border/40 px-4 py-3"
-  style="box-shadow: var(--shadow-1, 0 1px 3px 0 rgb(0 0 0 / 0.06))"
+  class="sticky top-0 z-50 bg-background/75 backdrop-blur-lg border-b border-border/40 px-4 py-3"
+  style="
+    box-shadow:
+      0 1px 0 color-mix(in srgb, var(--primary) 8%, transparent),
+      var(--shadow-1, 0 1px 3px 0 rgb(0 0 0 / 0.06));
+  "
   (click)="onHeaderClick()"
 >
   <nav class="w-full max-w-7xl mx-auto flex items-center justify-between gap-3">
-    <div class="flex items-center gap-2 min-w-0">
-      <img
-        [src]="logoSrc()"
-        width="40"
-        height="40"
-        class="w-10 h-10 rounded-md"
-        [alt]="logoAlt()"
-      />
-      <div class="flex items-baseline min-w-0">
-        <span class="text-xl sm:text-3xl font-bold text-gray-800 truncate">{{
-          appName()
-        }}</span>
-        @if (byline()?.trim()) {
-          <span
-            class="ml-1 text-xs font-medium text-gray-500 truncate hidden sm:inline"
-            >{{ byline() }}</span
-          >
-        }
+    @if (logoNavigable()) {
+      <a
+        [routerLink]="logoRoute()"
+        class="flex items-center gap-2 min-w-0 cursor-pointer"
+        (click)="$event.stopPropagation()"
+        aria-label="Go to home page"
+      >
+        <img
+          [src]="logoSrc()"
+          width="40"
+          height="40"
+          class="w-10 h-10 rounded-md"
+          [alt]="logoAlt()"
+        />
+        <div class="flex items-baseline min-w-0">
+          <span class="text-xl sm:text-3xl font-bold text-gray-800 truncate">{{
+            appName()
+          }}</span>
+          @if (byline()?.trim()) {
+            <span
+              class="ml-1 text-xs font-medium text-gray-500 truncate hidden sm:inline"
+              >{{ byline() }}</span
+            >
+          }
+        </div>
+      </a>
+    } @else {
+      <div class="flex items-center gap-2 min-w-0">
+        <img
+          [src]="logoSrc()"
+          width="40"
+          height="40"
+          class="w-10 h-10 rounded-md"
+          [alt]="logoAlt()"
+        />
+        <div class="flex items-baseline min-w-0">
+          <span class="text-xl sm:text-3xl font-bold text-gray-800 truncate">{{
+            appName()
+          }}</span>
+          @if (byline()?.trim()) {
+            <span
+              class="ml-1 text-xs font-medium text-gray-500 truncate hidden sm:inline"
+              >{{ byline() }}</span
+            >
+          }
+        </div>
       </div>
-    </div>
+    }
 
     <div class="flex items-center gap-3">
       <!-- <workern-language-switcher /> -->
 
-      @if (!isLoggedIn()) {
+      @if (!isLoggedIn() && showSignIn()) {
         <button
           hlmBtn
           size="sm"

@@ -1,38 +1,18 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workern_auth/workern_auth.dart';
 import 'adaptive_dialog.dart';
 
 /// A customizable app bar widget that shows app name, auth actions, and notifications
 ///
-/// The auth state and actions are controlled by the parent widget,
-/// making this widget flexible and independent of Firebase.
-///
-/// Example:
-/// ```dart
-/// WorkernAppBar(
-///   title: 'Sangrah',
-///   themeColor: Colors.purple,
-///   showAuthAction: true,
-///   isUserLoggedIn: user != null,
-///   onLogout: () async {
-///     await FirebaseAuth.instance.signOut();
-///     if (context.mounted) Navigator.pushNamed(context, '/login');
-///   },
-///   showNotifications: true,
-///   onNotificationTap: () => Navigator.pushNamed(context, '/notifications'),
-///   customActions: [
-///     IconButton(
-///       icon: Icon(Icons.filter_list, color: Colors.white),
-///       onPressed: () => showFilterDialog(context),
-///     ),
-///   ],
-/// )
-/// ```
+/// In 2026 mode, it supports backdrop blur, glassmorphism, and ambient layering.
 class WorkernAppBar extends ConsumerWidget implements PreferredSizeWidget {
   /// The title/app name to display
   final String title;
 
-  /// The primary theme color of the app (used for app bar background)
+  /// The primary theme color of the app. In non-glass mode, this is the background.
   final Color themeColor;
 
   /// Whether to show sign in/out action
@@ -53,8 +33,8 @@ class WorkernAppBar extends ConsumerWidget implements PreferredSizeWidget {
   /// Number of unseen notifications to display as a badge
   final int unseenNotificationCount;
 
-  /// Text color of the app bar (defaults to white)
-  final Color foregroundColor;
+  /// Text color of the app bar (defaults to white, or onSurface in glass mode)
+  final Color? foregroundColor;
 
   /// Elevation of the app bar
   final double elevation;
@@ -72,25 +52,32 @@ class WorkernAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final List<Widget>? customActions;
 
   /// Optional gradient background. When set the flat [themeColor] background is
-  /// replaced by this gradient. Use with [foregroundColor] set to a dark color
-  /// for the ambient / Design-V2 header style.
+  /// replaced by this gradient.
   final Gradient? gradient;
 
   /// Optional subtitle shown below [title] in a smaller muted style.
-  /// When provided the app bar height expands to accommodate both lines.
   final String? subtitle;
 
   /// Whether to show a profile icon button when the user is logged in.
-  /// Defaults to true. Pass [onProfileTapped] to handle the navigation.
   final bool showProfileAction;
 
-  /// Callback when the profile icon is tapped. Only relevant when
-  /// [showProfileAction] is true and [isUserLoggedIn] is true.
+  /// Callback when the profile icon is tapped.
   final VoidCallback? onProfileTapped;
 
   /// Optional custom leading widget displayed on the left side of the app bar.
-  /// When provided, overrides the back button and drawer toggle.
   final Widget? leadingWidget;
+
+  /// Optional custom width for the leading widget.
+  final double? leadingWidth;
+
+  /// Optional custom title widget. If provided, [title] is ignored.
+  final Widget? titleWidget;
+
+  /// Optional custom height for the app bar. Defaults to [kToolbarHeight] (56).
+  final double? height;
+
+  /// Whether to use the 2026 Glassmorphism style with backdrop blur.
+  final bool useGlass;
 
   const WorkernAppBar({
     super.key,
@@ -102,7 +89,7 @@ class WorkernAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.showNotifications = true,
     this.onNotificationTap,
     this.unseenNotificationCount = 0,
-    this.foregroundColor = Colors.white,
+    this.foregroundColor,
     this.elevation = 2,
     this.showDrawer = false,
     this.showBackButton = false,
@@ -113,78 +100,97 @@ class WorkernAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.showProfileAction = true,
     this.onProfileTapped,
     this.leadingWidget,
+    this.leadingWidth,
+    this.titleWidget,
+    this.height,
+    this.useGlass = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hasSubtitle = subtitle != null && subtitle!.isNotEmpty;
-    return AppBar(
-      title: hasSubtitle
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  subtitle!,
-                  style: TextStyle(
-                    color: foregroundColor.withOpacity(0.6),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.2,
+    final cs = Theme.of(context).colorScheme;
+    final effectiveForegroundColor =
+        foregroundColor ?? (useGlass ? cs.onSurface : Colors.white);
+
+    final appBar = AppBar(
+      title:
+          titleWidget ??
+          (hasSubtitle
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      subtitle!,
+                      style: TextStyle(
+                        color: effectiveForegroundColor.withOpacity(0.6),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          color: effectiveForegroundColor,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: effectiveForegroundColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: foregroundColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                    height: 1.2,
-                  ),
-                ),
-              ],
-            )
-          : Text(
-              title,
-              style: TextStyle(
-                color: foregroundColor,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-      backgroundColor: gradient != null ? Colors.transparent : themeColor,
+                )),
+      backgroundColor: useGlass
+          ? Colors.transparent
+          : (gradient != null ? Colors.transparent : themeColor),
       flexibleSpace: gradient != null
           ? DecoratedBox(
               decoration: BoxDecoration(gradient: gradient),
               child: const SizedBox.expand(),
             )
           : null,
-      elevation: elevation,
+      toolbarHeight: height,
+      elevation: useGlass ? 0 : elevation,
       automaticallyImplyLeading: showDrawer || showBackButton,
-      leadingWidth: leadingWidget != null ? 64 : null,
+      leadingWidth: leadingWidth ?? (leadingWidget != null ? 64 : null),
       leading:
           leadingWidget ??
           (showBackButton
               ? IconButton(
-                  icon: Icon(Icons.arrow_back, color: foregroundColor),
+                  icon: Icon(Icons.arrow_back, color: effectiveForegroundColor),
                   onPressed: onBackPressed ?? () => Navigator.pop(context),
                   tooltip: 'Back',
                 )
               : null),
+      systemOverlayStyle: useGlass ? SystemUiOverlayStyle.dark : null,
       actions: [
         if (customActions != null) ...customActions!,
-        if (showProfileAction && isUserLoggedIn)
-          IconButton(
-            icon: Icon(Icons.account_circle_outlined, color: foregroundColor),
-            tooltip: 'Account',
-            onPressed: onProfileTapped ?? () {},
-          ),
         if (showNotifications) ...[
           Stack(
             children: [
               IconButton(
-                icon: Icon(Icons.notifications, color: foregroundColor),
+                icon: Icon(
+                  Icons.notifications,
+                  color: effectiveForegroundColor,
+                ),
                 onPressed: onNotificationTap ?? () {},
                 tooltip: 'Notifications',
               ),
@@ -218,22 +224,48 @@ class WorkernAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ],
           ),
         ],
+        if (showProfileAction && isUserLoggedIn)
+          IconButton(
+            icon: Icon(
+              Icons.account_circle_outlined,
+              color: effectiveForegroundColor,
+            ),
+            tooltip: 'Account',
+            onPressed: onProfileTapped ?? () {},
+          ),
         if (showAuthAction) ...[
           if (isUserLoggedIn)
             IconButton(
-              icon: Icon(Icons.logout, color: foregroundColor),
+              icon: Icon(Icons.logout, color: effectiveForegroundColor),
               onPressed: () => _showLogoutConfirmation(context, ref),
               tooltip: 'Logout',
             )
           else
             TextButton(
               onPressed: () => Navigator.pushNamed(context, '/login'),
-              child: Text('Sign In', style: TextStyle(color: foregroundColor)),
+              child: Text(
+                'Sign In',
+                style: TextStyle(color: effectiveForegroundColor),
+              ),
             ),
         ],
         const SizedBox(width: 8),
       ],
     );
+
+    if (useGlass) {
+      return ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            color: themeColor.withValues(alpha: 0.1),
+            child: appBar,
+          ),
+        ),
+      );
+    }
+
+    return appBar;
   }
 
   void _showLogoutConfirmation(BuildContext context, WidgetRef ref) async {
@@ -245,14 +277,21 @@ class WorkernAppBar extends ConsumerWidget implements PreferredSizeWidget {
       isDestructive: true,
     );
     if (confirmed) {
-      onLogout?.call();
+      if (onLogout != null) {
+        onLogout!.call();
+      } else {
+        // Use workern_auth's authServiceProvider when onLogout is null
+        final authService = ref.read(authServiceProvider);
+        await authService.signOut();
+      }
     }
   }
 
   @override
   Size get preferredSize => Size.fromHeight(
-    subtitle != null && subtitle!.isNotEmpty
-        ? kToolbarHeight + 18
-        : kToolbarHeight,
+    height ??
+        (subtitle != null && subtitle!.isNotEmpty
+            ? kToolbarHeight + 18
+            : kToolbarHeight),
   );
 }

@@ -50,7 +50,7 @@ class FirebaseInitConfig {
   const FirebaseInitConfig({
     required this.firebaseOptions,
     this.googleClientId,
-    this.emulatorHost = '192.168.29.65', // Changed to localhost for simulators
+    this.emulatorHost = const String.fromEnvironment('EMULATOR_HOST', defaultValue: 'localhost'),
     this.authEmulatorPort = 9100,
     this.firestoreEmulatorPort = 8081,
     this.storageEmulatorPort = 9199,
@@ -102,9 +102,7 @@ class FirebaseInitializer {
 
       // Set up background message handler if provided
       if (config.backgroundMessageHandler != null) {
-        FirebaseMessaging.onBackgroundMessage(
-          config.backgroundMessageHandler!,
-        );
+        FirebaseMessaging.onBackgroundMessage(config.backgroundMessageHandler!);
         debugPrint('✅ Background message handler set');
       }
 
@@ -130,7 +128,8 @@ class FirebaseInitializer {
       if (shouldUseEmulatorsOnError) {
         try {
           debugPrint(
-              '🔧 Attempting emulator connection after initialization error');
+            '🔧 Attempting emulator connection after initialization error',
+          );
           await _connectToEmulators(config);
         } catch (emuError) {
           debugPrint('⚠️ Emulator connection failed: $emuError');
@@ -176,7 +175,7 @@ class FirebaseInitializer {
 
       // Set default values
       await remoteConfig.setDefaults(<String, dynamic>{
-        'free_saves_limit': 10, // Default free saves before paywall
+        'free_saves_limit': 100, // Default free saves before paywall
       });
 
       // Fetch and activate (non-blocking)
@@ -200,14 +199,16 @@ class FirebaseInitializer {
       CloudFunctionsService.firebaseRequest(name);
     }
     debugPrint(
-        '🔥 Warming up ${names.length} Cloud Function(s): ${names.join(', ')}');
+      '🔥 Warming up ${names.length} Cloud Function(s): ${names.join(', ')}',
+    );
   }
 
   /// Connect to Firebase emulators in debug mode
   static Future<void> _connectToEmulators(FirebaseInitConfig config) async {
     try {
       debugPrint(
-          '🔧 Connecting to Firebase Emulators at ${config.emulatorHost}');
+        '🔧 Connecting to Firebase Emulators at ${config.emulatorHost}',
+      );
 
       // Connect to Auth Emulator
       await FirebaseAuth.instance.useAuthEmulator(
@@ -243,10 +244,9 @@ class FirebaseInitializer {
       );
 
       // Connect to Functions Emulator
-      FirebaseFunctions.instanceFor(region: 'asia-south2').useFunctionsEmulator(
-        config.emulatorHost,
-        config.functionsEmulatorPort,
-      );
+      FirebaseFunctions.instanceFor(
+        region: 'asia-south2',
+      ).useFunctionsEmulator(config.emulatorHost, config.functionsEmulatorPort);
       _isFunctionsEmulatorConfigured = true;
       _functionsTargetDescription =
           'Emulator ${config.emulatorHost}:${config.functionsEmulatorPort} (asia-south2)';

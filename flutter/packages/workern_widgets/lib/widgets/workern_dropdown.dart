@@ -34,6 +34,13 @@ class WorkernDropDown<T> extends StatelessWidget {
             options: options,
             selectedOptionBuilder: selectedOptionBuilder,
             onChanged: onChanged,
+            decoration: ShadDecoration(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+              border: ShadBorder.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                radius: BorderRadius.circular(8),
+              ),
+            ),
           ),
         ),
       ],

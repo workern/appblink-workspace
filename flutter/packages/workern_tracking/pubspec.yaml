@@ -3,7 +3,6 @@ description: App Tracking Transparency (ATT) consent service for iOS. Requires N
 version: 1.0.0
 publish_to: 'none'
 resolution: workspace
-
 environment:
   sdk: ^3.11.0
 

@@ -1,0 +1,8 @@
+export enum TransactionProcessorID {
+  RAZORPAY = 'RAZORPAY',
+  STRIPE = 'STRIPE',
+  PAYPAL = 'PAYPAL',
+  PAYTM = 'PAYTM',
+  RAZORPAYX = 'RAZORPAYX',
+  LEMON_SQUEEZY = 'LEMON_SQUEEZY'
+}

@@ -2,12 +2,3 @@
   display: block;
   width: 100%;
 }
-
-input:focus {
-  border-color: var(--primary, #ec4899);
-  --tw-ring-color: color-mix(in srgb, var(--primary, #ec4899) 20%, transparent);
-}
-
-input:not(:disabled):hover {
-  border-color: #9ca3af;
-}

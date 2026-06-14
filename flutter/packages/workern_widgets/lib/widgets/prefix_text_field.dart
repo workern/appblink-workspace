@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 /// A text field with a non-editable currency symbol prefix, built on ShadInput.
@@ -11,6 +12,8 @@ class PrefixTextField extends StatelessWidget {
   final bool enabled;
   final Color primaryColor;
   final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
 
   const PrefixTextField({
     super.key,
@@ -22,6 +25,8 @@ class PrefixTextField extends StatelessWidget {
     this.enabled = true,
     this.primaryColor = const Color(0xFF6C5CE7),
     this.keyboardType = const TextInputType.numberWithOptions(decimal: true),
+    this.inputFormatters,
+    this.maxLength,
   });
 
   @override
@@ -38,6 +43,11 @@ class PrefixTextField extends StatelessWidget {
           enabled: enabled,
           keyboardType: keyboardType,
           onChanged: onChanged,
+          inputFormatters: inputFormatters,
+          maxLength: maxLength,
+          maxLengthEnforcement: maxLength != null
+              ? MaxLengthEnforcement.enforced
+              : null,
           placeholder: hintText != null ? Text(hintText!) : null,
           leading: Text(
             currencySymbol,

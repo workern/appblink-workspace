@@ -19,11 +19,14 @@ class NikatUserAddress extends Address implements Base {
   @override
   final BaseSpace space;
 
+  final String? landmark;
+
   NikatUserAddress({
     required this.id,
     required this.type,
     required this.name,
     required this.mobile,
+    this.landmark,
     required super.street,
     required super.city,
     required super.state,
@@ -44,6 +47,7 @@ class NikatUserAddress extends Address implements Base {
       type: json['type'] as String? ?? 'Home',
       name: json['name'] as String? ?? '',
       mobile: json['mobile'] as String? ?? '',
+      landmark: json['landmark'] as String?,
       street: json['street'] as String,
       city: json['city'] as String,
       state: json['state'] as String,
@@ -66,6 +70,7 @@ class NikatUserAddress extends Address implements Base {
     'type': type,
     'name': name,
     'mobile': mobile,
+    if (landmark != null) 'landmark': landmark,
     'street': street,
     'city': city,
     'state': state,
@@ -95,6 +100,7 @@ class NikatUserAddress extends Address implements Base {
     String? type,
     String? name,
     String? mobile,
+    String? landmark,
     String? street,
     String? city,
     String? state,
@@ -111,6 +117,7 @@ class NikatUserAddress extends Address implements Base {
     type: type ?? this.type,
     name: name ?? this.name,
     mobile: mobile ?? this.mobile,
+    landmark: landmark ?? this.landmark,
     street: street ?? this.street,
     city: city ?? this.city,
     state: state ?? this.state,

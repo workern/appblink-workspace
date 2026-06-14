@@ -1,0 +1,116 @@
+<section
+  [id]="config().sectionId ?? 'pricing'"
+  class="mx-auto max-w-6xl px-6 py-20"
+>
+  <!-- Section heading -->
+  <div class="mb-14 text-center">
+    @if (config().badgeLabel) {
+      <span
+        hlmBadge
+        variant="secondary"
+        [class]="'mb-4 rounded-full px-4 py-1.5 text-xs font-medium tracking-wider uppercase ' + (config().badgeClass ?? '')"
+      >
+        {{ config().badgeLabel }}
+      </span>
+    }
+    <h2 class="mb-3 font-heading text-4xl font-bold tracking-tight">
+      {{ config().title }}
+    </h2>
+    @if (config().subtitle) {
+      <p class="text-lg text-white/70">{{ config().subtitle }}</p>
+    }
+  </div>
+
+  <!-- Plans grid -->
+  <div [class]="config().gridClass ?? 'grid gap-6 md:grid-cols-2 max-w-3xl mx-auto'">
+    @for (plan of config().plans; track plan.id) {
+      <div
+        hlmCard
+        class="flex flex-col"
+        [class]="plan.cardClass ?? ''"
+        [class.relative]="plan.popular"
+      >
+        <!-- Popular badge -->
+        @if (plan.popular) {
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+            <span hlmBadge variant="secondary" class="rounded-full text-xs px-3">
+              {{ plan.popularLabel ?? 'Most Popular' }}
+            </span>
+          </div>
+        }
+
+        <!-- Card header -->
+        <div hlmCardHeader [class.pt-7]="plan.popular">
+          <p
+            [class]="'text-xs font-semibold uppercase tracking-widest mb-1 ' + (plan.nameClass ?? 'opacity-40')"
+          >
+            {{ plan.name }}
+          </p>
+          <div class="flex items-baseline gap-1">
+            <span class="text-4xl font-bold">{{ plan.price }}</span>
+            @if (plan.period) {
+              <span class="text-sm opacity-35">{{ plan.period }}</span>
+            }
+          </div>
+          @if (plan.subNote) {
+            <p class="text-xs text-white/65 mt-0.5">{{ plan.subNote }}</p>
+          }
+          <p class="text-sm text-white/75 mt-2">{{ plan.description }}</p>
+        </div>
+
+        <!-- Features list -->
+        <div hlmCardContent class="flex-1">
+          <ul class="space-y-2.5 mb-6">
+            @for (feature of plan.features; track feature) {
+              <li class="flex items-start gap-2 text-sm">
+                <ng-icon
+                  hlmIcon
+                  name="lucideCheck"
+                  size="sm"
+                  class="mt-0.5 shrink-0"
+                  [class]="plan.featureCheckClass ?? 'text-white/55'"
+                />
+                <span class="text-sm text-white/75" [innerHTML]="feature"></span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- CTA button -->
+        <div hlmCardContent>
+          @if (plan.cta.routerLink) {
+            <a
+              hlmBtn
+              class="w-full"
+              [variant]="plan.cta.variant ?? 'default'"
+              [class]="plan.cta.class ?? ''"
+              [routerLink]="plan.cta.routerLink"
+            >
+              {{ plan.cta.label }}
+            </a>
+          } @else {
+            <a
+              hlmBtn
+              class="w-full"
+              [variant]="plan.cta.variant ?? 'default'"
+              [class]="plan.cta.class ?? ''"
+              [href]="plan.cta.href"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ plan.cta.label }}
+            </a>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Footer note -->
+  @if (config().footerNote) {
+    <p class="mt-8 text-center text-xs text-white/55">
+      {{ config().footerNote }}
+    </p>
+  }
+</section>
+

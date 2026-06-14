@@ -66,16 +66,21 @@
 
   @media (min-width: 900px) {
     grid-template-columns: 220px 1fr;
-    padding: 3rem 1.5rem 5rem;
+    padding: 3rem 1.5rem 0;
     align-items: start;
+    /* Fixed height so TOC stays in place while content scrolls internally */
+    height: calc(100dvh - var(--legal-top-offset, 0px));
+    box-sizing: border-box;
+    overflow: hidden;
   }
 }
 
 /* ===================== Sidebar TOC ===================== */
 .legal-toc {
   @media (min-width: 900px) {
-    position: sticky;
-    top: 5rem;
+    align-self: start;
+    overflow-y: auto;
+    max-height: 100%;
   }
 }
 
@@ -128,6 +133,14 @@
 /* ===================== Main Content ===================== */
 .legal-content {
   min-width: 0;
+
+  @media (min-width: 900px) {
+    overflow-y: auto;
+    height: 100%;
+    padding-bottom: 5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
 }
 
 .legal-content-hero {

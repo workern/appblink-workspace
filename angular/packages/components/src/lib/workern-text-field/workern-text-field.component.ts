@@ -5,8 +5,9 @@ import {
   output,
   model
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { FieldTree, FormField } from '@angular/forms/signals';
+import { HlmInput } from '@spartan/components/input';
+import { HlmLabel } from '@spartan/components/label';
 import {
   FieldDescriptor,
   TextFieldDescriptor
@@ -17,7 +18,7 @@ import {
   templateUrl: './workern-text-field.component.html',
   styleUrl: './workern-text-field.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, FormField]
+  imports: [FormField, HlmInput, HlmLabel]
 })
 export class WorkernTextFieldComponent {
   readonly label = input<string>('');

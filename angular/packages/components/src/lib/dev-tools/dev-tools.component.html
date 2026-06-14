@@ -1,0 +1,94 @@
+@if (isDevelopment) {
+  <div class="workern-dev-tools-container">
+    <!-- Floating DevTools Panel Card -->
+    <div 
+      class="workern-panel-card"
+      [class.open]="isOpen()"
+    >
+      <div class="panel-header">
+        <h4 class="panel-title">🎨 Dev Theme Switcher</h4>
+        <button class="panel-close-btn" (click)="toggleOpen()">
+          <ng-icon name="lucideX" />
+        </button>
+      </div>
+
+      <!-- Theme Mode Selection -->
+      <div class="panel-section">
+        <label class="section-label">Theme Mode</label>
+        <div class="segment-control">
+          <button 
+            class="segment-btn" 
+            [class.active]="themeService.mode() === 'system'"
+            (click)="setMode('system')"
+            title="System Preference"
+          >
+            <ng-icon name="lucideMonitor" class="w-4 h-4 mr-1.5" />
+            <span>System</span>
+          </button>
+          <button 
+            class="segment-btn" 
+            [class.active]="themeService.mode() === 'light'"
+            (click)="setMode('light')"
+            title="Light Mode"
+          >
+            <ng-icon name="lucideSun" class="w-4 h-4 mr-1.5" />
+            <span>Light</span>
+          </button>
+          <button 
+            class="segment-btn" 
+            [class.active]="themeService.mode() === 'dark'"
+            (click)="setMode('dark')"
+            title="Dark Mode"
+          >
+            <ng-icon name="lucideMoon" class="w-4 h-4 mr-1.5" />
+            <span>Dark</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Color Palette Grid Selection -->
+      <div class="panel-section">
+        <label class="section-label">Color Palette</label>
+        <div class="palette-grid">
+          @for (p of palettes; track p.name) {
+            <button 
+              class="palette-btn" 
+              (click)="setPalette(p.name)"
+              [title]="p.label"
+              [style.background-color]="p.color"
+            >
+              @if (themeService.palette() === p.name) {
+                <div class="check-overlay">
+                  <ng-icon name="lucideCheck" class="text-white w-3.5 h-3.5" />
+                </div>
+              }
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Quick Shortcuts Instruction -->
+      <div class="panel-shortcuts">
+        <p>💡 <strong>Shortcuts on Floating Icon:</strong></p>
+        <p>• Double-click to cycle theme mode</p>
+        <p>• Right-click to cycle palette</p>
+      </div>
+    </div>
+
+    <!-- Floating Trigger Icon Button -->
+    <button 
+      class="dev-tools-trigger"
+      [class.active]="isOpen()"
+      (click)="toggleOpen()"
+      (dblclick)="onTriggerDblClick($event)"
+      (contextmenu)="onTriggerRightClick($event)"
+      title="Theme Developer Tools (DblClick: mode, RightClick: palette)"
+    >
+      @if (isOpen()) {
+        <ng-icon name="lucideChevronUp" class="w-5 h-5 animate-bounce" />
+      } @else {
+        <ng-icon name="lucideSparkles" class="w-5 h-5" />
+      }
+    </button>
+  </div>
+}

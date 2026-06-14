@@ -1,21 +1,22 @@
 import axios from 'axios';
-import { db } from '../../global';
+import { db, HIKER_API_KEY } from '../../global';
 import { InstagramPostResult, MediaItem } from './types';
 import { SaveType } from '@workern/models';
 import { log } from 'firebase-functions/logger';
 
 // HikerAPI configuration
 const HIKER_API_BASE_URL = 'https://api.hikerapi.com';
-const HIKER_API_KEY =
-  process.env.HIKER_API_KEY || '4nz29ve9zoqx654p9ux4s8s7lf1ra8wf';
 
-async function upsertInstagramUserCacheFromPost(payload: {
-  username?: string;
-  userId?: string;
-  fullName?: string;
-  profilePicUrl?: string;
-  isVerified?: boolean;
-}) {
+async function upsertInstagramUserCacheFromPost(
+  payload: {
+    username?: string;
+    userId?: string;
+    fullName?: string;
+    profilePicUrl?: string;
+    isVerified?: boolean;
+  },
+  appId: string
+) {
   const username = payload.username?.trim().toLowerCase();
   if (!username) {
     return;
@@ -24,7 +25,7 @@ async function upsertInstagramUserCacheFromPost(payload: {
   try {
     const ref = db
       .collection('apps')
-      .doc('save-nest')
+      .doc(appId)
       .collection('instagramUsers')
       .doc(username);
 
@@ -81,7 +82,8 @@ async function upsertInstagramUserCacheFromPost(payload: {
  * @returns Normalized post data matching SmartSave model
  */
 export async function getInstagramPostUsingHiker(
-  postUrl: string
+  postUrl: string,
+  appId: string
 ): Promise<InstagramPostResult | null> {
   try {
     console.log('🔍 Fetching Instagram post from HikerAPI:', postUrl);
@@ -93,7 +95,7 @@ export async function getInstagramPostUsingHiker(
           url: postUrl
         },
         headers: {
-          'x-access-key': HIKER_API_KEY
+          'x-access-key': HIKER_API_KEY.value()
         }
       }
     );
@@ -187,7 +189,7 @@ export async function getInstagramPostUsingHiker(
         fullName: media.user?.full_name,
         profilePicUrl: media.user?.profile_pic_url,
         isVerified: media.user?.is_verified
-      });
+      }, appId);
 
       console.log('✅ Normalized Post Data:', JSON.stringify(result, null, 2));
       return result;
@@ -210,12 +212,13 @@ export async function getInstagramPostUsingHiker(
  * First checks the Firestore cache; if not found, calls HikerAPI user info endpoint.
  */
 async function resolveInstagramUserId(
-  username: string
+  username: string,
+  appId: string
 ): Promise<string | null> {
   const normalized = username.trim().toLowerCase();
   const docRef = db
     .collection('apps')
-    .doc('save-nest')
+    .doc(appId)
     .collection('instagramUsers')
     .doc(normalized);
 
@@ -230,7 +233,7 @@ async function resolveInstagramUserId(
       `${HIKER_API_BASE_URL}/v2/user/by/username`,
       {
         params: { username: normalized },
-        headers: { 'x-access-key': HIKER_API_KEY }
+        headers: { 'x-access-key': HIKER_API_KEY.value() }
       }
     );
     const user = infoRes.data?.user;
@@ -243,7 +246,7 @@ async function resolveInstagramUserId(
         profilePicUrl:
           user?.hd_profile_pic_url_info?.url ?? user?.profile_pic_url,
         isVerified: user?.is_verified
-      });
+      }, appId);
       return userId;
     }
   } catch (e) {
@@ -258,12 +261,13 @@ async function resolveInstagramUserId(
  * @returns Array of normalized post results
  */
 export async function getInstagramPostsByUsername(
-  username: string
+  username: string,
+  appId: string
 ): Promise<InstagramPostResult[]> {
   try {
     console.log('🔍 Fetching Instagram posts by username:', username);
 
-    const userId = await resolveInstagramUserId(username);
+    const userId = await resolveInstagramUserId(username, appId);
     if (!userId) {
       console.warn(
         `⚠️ No user_id resolved for @${username}, skipping post fetch`
@@ -273,7 +277,7 @@ export async function getInstagramPostsByUsername(
 
     const response = await axios.get(`${HIKER_API_BASE_URL}/gql/user/medias`, {
       params: { user_id: userId, flat: true },
-      headers: { 'x-access-key': HIKER_API_KEY }
+      headers: { 'x-access-key': HIKER_API_KEY.value() }
     });
 
     const data = response.data as Record<string, unknown>;
@@ -289,7 +293,7 @@ export async function getInstagramPostsByUsername(
         fullName: responseUser['full_name'] as string | undefined,
         profilePicUrl: responseUser['profile_pic_url'] as string | undefined,
         isVerified: responseUser['is_verified'] as boolean | undefined
-      });
+      }, appId);
     }
 
     console.log(

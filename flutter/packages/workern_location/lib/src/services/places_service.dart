@@ -54,15 +54,15 @@ class PlacesService {
           final detailedResults = await Future.wait(
             results.map((place) async {
               final placeId = place['placeId'] as String;
-              final details =
-                  await fetchPlaceDetails(placeId, apiKey, fields: fields);
+              final details = await fetchPlaceDetails(
+                placeId,
+                apiKey,
+                fields: fields,
+              );
 
               if (details != null) {
                 // Merge autocomplete data with detailed data
-                return {
-                  ...place,
-                  'details': details,
-                };
+                return {...place, 'details': details};
               }
               return place;
             }),
@@ -174,19 +174,21 @@ class PlacesService {
 
         final street =
             (mapped['route'] != null && mapped['street_number'] != null)
-                ? '${mapped['street_number']} ${mapped['route']}'
-                : (mapped['route'] ?? mapped['sublocality'] ?? '');
+            ? '${mapped['street_number']} ${mapped['route']}'
+            : (mapped['route'] ?? mapped['sublocality'] ?? '');
         final city =
             mapped['locality'] ?? mapped['administrative_area_level_2'];
         final state = shortMapped['administrative_area_level_1'];
         final postalCode = mapped['postal_code'];
-        final subLocality = mapped['sublocality'] ??
+        final subLocality =
+            mapped['sublocality'] ??
             mapped['sublocality_level_1'] ??
             mapped['sublocality_level_2'];
         final area = subLocality;
 
         debugPrint(
-            '✅ Extracted - Street: $street, City: $city, State: $state, Postal Code: $postalCode, Area: $area, SubLocality: $subLocality');
+          '✅ Extracted - Street: $street, City: $city, State: $state, Postal Code: $postalCode, Area: $area, SubLocality: $subLocality',
+        );
 
         return {
           'street': street,
@@ -245,9 +247,59 @@ class PlacesService {
       apiKey: apiKey,
     );
 
-    return {
-      'position': position,
-      'address': addressDetails,
-    };
+    return {'position': position, 'address': addressDetails};
+  }
+
+  /// Forward geocode an address string to latitude/longitude coordinates.
+  ///
+  /// Builds a query from the provided components for the best accuracy.
+  /// Returns `null` if no result is found or an error occurs.
+  Future<Map<String, double>?> forwardGeocode({
+    required String apiKey,
+    String? street,
+    String? city,
+    String? state,
+    String? postalCode,
+    String? country,
+  }) async {
+    final parts = [
+      if (street?.isNotEmpty == true) street,
+      if (city?.isNotEmpty == true) city,
+      if (state?.isNotEmpty == true) state,
+      if (postalCode?.isNotEmpty == true) postalCode,
+      if (country?.isNotEmpty == true) country,
+    ];
+
+    if (parts.isEmpty) return null;
+
+    final address = Uri.encodeComponent(parts.join(', '));
+    final url =
+        'https://maps.googleapis.com/maps/api/geocode/json?address=$address&key=$apiKey';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final results = data['results'] as List?;
+        if (results != null && results.isNotEmpty) {
+          final location =
+              results[0]['geometry']?['location'] as Map<String, dynamic>?;
+          if (location != null) {
+            final lat = (location['lat'] as num?)?.toDouble();
+            final lng = (location['lng'] as num?)?.toDouble();
+            if (lat != null && lng != null) {
+              debugPrint('✅ Forward geocoded to: $lat, $lng');
+              return {'lat': lat, 'lng': lng};
+            }
+          }
+        }
+        debugPrint('⚠️ Forward geocode returned no results for: $address');
+      } else {
+        debugPrint('❌ Forward geocode failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error forward geocoding: $e');
+    }
+    return null;
   }
 }

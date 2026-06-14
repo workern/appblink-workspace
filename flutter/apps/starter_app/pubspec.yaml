@@ -29,6 +29,8 @@ dependencies:
   # Cloud Services Package
   workern_services:
     path: ../../packages/workern_services
+  workern_share_intent:
+    path: ../../packages/workern_share_intent
 
   # Shared Widgets Package
   workern_widgets:

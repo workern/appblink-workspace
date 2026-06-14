@@ -1,7 +1,14 @@
 <footer class="bg-card border-t border-border">
   <div class="mx-auto max-w-7xl px-6 lg:px-8 py-14">
     <!-- Top: Brand + Nav columns -->
-    <div class="grid grid-cols-1 gap-12 md:grid-cols-[2fr_1fr_1fr]">
+    <div
+      class="grid grid-cols-1 gap-12"
+      [class]="
+        config().resourceLinks?.length
+          ? 'md:grid-cols-[2fr_1fr_1fr_1fr]'
+          : 'md:grid-cols-[2fr_1fr_1fr]'
+      "
+    >
       <!-- Brand column -->
       <div class="flex flex-col gap-4 max-w-sm">
         <h2 class="text-xl font-bold text-foreground">
@@ -80,6 +87,38 @@
           </h3>
           <ul class="flex flex-col gap-3">
             @for (link of config().legalLinks; track link.href) {
+              <li>
+                @if (link.external) {
+                  <a
+                    [href]="link.href"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
+                    >{{ link.label }}</a
+                  >
+                } @else {
+                  <a
+                    [routerLink]="link.href"
+                    class="text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
+                    >{{ link.label }}</a
+                  >
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <!-- Resources links (optional third column) -->
+      @if (config().resourceLinks?.length) {
+        <div>
+          <h3
+            class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5"
+          >
+            {{ config().resourcesHeading || 'Resources' }}
+          </h3>
+          <ul class="flex flex-col gap-3">
+            @for (link of config().resourceLinks!; track link.href) {
               <li>
                 @if (link.external) {
                   <a

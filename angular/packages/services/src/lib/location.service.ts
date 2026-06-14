@@ -16,24 +16,37 @@ export class LocationService {
   userLocation$ = resource({
     params: () => ({}),
     loader: async ({ params }) => {
-      return new Promise<{ lat: number; lng: number } | null>((resolve) => {
-        if (typeof window !== 'undefined' && navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              resolve({
-                lat: position.coords.latitude,
-                lng: position.coords.longitude
-              });
-            },
-            (error) => {
-              console.error('Geolocation error:', error);
-              this.handleLocationError(error);
-              resolve(null);
-            }
-          );
-        } else {
-          return resolve(null);
+      if (typeof window === 'undefined' || !navigator.geolocation) {
+        return null;
+      }
+
+      // Skip the browser prompt entirely if permission is already denied
+      if ('permissions' in navigator) {
+        try {
+          const status = await navigator.permissions.query({ name: 'geolocation' });
+          if (status.state === 'denied') {
+            this.locationError.set('Location permissions are denied.');
+            return null;
+          }
+        } catch {
+          // permissions API unsupported — fall through
         }
+      }
+
+      return new Promise<{ lat: number; lng: number } | null>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            this.locationError.set(null);
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          (error) => {
+            this.handleLocationError(error);
+            resolve(null);
+          }
+        );
       });
     }
   });

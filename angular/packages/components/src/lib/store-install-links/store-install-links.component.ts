@@ -2,8 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  input
+  input,
+  inject
 } from '@angular/core';
+import { GtagService } from '@workern/services';
 
 @Component({
   selector: 'wn-store-install-links',
@@ -13,15 +15,17 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StoreInstallLinksComponent {
+  private readonly gtagService = inject(GtagService);
   readonly appName = input('our app');
-  readonly title = input('Install the app');
-  readonly description = input<string | null>(
-    'Get the mobile app from your preferred store.'
-  );
-  readonly playStoreUrl = input<string | null>(null);
-  readonly appStoreUrl = input<string | null>(null);
-
+  readonly playStoreUrl = input<string | undefined>(undefined);
+  readonly appStoreUrl = input<string | undefined>(undefined);
+  readonly title = input('Get the app');
+  readonly description = input<string | undefined>(undefined);
   protected readonly hasAnyStoreLink = computed(
     () => !!this.playStoreUrl() || !!this.appStoreUrl()
   );
+
+  onStoreClick(platform: 'android' | 'ios') {
+    this.gtagService.sendEvent('cta_install_click', { platform });
+  }
 }

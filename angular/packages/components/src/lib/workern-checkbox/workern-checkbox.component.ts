@@ -4,46 +4,36 @@ import {
   input,
   model
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { FormField } from '@angular/forms/signals';
+import { HlmCheckbox } from '@spartan/components/checkbox';
+import { HlmLabel } from '@spartan/components/label';
 
 @Component({
   selector: 'wn-checkbox',
   template: `
-    <div class="flex items-start gap-2">
-      <input
+    <div class="flex items-start gap-2" [style.--primary]="primaryColor()">
+      <hlm-checkbox
         [id]="id()"
-        type="checkbox"
-        [formField]="formField()"
-        class="mt-0.5 h-4 w-4 rounded border-gray-300 transition-colors
-               focus:ring-2 focus:ring-offset-0 cursor-pointer
-               disabled:cursor-not-allowed disabled:opacity-50"
-        [style.--primary]="primaryColor()"
-        [class.text-primary]="checked()"
-        [class.focus:ring-primary/20]="checked()"
+        [checked]="checked()"
+        (checkedChange)="checked.set($event)"
+        [disabled]="!enabled()"
       />
       <label
+        hlmLabel
         [for]="id()"
-        class="flex-1 text-sm cursor-pointer select-none"
-        [class.text-gray-700]="enabled()"
-        [class.text-gray-400]="!enabled()"
+        class="cursor-pointer"
+        [class.opacity-50]="!enabled()"
       >
-        <div class="font-medium">{{ label() }}</div>
+        <span>{{ label() }}</span>
         @if (description()) {
-          <div class="text-xs text-gray-500 mt-0.5">{{ description() }}</div>
+          <span class="block text-xs text-muted-foreground mt-0.5 font-normal">
+            {{ description() }}
+          </span>
         }
       </label>
     </div>
   `,
-  styles: [
-    `
-      input[type='checkbox'] {
-        accent-color: var(--primary, #6c5ce7);
-      }
-    `
-  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, FormField]
+  imports: [HlmCheckbox, HlmLabel]
 })
 export class WorkernCheckboxComponent {
   readonly label = input.required<string>();
@@ -53,7 +43,6 @@ export class WorkernCheckboxComponent {
   readonly id = input<string>(
     `checkbox-${Math.random().toString(36).substring(7)}`
   );
-  readonly formField = input<any>(null);
 
   readonly checked = model<boolean>(false);
 }

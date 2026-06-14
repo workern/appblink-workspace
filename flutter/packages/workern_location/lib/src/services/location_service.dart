@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:flutter/foundation.dart';
 
 /// Reason why getting location failed, used by callers to show appropriate UI.
@@ -89,10 +90,7 @@ class LocationService {
       return position;
     } catch (e) {
       debugPrint('❌ Error getting location: $e');
-      throw LocationException(
-        LocationFailureReason.unknown,
-        e.toString(),
-      );
+      throw LocationException(LocationFailureReason.unknown, e.toString());
     }
   }
 
@@ -102,6 +100,26 @@ class LocationService {
       return await Geolocator.getLastKnownPosition();
     } catch (e) {
       debugPrint('❌ Error getting last known position: $e');
+      return null;
+    }
+  }
+
+  /// Reverse-geocodes [lat]/[lng] to a human-readable locality name using the
+  /// device's native geocoder (no API key required). Returns the sub-locality
+  /// (neighbourhood), falling back to city, then the raw place name.
+  /// Returns null if geocoding fails or no placemarks are found.
+  Future<String?> getLocalityName(double lat, double lng) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isEmpty) return null;
+      final p = placemarks.first;
+      final name =
+          (p.subLocality?.isNotEmpty == true ? p.subLocality : null) ??
+          (p.locality?.isNotEmpty == true ? p.locality : null) ??
+          p.name;
+      return name?.isNotEmpty == true ? name : null;
+    } catch (e) {
+      debugPrint('⚠️ Reverse geocode failed: $e');
       return null;
     }
   }

@@ -87,15 +87,17 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
     setState(() => _isLoading = true);
 
     try {
-      final requestBody = {
+      final requestBody = <String, dynamic>{
         'input': input,
         'languageCode': 'en',
         'regionCode': 'IN',
-        'includedPrimaryTypes': widget.placeType != null
-            ? [widget.placeType]
-            : null,
         'includedRegionCodes': ['in'],
       };
+
+      // Only add placeType filter when provided
+      if (widget.placeType != null) {
+        requestBody['includedPrimaryTypes'] = [widget.placeType];
+      }
 
       // Add location bias if coordinates are available
       if (widget.latitude != null && widget.longitude != null) {

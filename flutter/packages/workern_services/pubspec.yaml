@@ -2,7 +2,6 @@ name: workern_services
 description: Cloud functions and other services for Workern apps.
 publish_to: none
 resolution: workspace
-
 environment:
   sdk: ^3.11.0
   flutter: '>=3.10.0'
@@ -23,7 +22,6 @@ dependencies:
     path: ../workern_auth
   workern_models:
     path: ../workern_models
-  flutter_sharing_intent: ^2.0.4
   flutter_riverpod: ^3.1.0
 
 dev_dependencies:

@@ -35,36 +35,36 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_FIREBASE_WEB_API_KEY',
-    authDomain: 'YOUR_FIREBASE_AUTH_DOMAIN',
-    databaseURL: 'YOUR_FIREBASE_DATABASE_URL',
-    projectId: 'YOUR_FIREBASE_PROJECT_ID',
-    storageBucket: 'YOUR_FIREBASE_STORAGE_BUCKET',
-    messagingSenderId: 'YOUR_FIREBASE_MESSAGING_SENDER_ID',
-    appId: 'YOUR_FIREBASE_WEB_APP_ID',
-    measurementId: 'YOUR_FIREBASE_MEASUREMENT_ID',
+    apiKey: 'AIzaSyC8_KPPUsCWq1ePlfQFfHFBNws73EgQQTc',
+    authDomain: 'auth.workern.com',
+    databaseURL: 'https://workern-app-default-rtdb.firebaseio.com',
+    projectId: 'workern-app',
+    storageBucket: 'workern-app.firebasestorage.app',
+    messagingSenderId: '524580981259',
+    appId: '1:524580981259:web:0567301a78f5d56525150e',
+    measurementId: 'G-RLLX67H1QW',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_FIREBASE_ANDROID_API_KEY',
-    appId: 'YOUR_ANDROID_MOBILESDK_APP_ID_1',
-    messagingSenderId: 'YOUR_FIREBASE_PROJECT_NUMBER',
-    projectId: 'YOUR_FIREBASE_PROJECT_ID',
-    databaseURL: 'YOUR_FIREBASE_DATABASE_URL',
-    storageBucket: 'YOUR_FIREBASE_STORAGE_BUCKET',
+    apiKey: 'AIzaSyAP93px3vdz1lWROs5QI3etEfJy5GWWL8U',
+    appId: '1:524580981259:android:3163ad4584360d2125150e',
+    messagingSenderId: '524580981259',
+    projectId: 'workern-app',
+    databaseURL: 'https://workern-app-default-rtdb.firebaseio.com',
+    storageBucket: 'workern-app.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_FIREBASE_IOS_API_KEY',
-    appId: 'YOUR_FIREBASE_IOS_APP_ID',
-    messagingSenderId: 'YOUR_FIREBASE_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_FIREBASE_PROJECT_ID',
-    databaseURL: 'YOUR_FIREBASE_DATABASE_URL',
-    storageBucket: 'YOUR_FIREBASE_STORAGE_BUCKET',
+    apiKey: 'AIzaSyCKq-I2ydd_ERFvTJ6IkzmAqmU8Mkft2gY',
+    appId: '1:524580981259:ios:a353f4c1ea701b9725150e',
+    messagingSenderId: '524580981259',
+    projectId: 'workern-app',
+    databaseURL: 'https://workern-app-default-rtdb.firebaseio.com',
+    storageBucket: 'workern-app.firebasestorage.app',
     androidClientId:
-        'YOUR_FIREBASE_ANDROID_CLIENT_ID',
+        '',
     iosClientId:
-        'YOUR_FIREBASE_IOS_CLIENT_ID',
-    iosBundleId: 'YOUR_IOS_BUNDLE_ID',
+        '',
+    iosBundleId: 'com.workern.starterApp',
   );
 }

@@ -1,25 +1,27 @@
-<div class="legal-page">
-  <header class="legal-page-header">
-    <div class="legal-header-inner">
-      <button class="legal-back-btn" (click)="backClick.emit()">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          aria-hidden="true"
-        >
-          <path d="M19 12H5M12 5l-7 7 7 7" />
-        </svg>
-        Back to Home
-      </button>
-      @if (appName()) {
-        <span class="legal-app-label">{{ appName() }}</span>
-      }
-    </div>
-  </header>
+<div class="legal-page" [style.--legal-top-offset.px]="topOffset()">
+  @if (!hideBuiltInHeader()) {
+    <header class="legal-page-header">
+      <div class="legal-header-inner">
+        <button class="legal-back-btn" (click)="backClick.emit()">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M19 12H5M12 5l-7 7 7 7" />
+          </svg>
+          Back to Home
+        </button>
+        @if (appName()) {
+          <span class="legal-app-label">{{ appName() }}</span>
+        }
+      </div>
+    </header>
+  }
 
   <div class="legal-layout">
     <!-- Sidebar TOC -->

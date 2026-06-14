@@ -108,7 +108,7 @@ class AuthProvider extends ChangeNotifier {
 
   firebase_auth.User? _firebaseUser;
   User? _appUser;
-  bool _isLoading = false;
+  bool _isLoading = true;
   String? _errorMessage;
   StreamSubscription<firebase_auth.User?>? _authSubscription;
 
@@ -140,6 +140,7 @@ class AuthProvider extends ChangeNotifier {
         debugPrint('🚪 User signed out');
         _appUser = null;
       }
+      _isLoading = false;
       notifyListeners();
     });
   }

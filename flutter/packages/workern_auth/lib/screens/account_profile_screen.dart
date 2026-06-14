@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:workern_services/workern_services.dart';
 import 'package:workern_widgets/workern_widgets.dart';
 import '../providers/auth_provider.dart';
+import '../services/auth_service.dart';
 
 /// A reusable account/profile screen for all Workern apps.
 ///
@@ -59,6 +60,9 @@ class AccountProfileScreen extends ConsumerStatefulWidget {
   /// Optional override for the app bar foreground (title/icon) color.
   final Color? appBarForegroundColor;
 
+  /// When true, the app bar uses glassmorphism and the body extends behind it.
+  final bool useGlass;
+
   const AccountProfileScreen({
     super.key,
     required this.deleteAccountFnName,
@@ -75,6 +79,7 @@ class AccountProfileScreen extends ConsumerStatefulWidget {
     this.termsUrl,
     this.appBarColor,
     this.appBarForegroundColor,
+    this.useGlass = false,
   });
 
   @override
@@ -204,7 +209,10 @@ class _AccountProfileScreenState extends ConsumerState<AccountProfileScreen> {
             children: [
               Text(
                 'Pro Plan',
-                style: theme.textTheme.p.copyWith(fontWeight: FontWeight.w600),
+                style: theme.textTheme.p.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.foreground,
+                ),
               ),
               Text(
                 'Unlimited saves & AI searches',
@@ -253,6 +261,7 @@ class _AccountProfileScreenState extends ConsumerState<AccountProfileScreen> {
                     'Free Plan',
                     style: theme.textTheme.p.copyWith(
                       fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.foreground,
                     ),
                   ),
                   Text(
@@ -346,7 +355,14 @@ class _AccountProfileScreenState extends ConsumerState<AccountProfileScreen> {
               children: [
                 Icon(icon, size: 18, color: theme.colorScheme.mutedForeground),
                 const SizedBox(width: 12),
-                Expanded(child: Text(label, style: theme.textTheme.p)),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.p.copyWith(
+                      color: theme.colorScheme.foreground,
+                    ),
+                  ),
+                ),
                 Icon(
                   Icons.open_in_new,
                   size: 16,
@@ -373,175 +389,203 @@ class _AccountProfileScreenState extends ConsumerState<AccountProfileScreen> {
     final theme = ShadTheme.of(context);
 
     return Scaffold(
+      extendBodyBehindAppBar: widget.useGlass,
       appBar: WorkernAppBar(
         title: widget.pageTitle,
-        themeColor: widget.appBarColor ?? widget.primaryColor,
-        foregroundColor: widget.appBarForegroundColor ?? Colors.white,
+        themeColor: widget.useGlass
+            ? Colors.transparent
+            : (widget.appBarColor ?? widget.primaryColor),
+        foregroundColor: widget.useGlass
+            ? null
+            : (widget.appBarForegroundColor ?? Colors.white),
+        useGlass: widget.useGlass,
         showAuthAction: false,
         showNotifications: false,
         showBackButton: true,
         elevation: 0,
       ),
-      body: ListView(
-        padding: EdgeInsets.only(
-          top: 16,
-          left: 16,
-          right: 16,
-          bottom: MediaQuery.of(context).padding.bottom + 16,
-        ),
+      body: Stack(
         children: [
-          if (user != null) ...[
-            ShadCard(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: widget.primaryColor.withValues(alpha: 0.1),
-                    backgroundImage: user.photoURL != null
-                        ? NetworkImage(user.photoURL!)
-                        : null,
-                    onBackgroundImageError: user.photoURL != null
-                        ? (_, __) {}
-                        : null,
-                    child: user.photoURL == null
-                        ? Icon(
-                            Icons.person,
-                            size: 32,
-                            color: widget.primaryColor,
-                          )
-                        : null,
+          if (widget.useGlass) const WorkernAmbientBackground(),
+          ListView(
+            padding: EdgeInsets.only(
+              top: widget.useGlass
+                  ? MediaQuery.of(context).padding.top + kToolbarHeight + 8
+                  : 16,
+              left: 16,
+              right: 16,
+              bottom: MediaQuery.of(context).padding.bottom + 16,
+            ),
+            children: [
+              if (user != null) ...[
+                ShadCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: widget.primaryColor.withValues(
+                          alpha: 0.1,
+                        ),
+                        backgroundImage: user.photoURL != null
+                            ? NetworkImage(user.photoURL!)
+                            : null,
+                        onBackgroundImageError: user.photoURL != null
+                            ? (_, __) {}
+                            : null,
+                        child: user.photoURL == null
+                            ? Icon(
+                                Icons.person,
+                                size: 32,
+                                color: widget.primaryColor,
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (user.displayName != null)
+                              Text(
+                                user.displayName!,
+                                style: theme.textTheme.h4.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.foreground,
+                                ),
+                              ),
+                            if (user.email != null)
+                              Text(user.email!, style: theme.textTheme.muted),
+                            if (user.phoneNumber != null)
+                              Text(
+                                user.phoneNumber!,
+                                style: theme.textTheme.muted,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // Subscription section (shown only when isSubscribed is provided)
+              if (widget.isSubscribed != null) _buildSubscriptionSection(theme),
+
+              // Legal section
+              _buildLegalSection(theme),
+
+              Text(
+                'ACCOUNT',
+                style: theme.textTheme.muted.copyWith(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ShadCard(
+                padding: EdgeInsets.zero,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: _signOut,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    child: Row(
                       children: [
-                        if (user.displayName != null)
-                          Text(
-                            user.displayName!,
-                            style: theme.textTheme.h4.copyWith(
-                              fontWeight: FontWeight.w600,
+                        Icon(
+                          Icons.logout,
+                          size: 18,
+                          color: theme.colorScheme.foreground,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Sign Out',
+                            style: theme.textTheme.p.copyWith(
+                              color: theme.colorScheme.foreground,
                             ),
                           ),
-                        if (user.email != null)
-                          Text(user.email!, style: theme.textTheme.muted),
-                        if (user.phoneNumber != null)
-                          Text(user.phoneNumber!, style: theme.textTheme.muted),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 18,
+                          color: theme.colorScheme.mutedForeground,
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // Subscription section (shown only when isSubscribed is provided)
-          if (widget.isSubscribed != null) _buildSubscriptionSection(theme),
-
-          // Legal section
-          _buildLegalSection(theme),
-
-          Text(
-            'ACCOUNT',
-            style: theme.textTheme.muted.copyWith(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ShadCard(
-            padding: EdgeInsets.zero,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: _signOut,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.logout,
-                      size: 18,
-                      color: theme.colorScheme.foreground,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text('Sign Out', style: theme.textTheme.p)),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 18,
-                      color: theme.colorScheme.mutedForeground,
-                    ),
-                  ],
                 ),
               ),
-            ),
-          ),
 
-          const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-          Text(
-            'DANGER ZONE',
-            style: theme.textTheme.muted.copyWith(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.8,
-              color: theme.colorScheme.destructive.withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 8),
-          ShadCard(
-            padding: EdgeInsets.zero,
-            border: ShadBorder.all(
-              color: theme.colorScheme.destructive.withValues(alpha: 0.3),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: _deleteAccount,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+              Text(
+                'DANGER ZONE',
+                style: theme.textTheme.muted.copyWith(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8,
+                  color: theme.colorScheme.destructive.withValues(alpha: 0.7),
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.delete_forever_outlined,
-                      size: 18,
-                      color: theme.colorScheme.destructive,
+              ),
+              const SizedBox(height: 8),
+              ShadCard(
+                padding: EdgeInsets.zero,
+                border: ShadBorder.all(
+                  color: theme.colorScheme.destructive.withValues(alpha: 0.3),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: _deleteAccount,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Delete Account',
-                            style: theme.textTheme.p.copyWith(
-                              color: theme.colorScheme.destructive,
-                              fontWeight: FontWeight.w500,
-                            ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_forever_outlined,
+                          size: 18,
+                          color: theme.colorScheme.destructive,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Delete Account',
+                                style: theme.textTheme.p.copyWith(
+                                  color: theme.colorScheme.destructive,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                widget.deleteAccountSubtitle,
+                                style: theme.textTheme.muted.copyWith(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            widget.deleteAccountSubtitle,
-                            style: theme.textTheme.muted.copyWith(fontSize: 12),
-                          ),
-                        ],
-                      ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 18,
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      ],
                     ),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 18,
-                      color: theme.colorScheme.mutedForeground,
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),

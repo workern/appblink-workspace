@@ -1,0 +1,13 @@
+name: workern_share_intent
+description: Decoupled sharing intent services and providers for Workern.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.0.0
+  flutter_sharing_intent: ^2.0.4

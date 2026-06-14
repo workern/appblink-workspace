@@ -5,11 +5,15 @@ import {
   ChangeDetectionStrategy
 } from '@angular/core';
 import { FormField, FieldTree } from '@angular/forms/signals';
-import { createModel } from './model';
+import { createModel, PhoneCountrySignals } from './model';
 import { FieldDescriptor } from './descriptor';
 import { WorkernTextFieldComponent } from '../workern-text-field/workern-text-field.component';
 import { WorkernCheckboxComponent } from '../workern-checkbox/workern-checkbox.component';
 import { WorkernButtonComponent } from '../workern-button/workern-button.component';
+import { WorkernSelectComponent } from '../workern-select/workern-select.component';
+import { WorkernSwitchComponent } from '../workern-switch/workern-switch.component';
+import { WorkernPhoneInputComponent } from '../workern-phone-input/workern-phone-input.component';
+import { CountryDialCode, DEFAULT_COUNTRY } from '../login/country-codes.data';
 
 @Component({
   selector: 'wn-dynamic-form',
@@ -19,15 +23,49 @@ import { WorkernButtonComponent } from '../workern-button/workern-button.compone
     FormField,
     WorkernTextFieldComponent,
     WorkernCheckboxComponent,
-    WorkernButtonComponent
+    WorkernButtonComponent,
+    WorkernSelectComponent,
+    WorkernSwitchComponent,
+    WorkernPhoneInputComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DynamicForm {
   readonly descriptor = input.required<FieldDescriptor>();
   readonly field = input.required<FieldTree<object>>();
+  /**
+   * Pass the map returned from `applyDescriptorValidators` here.
+   * When present, country changes update the reactive signals that drive the
+   * signals-form validators, so form validity stays in sync automatically.
+   */
+  readonly phoneCountrySignals = input<PhoneCountrySignals | null>(null);
 
   protected readonly imagePreviews = signal<Map<string, string[]>>(new Map());
+
+  protected onPhoneCountryChange(
+    fieldName: string,
+    country: CountryDialCode
+  ): void {
+    // Update the signals-form reactive validator signal if connected.
+    const sigMap = this.phoneCountrySignals();
+    if (sigMap?.has(fieldName)) {
+      sigMap.get(fieldName)!.set(country);
+    }
+  }
+
+  protected phoneError(
+    field: FieldTree<string>,
+    fieldName: string,
+    desc: any
+  ): string {
+    const f = (field as any)();
+    if (!f.touched()) return '';
+    // Errors from the signals form (includes our reactive phoneInvalid rule).
+    if (f.errors().length > 0) {
+      return f.errors()[0]?.message || '';
+    }
+    return '';
+  }
 
   addItem(item: FieldTree<object[]>, descriptor: FieldDescriptor): void {
     item().value.update((v) => [...v, createModel(descriptor)]);

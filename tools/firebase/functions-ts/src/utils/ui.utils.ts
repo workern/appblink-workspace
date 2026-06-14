@@ -1,9 +1,5 @@
 import { Timestamp } from 'firebase-admin/firestore';
-import {
-  TASK_RESPONSE_STATE_APPROVED,
-  TASK_RESPONSE_STATE_PENDING,
-  TASK_RESPONSE_STATE_REJECTED
-} from '../constants';
+
 
 export function nth(d) {
   if (d > 3 && d < 21) return 'th';
@@ -19,12 +15,7 @@ export function nth(d) {
   }
 }
 
-export function getRequesterResponseMessage(response) {
-  if (response == TASK_RESPONSE_STATE_PENDING) return 'Pending';
-  else if (response == TASK_RESPONSE_STATE_APPROVED) return 'Approved';
-  else if (response == TASK_RESPONSE_STATE_REJECTED) return 'Rejected';
-  else return 'Unknown state';
-}
+
 
 export function calculateAge(dateOfBirth: Timestamp): number {
   const birthDate = dateOfBirth.toDate();

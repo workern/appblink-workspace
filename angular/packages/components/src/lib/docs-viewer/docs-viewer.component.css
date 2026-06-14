@@ -1,0 +1,40 @@
+:host {
+  display: block;
+}
+
+.wdv-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+}
+
+.wdv-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid hsl(var(--border));
+  border-top-color: hsl(var(--primary));
+  border-radius: 50%;
+  animation: wdv-spin 0.7s linear infinite;
+}
+
+@keyframes wdv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.wdv-error {
+  color: hsl(var(--destructive));
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.875rem;
+}
+
+.wdv-prose {
+  display: block;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  line-height: 1.7;
+}

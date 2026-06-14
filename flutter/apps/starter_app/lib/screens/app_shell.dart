@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workern_auth/workern_auth.dart';
 import 'package:workern_widgets/workern_widgets.dart';
+import 'package:workern_dev_tools/workern_dev_tools.dart';
 import '../config/app_colors.dart';
 import '../config/app_tokens.dart';
 
@@ -70,6 +71,15 @@ class AppShell extends ConsumerWidget {
         showAuthAction: true,
         isUserLoggedIn: isAuthenticated,
         showNotifications: false,
+        leadingWidget: WorkernThemeTrigger(
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset('assets/icons/icon_1024.png'),
+            ),
+          ),
+        ),
       ),
       items: _items,
     );

@@ -27,6 +27,7 @@ node_modules/
 /public
 # IDEs and editors
 /.idea
+*.iml
 .project
 .classpath
 .c9/
@@ -87,16 +88,15 @@ App_Resources*/
 **/.DS_Store
 .flutter-plugins-dependencies
 **/.flutter-plugins-dependencies
-# Flutter - generated files
-**/*.iml
-flutter/.idea/
-flutter/build/
-flutter/**/build/
 # Flutter packages - ignore pubspec.lock in packages (not apps)
 flutter/packages/**/pubspec.lock
 tools/firebase/functions-ts/lib
+tools/firebase/functions-ts/.env.local
+**/.secret.local
+*.secret.local
 firebase-export-*/
 .env
+!tools/firebase/functions-ts/.env
 secure/
 
 # Generated store backup history (do not commit)
@@ -113,6 +113,7 @@ assets/**/app-store/texts-backups/
 **/fastlane/metadata/
 **/fastlane/screenshots/
 **/test_output/
+flutter/.idea/
 flutter/apps/**/**/fastlane/report.xml
 backups/
 assets/**/generated/
@@ -128,5 +129,14 @@ tools/github/n8n
 
 # Flutter — machine-specific and auto-generated files
 **/android/local.properties
+# network_security_config.xml contains device-specific LAN IPs for emulators.
+# App Blink extension auto-creates/patches this file on startup.
+**/android/app/src/main/res/xml/network_security_config.xml
+# dart_defines.local.json holds device-specific --dart-define values (e.g. EMULATOR_HOST).
+# App Blink extension auto-creates/updates this file on startup.
+# Per-app launch.json files reference this via --dart-define-from-file and are tracked.
+flutter/dart_defines.local.json
 **/GeneratedPluginRegistrant.java
 **/GeneratedPluginRegistrant.swift
+**/build/
+flutter/tools/.firestore_commit_cache

@@ -2,7 +2,6 @@ name: workern_location
 description: Location service and provider for Workern apps.
 publish_to: none
 resolution: workspace
-
 environment:
   sdk: ^3.11.0
   flutter: '>=3.10.0'
@@ -11,9 +10,13 @@ dependencies:
   flutter:
     sdk: flutter
   geolocator: ^14.0.2
+  geocoding: ^4.0.0
   http: ^1.6.0
   google_places_flutter: ^2.1.1
   provider: ^6.1.2
+  shadcn_ui: ^0.50.2
+  shared_preferences: ^2.5.4
+  skeletonizer: ^2.1.2
   workern_widgets:
     path: ../workern_widgets
 

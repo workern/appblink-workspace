@@ -60,6 +60,7 @@ class DocumentUploadTile extends StatefulWidget {
 }
 
 class _DocumentUploadTileState extends State<DocumentUploadTile> {
+  File? _selectedFile;
   bool _isUploading = false;
   String? _uploadedUrl;
 
@@ -98,6 +99,7 @@ class _DocumentUploadTileState extends State<DocumentUploadTile> {
 
     final file = File(image.path);
     setState(() {
+      _selectedFile = file;
       _isUploading = true;
     });
 
@@ -195,42 +197,176 @@ class _DocumentUploadTileState extends State<DocumentUploadTile> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GestureDetector(
-          onTap: _pickAndUploadDocument,
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: _isUploaded ? _primaryColor : Colors.grey.shade300,
+  Widget _buildUploadTile(BuildContext context) {
+    return GestureDetector(
+      onTap: _pickAndUploadDocument,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          children: [
+            if (_isUploading)
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
+                ),
+              )
+            else
+              Icon(Icons.cloud_upload, color: Colors.grey.shade500, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        widget.title,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (!widget.isOptional)
+                        Text(
+                          ' *',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.red,
+                              ),
+                        ),
+                    ],
+                  ),
+                  Text(
+                    _isUploading
+                        ? 'Uploading...'
+                        : widget.subtitle ??
+                              (widget.isOptional
+                                  ? 'Optional'
+                                  : 'Tap to upload'),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: _isUploading
+                          ? _primaryColor
+                          : Colors.grey.shade600,
+                    ),
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(6),
-              color: _isUploaded
-                  ? _primaryColor.withOpacity(0.05)
-                  : Colors.transparent,
             ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: Colors.grey.shade400,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreview(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: _primaryColor),
+        borderRadius: BorderRadius.circular(6),
+        color: _primaryColor.withValues(alpha: 0.05),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Image preview
+          Stack(
+            children: [
+              GestureDetector(
+                onTap: () => _openFullScreen(context),
+                child: SizedBox(
+                  height: 160,
+                  width: double.infinity,
+                  child: _selectedFile != null
+                      ? Image.file(
+                          _selectedFile!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => _placeholderPreview(),
+                        )
+                      : Image.network(
+                          _uploadedUrl!,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) =>
+                              progress == null
+                              ? child
+                              : Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      _primaryColor,
+                                    ),
+                                  ),
+                                ),
+                          errorBuilder: (_, _, _) => _placeholderPreview(),
+                        ),
+                ),
+              ),
+              // Expand icon hint
+              if (!_isUploading)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () => _openFullScreen(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(
+                        Icons.fullscreen,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
+              if (_isUploading)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black38,
+                    child: const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Uploading...',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          // Footer row: title + change button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
-                if (_isUploading)
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
-                    ),
-                  )
-                else
-                  Icon(
-                    _isUploaded ? Icons.check_circle : Icons.cloud_upload,
-                    color: _isUploaded ? _primaryColor : Colors.grey.shade500,
-                    size: 24,
-                  ),
-                const SizedBox(width: 12),
+                Icon(Icons.check_circle, color: _primaryColor, size: 16),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,30 +390,115 @@ class _DocumentUploadTileState extends State<DocumentUploadTile> {
                         ],
                       ),
                       Text(
-                        _isUploading
-                            ? 'Uploading...'
-                            : widget.subtitle ??
-                                  (_isUploaded
-                                      ? 'Uploaded ✓'
-                                      : (widget.isOptional ? 'Optional' : '')),
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: _isUploading || _isUploaded
-                              ? _primaryColor
-                              : Colors.grey.shade600,
+                        'Uploaded ✓',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelSmall?.copyWith(color: _primaryColor),
+                      ),
+                    ],
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _isUploading ? null : _pickAndUploadDocument,
+                  icon: const Icon(Icons.camera_alt_outlined, size: 14),
+                  label: const Text('Change'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _primaryColor,
+                    side: BorderSide(color: _primaryColor),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    textStyle: const TextStyle(fontSize: 12),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _placeholderPreview() => Container(
+    height: 160,
+    color: Colors.grey.shade100,
+    child: Center(
+      child: Icon(
+        Icons.image_not_supported_outlined,
+        size: 40,
+        color: Colors.grey.shade400,
+      ),
+    ),
+  );
+
+  void _openFullScreen(BuildContext context) {
+    final ImageProvider imageProvider = _selectedFile != null
+        ? FileImage(_selectedFile!) as ImageProvider
+        : NetworkImage(_uploadedUrl!);
+
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (_) => Dialog.fullscreen(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 5.0,
+                child: Image(image: imageProvider, fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 24,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: Colors.grey.shade400,
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_isUploaded) _buildPreview(context) else _buildUploadTile(context),
         if (widget.showVerificationStatus &&
             _isUploaded &&
             widget.verificationStatus != null)

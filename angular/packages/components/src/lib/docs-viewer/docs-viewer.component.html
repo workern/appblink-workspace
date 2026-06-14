@@ -1,0 +1,9 @@
+@if (loading()) {
+  <div class="wdv-loading">
+    <div class="wdv-spinner"></div>
+  </div>
+} @else if (error()) {
+  <div class="wdv-error">{{ error() }}</div>
+} @else {
+  <markdown [data]="content()" class="wdv-prose"></markdown>
+}

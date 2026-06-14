@@ -32,7 +32,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import {
   db,
   deployOptions,
-  revenueCatWebhookAuthorizationHeaderValue,
+  REVENUE_CAT_WEBHOOK_AUTHORIZATION_HEADER_VALUE,
   REVENUE_CAT_API_KEY
 } from '../../global';
 import {
@@ -275,7 +275,7 @@ export const webhookHandler = onRequest(
     ...deployOptions,
     memory: '512MiB',
     region: 'asia-south2',
-    secrets: [revenueCatWebhookAuthorizationHeaderValue, REVENUE_CAT_API_KEY]
+    secrets: [REVENUE_CAT_WEBHOOK_AUTHORIZATION_HEADER_VALUE, REVENUE_CAT_API_KEY]
   },
   async (req, res) => {
     // ── 1. Method guard ──────────────────────────────────────────────────
@@ -287,7 +287,7 @@ export const webhookHandler = onRequest(
     // ── 2. Shared-secret verification ────────────────────────────────────
     // RevenueCat sends the raw secret string in the Authorization header.
     const authHeader = req.get('Authorization') ?? '';
-    const expectedValue = revenueCatWebhookAuthorizationHeaderValue.value();
+    const expectedValue = REVENUE_CAT_WEBHOOK_AUTHORIZATION_HEADER_VALUE.value();
 
     if (!authHeader || authHeader !== expectedValue) {
       warn('RevenueCat webhook: invalid or missing Authorization header');

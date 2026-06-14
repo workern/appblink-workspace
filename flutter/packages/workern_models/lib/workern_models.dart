@@ -7,5 +7,5 @@ export 'billing/index.dart';
 export 'transaction/index.dart';
 export 'verification/index.dart';
 export 'workspaces/index.dart';
-export 'apps/index.dart';
+export 'apps/index.dart' hide Campaign, CampaignStatus;
 export 'media/index.dart';

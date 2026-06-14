@@ -24,10 +24,8 @@ import {
 import {
   Auth,
   GoogleAuthProvider,
-  ApplicationVerifier,
   onAuthStateChanged,
   signInWithPopup,
-  signInWithCredential,
   signOut,
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -70,7 +68,7 @@ export class AuthService {
       }
     }
   });
-  addresses = computed(() => this.addresses$.value());
+  addresses = computed(() => this.addresses$.value() || []);
   selectedAddress = linkedSignal(() => {
     const addresses = this.addresses();
     if (addresses?.length) {
@@ -114,11 +112,6 @@ export class AuthService {
 
   private recaptchaVerifier?: RecaptchaVerifier;
   private confirmationResult?: ConfirmationResult;
-
-  /** True when connectAuthEmulator() has been called (set by app.config.ts in dev). */
-  private get isEmulatorActive(): boolean {
-    return !!(this.auth as any).emulatorConfig;
-  }
 
   constructor() {
     onAuthStateChanged(this.auth, async (user) => {
@@ -186,21 +179,6 @@ export class AuthService {
 
   async loginWithGoogleProvider(): Promise<void> {
     try {
-      if (this.isEmulatorActive) {
-        // signInWithPopup is unreliable against the Auth emulator — use a fake
-        // credential. The emulator accepts any non-empty ID token string.
-        const credential = GoogleAuthProvider.credential(
-          JSON.stringify({
-            sub: 'emulator-google-user',
-            email: 'dev@example.com',
-            email_verified: true,
-            name: 'Dev User (Emulator)'
-          })
-        );
-        await signInWithCredential(this.auth, credential);
-        return;
-      }
-
       const provider = new GoogleAuthProvider();
       provider.addScope('profile');
       provider.addScope('email');
@@ -227,34 +205,21 @@ export class AuthService {
     recaptchaContainer: HTMLElement
   ): Promise<ConfirmationResult> {
     try {
-      let verifier: ApplicationVerifier;
-
-      if (this.isEmulatorActive) {
-        // RecaptchaVerifier makes a real network call to google.com/recaptcha
-        // which fails in emulator mode. The Auth emulator bypasses token
-        // validation entirely — any non-empty string is accepted.
-        verifier = {
-          type: 'recaptcha',
-          verify: () => Promise.resolve('fake-recaptcha-token-emulator')
-        };
-      } else {
-        this.recaptchaVerifier = new RecaptchaVerifier(
-          this.auth,
-          recaptchaContainer,
-          {
-            size: 'invisible',
-            callback: () => console.log('reCAPTCHA solved'),
-            'expired-callback': () => console.log('reCAPTCHA expired')
-          }
-        );
-        verifier = this.recaptchaVerifier;
-      }
+      this.recaptchaVerifier = new RecaptchaVerifier(
+        this.auth,
+        recaptchaContainer,
+        {
+          size: 'invisible',
+          callback: () => console.log('reCAPTCHA solved'),
+          'expired-callback': () => console.log('reCAPTCHA expired')
+        }
+      );
 
       // Send OTP — phoneNumber must already include the country code (e.g. +919876543210)
       this.confirmationResult = await signInWithPhoneNumber(
         this.auth,
         phoneNumber,
-        verifier
+        this.recaptchaVerifier
       );
 
       return this.confirmationResult;

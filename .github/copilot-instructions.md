@@ -9,6 +9,25 @@ Before writing any new code, creating any new file, or implementing any feature,
 - Read every rule in the response and follow them for the entire task.
 - Do **not** skip this step, even for small changes or single-file edits.
 
+## Design & UI Guardrails (MANDATORY)
+
+Before writing any UI, visual, or design-related code, you **MUST** call the `#appblink_design_skill_router` tool first.
+
+- Pass a description of the UI/design task as `taskDescription`.
+- Optionally pass `filePaths` for the files you plan to create or modify.
+- The tool will return the path to the correct design skill `SKILL.md` — call `read_file` on that path and follow every rule in it.
+- Do **not** skip this step for any task that changes how a feature looks, feels, moves, or is interacted with.
+
+## Component Reuse Guardrail (MANDATORY)
+
+Before creating any new component, widget, dialog, snackbar, input, loader, or any other UI element, you **MUST** call the `#appblink_component_reuse_check` tool first.
+
+- Pass a description of the component you need as `componentDescription`.
+- Optionally pass `filePaths` to auto-detect the framework (Flutter or Angular).
+- If the tool finds an existing shared component — use it. Do **not** create a duplicate.
+- If no shared component exists but a similar one is at app level — consider promoting it.
+- If you create a new component that could be useful across apps — place it in `flutter/packages/workern_widgets/` or `angular/packages/components/`, not in the app.
+
 ## Architecture
 
 Multi-platform monorepo: Angular (web) + Flutter (mobile) + Firebase Cloud Functions (backend) + Firestore.
@@ -73,6 +92,7 @@ Get app IDs from the `APPID` enum, not hardcoded strings. Update `tools/firebase
 - All Firestore models extend `BaseModel` (`libs/shared/models/src/lib/interfaces/base.model.ts` / `flutter/packages/workern_models/lib/base_model.dart`) — gives `id`, `createdAt`, `updatedAt`.
 - Use enums for status/type fields — never hardcoded strings. Capitalize enum values.
 - **App-specific models/interfaces must go in the `apps/` subfolder**: `libs/shared/models/src/lib/apps/{app-name}/` (TypeScript) and `flutter/packages/workern_models/lib/apps/{app_name}/` (Dart). Never place app-specific types in the root `interfaces/`, `models/`, or `enums/` folders — those are for truly cross-app shared types only.
+
 ## File Size Limits
 
 - Angular `.html`: max ~200 lines — extract sub-components.

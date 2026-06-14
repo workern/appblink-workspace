@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart'
     as fbAuth
@@ -333,177 +334,203 @@ class _LoginScreenState extends State<LoginScreen>
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: cs.surface,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 48),
-              // Header
-              if (widget.logo != null) ...[
-                Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(22),
-                    child: widget.logo!,
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-              Text(
-                widget.appName,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: cs.onSurface,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                widget.appDescription,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 40),
-              Text(
-                'Log in or sign up',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  letterSpacing: 0.2,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              // Phone input with country selector in vertical alignment
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Country code selector with search
-                  WorkernSelectWithSearch<CountryCode>(
-                    label: 'Select Country',
-                    initialValue: _selectedCountry,
-                    items: countryCodes,
-                    placeholder: 'Choose your country',
-                    searchPlaceholder: 'Search country...',
-                    noResultsText: 'No country found',
-                    searchPredicate: (country, query) =>
-                        country.name.toLowerCase().contains(
-                          query.toLowerCase(),
-                        ) ||
-                        country.dialCode.contains(query),
-                    itemBuilder: (context, country) => Row(
-                      mainAxisSize: MainAxisSize.min,
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
+            const WorkernAmbientBackground(),
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 48),
+                    // Header
+                    if (widget.logo != null) ...[
+                      Center(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(22),
+                          child: widget.logo!,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    Text(
+                      widget.appName,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: cs.onSurface,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.appDescription,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 40),
+                    Text(
+                      'Log in or sign up',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        letterSpacing: 0.2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    // Phone input with country selector in vertical alignment
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          country.flag,
-                          style: const TextStyle(fontSize: 18),
+                        // Country code selector with search
+                        WorkernSelectWithSearch<CountryCode>(
+                          label: 'Select Country',
+                          initialValue: _selectedCountry,
+                          items: countryCodes,
+                          placeholder: 'Choose your country',
+                          searchPlaceholder: 'Search country...',
+                          noResultsText: 'No country found',
+                          searchPredicate: (country, query) =>
+                              country.name.toLowerCase().contains(
+                                query.toLowerCase(),
+                              ) ||
+                              country.dialCode.contains(query),
+                          itemBuilder: (context, country) => Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                country.flag,
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                country.name,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                country.dialCode,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                          selectedOptionBuilder: (context, country) => Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                country.flag,
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                              const SizedBox(width: 8),
+                              Text('${country.name} (${country.dialCode})'),
+                            ],
+                          ),
+                          onChanged: (CountryCode? newCountry) {
+                            if (newCountry != null) {
+                              setState(() => _selectedCountry = newCountry);
+                            }
+                          },
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          country.name,
-                          style: const TextStyle(fontSize: 13),
+                        const SizedBox(height: 16),
+                        // Phone number input
+                        PrefixTextField(
+                          controller: _phoneController,
+                          currencySymbol: _selectedCountry.dialCode,
+                          labelText: 'Mobile Number',
+                          hintText: 'Enter your mobile number',
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          primaryColor: widget.primaryColor,
+                          onChanged: (value) {
+                            setState(() {});
+                            final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+                            final country = _selectedCountry;
+                            if (country.isFixedLength &&
+                                country.mobileLength != null &&
+                                digits.length == country.mobileLength &&
+                                _currentStep == _AuthStep.enterPhone) {
+                              _verifyPhoneNumber();
+                            }
+                          },
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          country.dialCode,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Continue button wrapped in ScalePress for responsive feedback
+                    ScalePress(
+                      child: WorkernPrimaryButton(
+                        label: 'Continue',
+                        onPressed: _verifyPhoneNumber,
+                        primaryColor: widget.primaryColor,
+                        height: 56,
+                        fontSize: 16,
+                        borderRadius: 8,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Social sign-in options
+                    if (widget.googleClientId != null ||
+                        (widget.showAppleSignIn && Platform.isIOS)) ...[
+                      // OR Divider
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: cs.outlineVariant)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'OR',
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: cs.outlineVariant)),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Sign in with Apple (iOS only, shown first per Apple guidelines)
+                      if (widget.showAppleSignIn && Platform.isIOS) ...[
+                        ScalePress(
+                          child: OAuthProviderButton(
+                            provider: AppleProvider(),
+                            action: AuthAction.signIn,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Google Sign-In Button
+                      if (widget.googleClientId != null) ...[
+                        ScalePress(
+                          child: OAuthProviderButton(
+                            provider: GoogleProvider(clientId: widget.googleClientId!),
+                            action: AuthAction.signIn,
                           ),
                         ),
                       ],
-                    ),
-                    selectedOptionBuilder: (context, country) => Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          country.flag,
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('${country.name} (${country.dialCode})'),
-                      ],
-                    ),
-                    onChanged: (CountryCode? newCountry) {
-                      if (newCountry != null) {
-                        setState(() => _selectedCountry = newCountry);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  // Phone number input
-                  PrefixTextField(
-                    controller: _phoneController,
-                    currencySymbol: _selectedCountry.dialCode,
-                    labelText: 'Mobile Number',
-                    hintText: 'Enter your mobile number',
-                    keyboardType: TextInputType.phone,
-                    primaryColor: widget.primaryColor,
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+                      const SizedBox(height: 32),
+                    ],
 
-              // Continue button
-              WorkernPrimaryButton(
-                label: 'Continue',
-                onPressed: _verifyPhoneNumber,
-                primaryColor: widget.primaryColor,
-                height: 56,
-                fontSize: 16,
-                borderRadius: 8,
-              ),
-              const SizedBox(height: 32),
-
-              // Social sign-in options
-              if (widget.googleClientId != null ||
-                  (widget.showAppleSignIn && Platform.isIOS)) ...[
-                // OR Divider
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: cs.outlineVariant)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: cs.outlineVariant)),
+                    // Footer
+                    _buildPolicyFooter(context),
                   ],
                 ),
-                const SizedBox(height: 24),
-
-                // Sign in with Apple (iOS only, shown first per Apple guidelines)
-                if (widget.showAppleSignIn && Platform.isIOS) ...[
-                  OAuthProviderButton(
-                    provider: AppleProvider(),
-                    action: AuthAction.signIn,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // Google Sign-In Button
-                if (widget.googleClientId != null) ...[
-                  OAuthProviderButton(
-                    provider: GoogleProvider(clientId: widget.googleClientId!),
-                    action: AuthAction.signIn,
-                  ),
-                ],
-                const SizedBox(height: 32),
-              ],
-
-              // Footer
-              _buildPolicyFooter(context),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -549,22 +576,30 @@ class _LoginScreenState extends State<LoginScreen>
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: cs.surface,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              EggClockLoader(size: 120, color: widget.primaryColor),
-              const SizedBox(height: 24),
-              Text(
-                'Signing you in...',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: cs.onSurface),
+      body: Stack(
+        children: [
+          const WorkernAmbientBackground(),
+          SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  EggClockLoader(size: 120, color: widget.primaryColor),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Signing you in...',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -574,7 +609,7 @@ class _LoginScreenState extends State<LoginScreen>
     return TextSpan(
       text: text,
       style: TextStyle(
-        color: hasUrl ? color : color.withOpacity(0.5),
+        color: hasUrl ? color : color.withValues(alpha: 0.5),
         fontWeight: FontWeight.w500,
         decoration: hasUrl ? TextDecoration.underline : null,
         decorationColor: color,
@@ -590,6 +625,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildPolicyFooter(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 8),
       child: RichText(
@@ -597,7 +633,7 @@ class _LoginScreenState extends State<LoginScreen>
         text: TextSpan(
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.black54),
+          ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           children: [
             const TextSpan(text: 'By continuing, you agree to our '),
             _policyLink(

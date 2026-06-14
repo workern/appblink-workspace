@@ -38,12 +38,5 @@ export interface SpaceMember<T = Date, K = SpaceMemberRole> {
   stats?: SpaceMemberStats;
   joinedAt?: WorkernTime<T>;
   claims?: any;
-  permissions?: {
-    challansView?: boolean;
-    challansEdit?: boolean;
-    stockView?: boolean;
-    stockEdit?: boolean;
-    employeeView?: boolean;
-    employeeEdit?: boolean;
-  };
+  permissions?: Record<string, boolean>;
 }

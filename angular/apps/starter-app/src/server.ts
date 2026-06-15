@@ -25,6 +25,18 @@ const angularApp = new AngularNodeAppEngine();
  */
 
 /**
+ * Rewrite the host header to the forwarded host so Angular SSR accepts
+ * Firebase App Hosting / Cloud Run internal URLs.
+ */
+app.use((req, _res, next) => {
+  const forwarded = req.headers['x-forwarded-host'];
+  if (forwarded) {
+    req.headers['host'] = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+  }
+  next();
+});
+
+/**
  * Serve static files from /.
  */
 app.use(

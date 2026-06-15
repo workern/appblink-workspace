@@ -5,16 +5,15 @@ import 'config/auth_config.dart';
 import 'firebase_options.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workern_notifications/workern_notifications.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:workern_services/workern_services.dart';
 import 'package:workern_share_intent/workern_share_intent.dart';
 import 'package:workern_billing/workern_billing.dart';
 import 'services/starter_app_notification_handler.dart';
 import 'package:workern_auth/workern_auth.dart' as app_auth;
+import 'package:workern_dev_tools/workern_dev_tools.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
-import 'config/app_router.dart' show routerProvider;
 
-// TODO: Replace with your actual RevenueCat API keys from https://app.revenuecat.com
-// TODO: Replace 'your-app-pro' with your app's entitlement identifier
 const _billingConfig = WorkernBillingConfig(
   androidApiKey: 'YOUR_REVENUECAT_ANDROID_API_KEY',
   iosApiKey: 'YOUR_REVENUECAT_IOS_API_KEY',
@@ -22,25 +21,20 @@ const _billingConfig = WorkernBillingConfig(
 );
 
 void main() async {
-  final binding = WidgetsFlutterBinding.ensureInitialized();
-  // Keep the native splash visible while we initialize.
-  binding.deferFirstFrame();
+  WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Future.wait([
-      FirebaseInitializer.initialize(
-        FirebaseInitConfig(
-          firebaseOptions: DefaultFirebaseOptions.currentPlatform,
-          googleClientId: GOOGLE_CLIENT_ID,
-          backgroundMessageHandler: workernFirebaseMessagingBackgroundHandler,
-          useEmulators: false,
-        ),
+    await FirebaseInitializer.initialize(
+      FirebaseInitConfig(
+        firebaseOptions: DefaultFirebaseOptions.currentPlatform,
+        googleClientId: GOOGLE_CLIENT_ID,
+        backgroundMessageHandler: workernFirebaseMessagingBackgroundHandler,
+        useEmulators: false,
       ),
-      WorkernBilling.initialize(_billingConfig),
-    ]);
+    );
+    // Configure RevenueCat billing
+    await WorkernBilling.initialize(_billingConfig);
   } catch (e) {
     debugPrint('❌ Initialization error: $e');
-  } finally {
-    binding.allowFirstFrame();
   }
   runApp(const ProviderScope(child: StarterApp()));
 }
@@ -85,9 +79,7 @@ class StarterApp extends ConsumerWidget {
   const StarterApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => _buildApp(ref);
-
-  Widget _buildApp(WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Watch notification service provider - auto-initializes on user sign-in
     ref.watch(notificationServiceProvider);
     // Sync RevenueCat with Firebase user (logIn / logOut)
@@ -103,26 +95,35 @@ class StarterApp extends ConsumerWidget {
       });
     });
 
-    return ShadApp.custom(
-      themeMode: ThemeMode.system,
-      theme: ShadThemeData(
-        brightness: Brightness.light,
-        colorScheme: const ShadSlateColorScheme.light(),
+    final firebaseUser = ref.watch(firebaseUserProvider);
+    final isLoading =
+        firebaseUser == null && FirebaseAuth.instance.currentUser == null;
+
+    return WorkernThemeSwitcher(
+      customLight: appTheme,
+      customDark: appDarkTheme,
+      builder: (themeMode, lightTheme, darkTheme) => ShadApp.custom(
+        themeMode: themeMode,
+        theme: ShadThemeData(
+          brightness: Brightness.light,
+          colorScheme: const ShadSlateColorScheme.light(),
+        ),
+        darkTheme: ShadThemeData(
+          brightness: Brightness.dark,
+          colorScheme: const ShadSlateColorScheme.dark(),
+        ),
+        appBuilder: (context) {
+          return MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            title: 'Starter App',
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: themeMode,
+            routerConfig: createRouter(firebaseUser, isLoading: isLoading),
+            builder: (context, child) => ShadAppBuilder(child: child!),
+          );
+        },
       ),
-      darkTheme: ShadThemeData(
-        brightness: Brightness.dark,
-        colorScheme: const ShadSlateColorScheme.dark(),
-      ),
-      appBuilder: (context) {
-        return MaterialApp.router(
-          debugShowCheckedModeBanner: false,
-          title: 'Starter App',
-          theme: appTheme,
-          darkTheme: appDarkTheme,
-          routerConfig: ref.watch(routerProvider),
-          builder: (context, child) => ShadAppBuilder(child: child!),
-        );
-      },
     );
   }
 }

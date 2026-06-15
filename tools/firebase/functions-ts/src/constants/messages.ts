@@ -4,14 +4,12 @@ export const messages = {
       incorrectDataSent: 'Incorrect data sent.',
       unAuthorized: 'You are not authorized to perform this action.'
     },
-    space: {
-      notExists: 'Space does not exist.'
+    transaction: {
+      successMessage: 'Transaction successful'
     },
     order: {
       errorCreating: 'Error creating order.'
-    },
-    transaction: {
-      successMessage: 'Transaction successful'
     }
   }
 };
+

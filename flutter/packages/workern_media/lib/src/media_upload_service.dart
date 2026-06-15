@@ -5,7 +5,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:video_compress/video_compress.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
-import 'package:workern_models/workern_models.dart';
+import 'package:workern_models/media/media_item.dart';
 import 'package:workern_services/workern_services.dart';
 
 class MediaUploadResult {

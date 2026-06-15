@@ -5,6 +5,12 @@ import { TransactionType } from '../../enums/transactions/transaction-type';
 import { firestoreWriteTimestamp, isProduction } from '../../global';
 import { Amount } from '@workern/models';
 import { TransactionProcessor } from './transaction-processor';
+
+/** Minimal task reference stored inside transaction notes. */
+interface TransactionTaskRef {
+  id: string;
+  spaceId: string;
+}
 export class Transaction {
   public id: string;
   public uid: string;
@@ -27,6 +33,7 @@ export class Transaction {
           uid: string;
           message: string;
           processor?: TransactionProcessor;
+          task?: TransactionTaskRef;
           reason: TransactionReason;
           createdAt: Timestamp;
           finalizedAt: Timestamp;
@@ -50,7 +57,8 @@ export class Transaction {
       this.processor = data.processor != null ? data.processor : null;
       this.createdAt = data.createdAt || Timestamp.now();
       this.finalizedAt = data.finalizedAt || null;
-      this.notes = data.notes || {}
+      this.notes = data.notes || {};
+      // notes.task is stored as a plain { id, spaceId } reference — no class wrapping needed.
     }
   }
 
@@ -64,7 +72,8 @@ export class Transaction {
       }
     }
     if (this.notes.task) {
-      transaction.task = this.notes.task.forTransaction();
+      // notes.task is already a plain { id, spaceId } object — copy it as-is.
+      transaction.task = { ...this.notes.task };
     }
 
     return transaction;
@@ -73,7 +82,28 @@ export class Transaction {
   getRedirectURL(): string {
     let redirectHost = `${isProduction ? 'https://workern.com' : 'http://localhost:9002'}`;
     let redirectPath = `/dashboard/${this.notes.productId}?tab=billing`;
-    //TODO: make the notes include the redirect link or host&path.
+
+    const resolver = redirectResolvers.get(this.notes.source);
+    if (resolver) {
+      const result = resolver(this);
+      redirectHost = result.redirectHost;
+      redirectPath = result.redirectPath;
+    }
+
     return `${redirectHost}${redirectPath}${redirectPath.includes('?') ? '&' : '?'}status=success&transactionId=${this.id}`;
   }
 }
+
+export type RedirectResolver = (
+  transaction: Transaction
+) => { redirectHost: string; redirectPath: string };
+
+const redirectResolvers = new Map<string, RedirectResolver>();
+
+export function registerRedirectResolver(
+  source: string,
+  resolver: RedirectResolver
+) {
+  redirectResolvers.set(source, resolver);
+}
+

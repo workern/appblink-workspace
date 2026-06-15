@@ -9,6 +9,11 @@
 /// 2. Use [LoginScreen] for the login UI
 /// 3. Other auth flows are handled by firebase_ui_auth
 
+library workern_auth;
+
+import 'package:workern_auth/screens/login_screen.dart' show LoginScreen;
+import 'package:workern_auth/workern_auth.dart' show LoginScreen;
+
 // Configuration
 export 'config/auth_config.dart';
 

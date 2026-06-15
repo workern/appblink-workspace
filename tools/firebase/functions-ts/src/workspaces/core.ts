@@ -18,7 +18,7 @@ import {
   requireAuthDecoded,
   requireMethod,
   parseBody
-} from './request-helpers';
+} from '../utils/request.utils';
 
 // ─── Generic Path Helpers ─────────────────────────────────────────────────────
 
@@ -72,11 +72,30 @@ export async function requireWorkspaceMemberForApp(
   return true;
 }
 
+/**
+ * Boolean membership check for use in non-HTTP contexts (callable functions,
+ * triggers, etc.). Replaces the old `isSpaceMember` from spaces-app for code
+ * that lives outside `src/apps/`.
+ *
+ * Returns true if the user has a member doc in the workspace, false otherwise.
+ */
+export async function isWorkspaceMember(
+  appId: string,
+  workspaceId: string,
+  uid: string
+): Promise<boolean> {
+  const snap = await workspaceRefForApp(appId, workspaceId)
+    .collection('members')
+    .doc(uid)
+    .get();
+  return snap.exists;
+}
+
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const ensureWorkspaceSchema = z.object({
   appId: z.string().min(1),
-  workspaceId: z.string().min(1),
+  workspaceId: z.string().min(1).optional(),
   name: z.string().optional()
 });
 
@@ -307,7 +326,9 @@ export const ensureworkspace = onRequest(
     );
     if (parsed === undefined) return;
 
-    const { appId, workspaceId, name } = parsed;
+    const { appId, name } = parsed;
+    // If no workspaceId provided, generate one server-side
+    const workspaceId = parsed.workspaceId ?? db.collection('_').doc().id;
     const displayName = name ?? workspaceId.split('/').pop() ?? workspaceId;
     const now = new Date().toISOString();
 
@@ -334,7 +355,7 @@ export const ensureworkspace = onRequest(
         tx.set(wsRef, {
           workspaceId,
           name: displayName,
-          ownerId: uid,
+          owner: { uid, name: userDisplayName ?? '' },
           createdAt: now,
           updatedAt: now
         });
@@ -782,7 +803,7 @@ export const updatemember = onRequest(
       return;
 
     const wsSnap = await workspaceRefForApp(appId, workspaceId).get();
-    const isOwner = wsSnap.data()?.['ownerId'] === uid;
+    const isOwner = wsSnap.data()?.['owner']?.['uid'] === uid;
 
     if (displayName !== undefined && uid !== memberUid && !isOwner) {
       res.status(403).json({
@@ -945,7 +966,7 @@ export const transferownership = onRequest(
       return;
     }
 
-    if (wsSnap.data()?.['ownerId'] !== uid) {
+    if (wsSnap.data()?.['owner']?.['uid'] !== uid) {
       res.status(403).json({
         error: 'Only the current workspace owner can transfer ownership'
       });
@@ -986,7 +1007,13 @@ export const transferownership = onRequest(
       tx.set(
         wsRef,
         {
-          ownerId: targetUid,
+          owner: {
+            uid: targetUid,
+            name:
+              (targetMemberSnap.data()?.['displayName'] as
+                | string
+                | undefined) ?? ''
+          },
           updatedAt: now
         },
         { merge: true }
@@ -1245,7 +1272,7 @@ export const remove = onRequest(
       return;
     }
 
-    if (wsSnap.data()?.['ownerId'] !== uid) {
+    if (wsSnap.data()?.['owner']?.['uid'] !== uid) {
       res
         .status(403)
         .json({ error: 'Only the workspace owner can delete a workspace' });

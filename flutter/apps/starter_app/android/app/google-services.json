@@ -1,49 +1,49 @@
 {
   "project_info": {
-    "project_number": "YOUR_FIREBASE_PROJECT_NUMBER",
-    "firebase_url": "YOUR_FIREBASE_DATABASE_URL",
-    "project_id": "YOUR_FIREBASE_PROJECT_ID",
-    "storage_bucket": "YOUR_FIREBASE_STORAGE_BUCKET"
+    "project_number": "524580981259",
+    "firebase_url": "https://workern-app-default-rtdb.firebaseio.com",
+    "project_id": "workern-app",
+    "storage_bucket": "workern-app.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "YOUR_ANDROID_MOBILESDK_APP_ID_1",
+        "mobilesdk_app_id": "1:524580981259:android:5e429e525c2747d225150e",
         "android_client_info": {
-          "package_name": "YOUR_ANDROID_PACKAGE_NAME_1"
+          "package_name": "com.workern.nikat"
         }
       },
       "oauth_client": [
         {
-          "client_id": "YOUR_OAUTH_CLIENT_ID_ANDROID_1",
+          "client_id": "524580981259-9p2hoevas5oevqa8jvof025vpjbn12bp.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "YOUR_ANDROID_PACKAGE_NAME_1",
-            "certificate_hash": "YOUR_ANDROID_CERTIFICATE_HASH_1"
+            "package_name": "com.workern.nikat",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
           }
         },
         {
-          "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_1",
+          "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "YOUR_FIREBASE_ANDROID_API_KEY"
+          "current_key": "AIzaSyAP93px3vdz1lWROs5QI3etEfJy5GWWL8U"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_1",
+              "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_IOS_1",
+              "client_id": "524580981259-0lipg5hmfhj9gfergh1394o1hs578bto.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "YOUR_IOS_BUNDLE_ID_1"
+                "bundle_id": "com.workern.nikatDelivery"
               }
             }
           ]
@@ -52,34 +52,34 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "YOUR_ANDROID_MOBILESDK_APP_ID_2",
+        "mobilesdk_app_id": "1:524580981259:android:27a8aad58927f14925150e",
         "android_client_info": {
-          "package_name": "YOUR_ANDROID_PACKAGE_NAME_2"
+          "package_name": "com.workern.nikatDelivery"
         }
       },
       "oauth_client": [
         {
-          "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_2",
+          "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "YOUR_FIREBASE_ANDROID_API_KEY"
+          "current_key": "AIzaSyAP93px3vdz1lWROs5QI3etEfJy5GWWL8U"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_2",
+              "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_IOS_2",
+              "client_id": "524580981259-0lipg5hmfhj9gfergh1394o1hs578bto.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "YOUR_IOS_BUNDLE_ID_2"
+                "bundle_id": "com.workern.nikatDelivery"
               }
             }
           ]
@@ -88,34 +88,34 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "YOUR_ANDROID_MOBILESDK_APP_ID_3",
+        "mobilesdk_app_id": "1:524580981259:android:80a929f5d6e37b7125150e",
         "android_client_info": {
-          "package_name": "YOUR_ANDROID_PACKAGE_NAME_3"
+          "package_name": "com.workern.promptkul"
         }
       },
       "oauth_client": [
         {
-          "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_3",
+          "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "YOUR_FIREBASE_ANDROID_API_KEY"
+          "current_key": "AIzaSyAP93px3vdz1lWROs5QI3etEfJy5GWWL8U"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_3",
+              "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_IOS_3",
+              "client_id": "524580981259-0lipg5hmfhj9gfergh1394o1hs578bto.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "YOUR_IOS_BUNDLE_ID_3"
+                "bundle_id": "com.workern.nikatDelivery"
               }
             }
           ]
@@ -124,42 +124,42 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "YOUR_ANDROID_MOBILESDK_APP_ID_4",
+        "mobilesdk_app_id": "1:524580981259:android:f1fe9d09b3a994c925150e",
         "android_client_info": {
-          "package_name": "YOUR_ANDROID_PACKAGE_NAME_4"
+          "package_name": "com.workern.sangrah"
         }
       },
       "oauth_client": [
         {
-          "client_id": "YOUR_OAUTH_CLIENT_ID_ANDROID_4",
+          "client_id": "524580981259-mjpk80c7rndm50d4724bcc3f4cdkucj6.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "YOUR_ANDROID_PACKAGE_NAME_4",
-            "certificate_hash": "YOUR_ANDROID_CERTIFICATE_HASH_4"
+            "package_name": "com.workern.sangrah",
+            "certificate_hash": "a8949adce4b4c0901cf975b11aa2bce106aa9767"
           }
         },
         {
-          "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_4",
+          "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "YOUR_FIREBASE_ANDROID_API_KEY"
+          "current_key": "AIzaSyAP93px3vdz1lWROs5QI3etEfJy5GWWL8U"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_4",
+              "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_IOS_4",
+              "client_id": "524580981259-0lipg5hmfhj9gfergh1394o1hs578bto.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "YOUR_IOS_BUNDLE_ID_4"
+                "bundle_id": "com.workern.nikatDelivery"
               }
             }
           ]
@@ -168,34 +168,34 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "YOUR_ANDROID_MOBILESDK_APP_ID_5",
+        "mobilesdk_app_id": "1:524580981259:android:3eacedae9235d58525150e",
         "android_client_info": {
-          "package_name": "YOUR_ANDROID_PACKAGE_NAME_5"
+          "package_name": "com.workern.sangrah.admin"
         }
       },
       "oauth_client": [
         {
-          "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_5",
+          "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "YOUR_FIREBASE_ANDROID_API_KEY"
+          "current_key": "AIzaSyAP93px3vdz1lWROs5QI3etEfJy5GWWL8U"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_5",
+              "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_IOS_5",
+              "client_id": "524580981259-0lipg5hmfhj9gfergh1394o1hs578bto.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "YOUR_IOS_BUNDLE_ID_5"
+                "bundle_id": "com.workern.nikatDelivery"
               }
             }
           ]
@@ -204,34 +204,34 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "YOUR_ANDROID_MOBILESDK_APP_ID_6",
+        "mobilesdk_app_id": "1:524580981259:android:3163ad4584360d2125150e",
         "android_client_info": {
-          "package_name": "YOUR_ANDROID_PACKAGE_NAME_6"
+          "package_name": "com.workern.starterApp"
         }
       },
       "oauth_client": [
         {
-          "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_6",
+          "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "YOUR_FIREBASE_ANDROID_API_KEY"
+          "current_key": "AIzaSyAP93px3vdz1lWROs5QI3etEfJy5GWWL8U"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_WEB_6",
+              "client_id": "524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "YOUR_OAUTH_CLIENT_ID_IOS_6",
+              "client_id": "524580981259-0lipg5hmfhj9gfergh1394o1hs578bto.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "YOUR_IOS_BUNDLE_ID_6"
+                "bundle_id": "com.workern.nikatDelivery"
               }
             }
           ]
@@ -239,5 +239,5 @@
       }
     }
   ],
-  "configuration_version": "YOUR_CONFIGURATION_VERSION"
+  "configuration_version": "1"
 }

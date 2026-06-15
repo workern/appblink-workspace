@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { logger } from 'firebase-functions';
-import { SearchResult, SearchResultType } from '../../apps/smart-save/types';
-
-const GOOGLE_PLACES_API_KEY = 'AIzaSyDKALiD1adXRI-E5AS7AD8t8tNG_mguPOc';
+import { SearchResult, SearchResultType } from '@workern/models';
+import { GOOGLE_PLACES_API_KEY } from '../../global';
 
 export interface GooglePlaceResult {
   description: string;
@@ -23,7 +22,8 @@ export async function searchGooglePlaces(
   query: string,
   limit = 3
 ): Promise<SearchResult[]> {
-  if (!GOOGLE_PLACES_API_KEY) {
+  const apiKey = GOOGLE_PLACES_API_KEY.value();
+  if (!apiKey) {
     logger.warn('Google Places API key is not configured');
     return [];
   }
@@ -35,7 +35,7 @@ export async function searchGooglePlaces(
       {
         params: {
           input: query,
-          key: GOOGLE_PLACES_API_KEY
+          key: apiKey
         }
       }
     );

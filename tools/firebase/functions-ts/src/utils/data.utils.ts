@@ -1,7 +1,6 @@
 import { https } from 'firebase-functions/v2';
 import { messages } from '../constants/messages';
-
-import { error, log } from 'firebase-functions/logger';
+import { log } from 'firebase-functions/logger';
 import { CallableRequest } from 'firebase-functions/https';
 
 export async function checkRequest(
@@ -11,7 +10,7 @@ export async function checkRequest(
 ) {
   const langCode = request.data?.lang || 'en';
   const errorMessages = messages[langCode];
-  const spaceId = request.data?.spaceId;
+
   if (!request.auth?.uid && onlyAuth) {
     throw new https.HttpsError(
       'unauthenticated',
@@ -29,16 +28,9 @@ export async function checkRequest(
       errorMessages.general.incorrectDataSent
     );
   }
-  // if (spaceId != null) {
-  //   const isMember = await isSpaceMember(spaceId, request.auth.uid);
-  //   log('isMember', isMember);
-  //   if (!isMember) {
-  //     throw new https.HttpsError(
-  //       'permission-denied',
-  //       errorMessages.general.unAuthorized
-  //     );
-  //   }
-  // }
+
+  // Note: workspace/space membership authorization is the responsibility of
+  // the calling function. Use isWorkspaceMember() from workspaces/core.ts.
 
   return true;
 }

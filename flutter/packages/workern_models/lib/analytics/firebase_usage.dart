@@ -98,20 +98,20 @@ class FirebaseCostBreakdown {
   });
 
   factory FirebaseCostBreakdown.fromJson(Map<String, dynamic> json) {
-    double toDouble(dynamic value) => (value ?? 0).toDouble();
+    double _toDouble(dynamic value) => (value ?? 0).toDouble();
     return FirebaseCostBreakdown(
-      firestoreReadsUsd: toDouble(json['firestoreReadsUsd']),
-      firestoreWritesUsd: toDouble(json['firestoreWritesUsd']),
-      firestoreDeletesUsd: toDouble(json['firestoreDeletesUsd']),
-      firestoreNetworkUsd: toDouble(json['firestoreNetworkUsd']),
-      functionsInvocationsUsd: toDouble(json['functionsInvocationsUsd']),
-      functionsNetworkUsd: toDouble(json['functionsNetworkUsd']),
-      functionsGbSecondsUsd: toDouble(json['functionsGbSecondsUsd']),
-      functionsCpuSecondsUsd: toDouble(json['functionsCpuSecondsUsd']),
-      storageUploadsUsd: toDouble(json['storageUploadsUsd']),
-      storageDownloadsUsd: toDouble(json['storageDownloadsUsd']),
-      storageNetworkUsd: toDouble(json['storageNetworkUsd']),
-      totalUsd: toDouble(json['totalUsd']),
+      firestoreReadsUsd: _toDouble(json['firestoreReadsUsd']),
+      firestoreWritesUsd: _toDouble(json['firestoreWritesUsd']),
+      firestoreDeletesUsd: _toDouble(json['firestoreDeletesUsd']),
+      firestoreNetworkUsd: _toDouble(json['firestoreNetworkUsd']),
+      functionsInvocationsUsd: _toDouble(json['functionsInvocationsUsd']),
+      functionsNetworkUsd: _toDouble(json['functionsNetworkUsd']),
+      functionsGbSecondsUsd: _toDouble(json['functionsGbSecondsUsd']),
+      functionsCpuSecondsUsd: _toDouble(json['functionsCpuSecondsUsd']),
+      storageUploadsUsd: _toDouble(json['storageUploadsUsd']),
+      storageDownloadsUsd: _toDouble(json['storageDownloadsUsd']),
+      storageNetworkUsd: _toDouble(json['storageNetworkUsd']),
+      totalUsd: _toDouble(json['totalUsd']),
     );
   }
 
@@ -147,12 +147,12 @@ class FirebasePricingRecommendation {
   });
 
   factory FirebasePricingRecommendation.fromJson(Map<String, dynamic> json) {
-    double toDouble(dynamic value) => (value ?? 0).toDouble();
+    double _toDouble(dynamic value) => (value ?? 0).toDouble();
     return FirebasePricingRecommendation(
-      estimatedCostUsdPerUser: toDouble(json['estimatedCostUsdPerUser']),
-      suggestedPriceUsdPerUser: toDouble(json['suggestedPriceUsdPerUser']),
-      suggestedFloorUsdPerUser: toDouble(json['suggestedFloorUsdPerUser']),
-      grossMarginPctAtSuggestedPrice: toDouble(
+      estimatedCostUsdPerUser: _toDouble(json['estimatedCostUsdPerUser']),
+      suggestedPriceUsdPerUser: _toDouble(json['suggestedPriceUsdPerUser']),
+      suggestedFloorUsdPerUser: _toDouble(json['suggestedFloorUsdPerUser']),
+      grossMarginPctAtSuggestedPrice: _toDouble(
         json['grossMarginPctAtSuggestedPrice'],
       ),
     );

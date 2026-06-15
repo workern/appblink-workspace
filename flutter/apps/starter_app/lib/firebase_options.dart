@@ -47,7 +47,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAP93px3vdz1lWROs5QI3etEfJy5GWWL8U',
-    appId: '1:524580981259:android:3163ad4584360d2125150e',
+    appId: '1:524580981259:android:5e429e525c2747d225150e',
     messagingSenderId: '524580981259',
     projectId: 'workern-app',
     databaseURL: 'https://workern-app-default-rtdb.firebaseio.com',

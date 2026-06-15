@@ -21,13 +21,13 @@
 
 import { HttpsError, onCall } from 'firebase-functions/https';
 import { z } from 'zod';
-import { checkRequest } from '../../utils';
+import { checkRequest } from '../../utils/data.utils';
 import {
   db,
   deployOptions,
   firestoreWriteTimestamp,
-  metaAppId,
-  metaAppSecret
+  META_APP_ID,
+  META_APP_SECRET
 } from '../../global';
 import { whatsappAccessToken } from './constants';
 import { graphApiRequest } from './common';
@@ -83,7 +83,7 @@ const disconnectSchema = z.object({
 export const connectbusiness = onCall(
   {
     ...deployOptions,
-    secrets: [whatsappAccessToken, metaAppSecret, metaAppId]
+    secrets: [whatsappAccessToken, META_APP_SECRET, META_APP_ID]
   },
   async (request) => {
     await checkRequest(request, connectSchema, true);
@@ -102,8 +102,8 @@ export const connectbusiness = onCall(
       `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token`,
       {
         params: {
-          client_id: metaAppId.value(),
-          client_secret: metaAppSecret.value(),
+          client_id: META_APP_ID.value(),
+          client_secret: META_APP_SECRET.value(),
           code
         }
       }
@@ -117,7 +117,7 @@ export const connectbusiness = onCall(
       {
         params: {
           input_token: userAccessToken,
-          access_token: `${metaAppId.value()}|${metaAppSecret.value()}`
+          access_token: `${META_APP_ID.value()}|${META_APP_SECRET.value()}`
         }
       }
     );

@@ -17,14 +17,29 @@ dependencies:
   # Firebase
   firebase_core: ^4.4.0
   firebase_auth: ^6.1.4
-  firebase_messaging: ^16.1.1
+  firebase_storage: ^13.0.6
+  cloud_firestore: ^6.1.2
+  cloud_functions: ^6.0.6
+  firebase_ui_auth: ^3.0.1
 
   # State Management
   flutter_riverpod: ^3.1.0
+  riverpod_annotation: ^4.0.0
+
+  # Share Intent (receiving content from other apps)
+  flutter_sharing_intent: ^2.0.4
+
+  # Common Models
+  workern_models:
+    path: ../../packages/workern_models
 
   # Authentication Package
   workern_auth:
     path: ../../packages/workern_auth
+
+  # Location Services Package
+  workern_location:
+    path: ../../packages/workern_location
 
   # Cloud Services Package
   workern_services:
@@ -35,6 +50,8 @@ dependencies:
   # Shared Widgets Package
   workern_widgets:
     path: ../../packages/workern_widgets
+  workern_dev_tools:
+    path: ../../packages/workern_dev_tools
 
   # Media Package (image upload, video player, storage) — requires camera/photo permissions
   workern_media:
@@ -48,11 +65,38 @@ dependencies:
   workern_billing:
     path: ../../packages/workern_billing
 
-  # UI
+  workern_ai:
+    path: ../../packages/workern_ai
+
+  # UI & Image handling
   shadcn_ui: ^0.50.2
+  image_picker: ^1.1.2
+  cached_network_image: ^3.4.1
+  photo_view: ^0.15.0
 
   # Routing
   go_router: ^14.0.0
+
+  # Utilities
+  intl: ^0.20.2
+  uuid: ^4.5.1
+  timeago: ^3.7.0
+  url_launcher: ^6.3.1
+  share_plus: ^12.0.1
+  shared_preferences: ^2.5.4
+
+  # Location & Maps
+  location: ^8.0.1
+  geolocator: ^14.0.2
+  geoflutterfire_plus: ^0.0.33
+  google_maps_flutter: ^2.14.0
+  google_places_flutter: ^2.1.1
+
+  # HTTP & Networking
+  http: ^1.2.0
+
+  # Payment (if needed for future implementation)
+  firebase_messaging: ^16.1.1
 
 dev_dependencies:
   flutter_test:

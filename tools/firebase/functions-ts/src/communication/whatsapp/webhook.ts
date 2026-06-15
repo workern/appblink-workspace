@@ -1,7 +1,7 @@
 import { onCall, onRequest } from 'firebase-functions/https';
 import { z } from 'zod';
 import * as crypto from 'crypto';
-import { checkRequest } from '../../utils';
+import { checkRequest } from '../../utils/data.utils';
 import {
   getConversationSnapByPhoneNumber,
   getMessageRef,
@@ -11,11 +11,15 @@ import {
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { log, warn } from 'firebase-functions/logger';
 import { Conversation, Message } from './interfaces';
-import { db ,metaAppSecret} from '../../global';
+import { db, META_APP_SECRET } from '../../global';
 import { whatsappAccessToken } from './constants';
 const VERIFY_TOKEN = 'shambho';
 
-function isValidSignature(rawBody: Buffer, signature: string | undefined, appSecret: string): boolean {
+function isValidSignature(
+  rawBody: Buffer,
+  signature: string | undefined,
+  appSecret: string
+): boolean {
   if (!signature) {
     warn('Missing x-hub-signature-256 header');
     return false;
@@ -86,7 +90,7 @@ export const overrideCallbackUrl = onCall(async (request) => {
  * Webhook HTTP handler
  */
 export const handler = onRequest(
-  { secrets: [whatsappAccessToken,metaAppSecret] },
+  { secrets: [whatsappAccessToken, META_APP_SECRET] },
   async (req, res) => {
     if (req.method === 'GET') {
       const mode = req.query['hub.mode'];
@@ -98,8 +102,10 @@ export const handler = onRequest(
         res.status(403).send('Forbidden');
       }
     } else if (req.method === 'POST') {
-      const signature = req.headers['x-hub-signature-256'] as string | undefined;
-      if (!isValidSignature(req.rawBody, signature, metaAppSecret.value())) {
+      const signature = req.headers['x-hub-signature-256'] as
+        | string
+        | undefined;
+      if (!isValidSignature(req.rawBody, signature, META_APP_SECRET.value())) {
         warn('Invalid webhook signature — request rejected');
         res.status(403).send('Invalid signature');
         return;

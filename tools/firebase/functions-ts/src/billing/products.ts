@@ -1,12 +1,12 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
-import { checkRequest, getUser } from '../utils';
+import { checkRequest } from '../utils/data.utils';
 import {
   db,
   deployOptions,
   isProduction,
-  razorpayKeyId,
-  razorpayKeySecret
+  RAZORPAY_KEY_ID,
+  RAZORPAY_KEY_SECRET
 } from '../global';
 import {
   CreateProductCheckoutResponse,
@@ -30,7 +30,7 @@ import { createLemonSqueezyCheckoutAndFirestoreEntry } from './gateways/lemonsqu
 import { createDodoSubscriptionSession } from './gateways/dodo-payments';
 import { TransactionReason } from '../enums/transactions/transaction-reason';
 import { TransactionType } from '../enums/transactions/transaction-type';
-
+import { getUser } from '../utils/firebase.utils';
 import { FieldValue } from 'firebase-admin/firestore';
 
 const gatewaySchema = z.enum(TransactionProcessorID);
@@ -248,7 +248,7 @@ export const createProductCheckoutSession = onCall(
   {
     ...deployOptions,
     region: 'asia-south2',
-    secrets: [razorpayKeyId, razorpayKeySecret]
+    secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET]
   },
   async (request): Promise<CreateProductCheckoutResponse> => {
     await checkRequest(request, createProductCheckoutSchema, true);
@@ -597,7 +597,7 @@ export const cancelSubscription = onCall(
   {
     ...deployOptions,
     region: 'asia-south2',
-    secrets: [razorpayKeyId, razorpayKeySecret]
+    secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET]
   },
   async (request) => {
     await checkRequest(request, cancelSubscriptionSchema, true);
@@ -630,10 +630,8 @@ export const cancelSubscription = onCall(
     }
 
     const instance = new Razorpay({
-      key_id: isProduction ? razorpayKeyId.value() : 'rzp_test_Rm3ZpwsyNst8nl',
-      key_secret: isProduction
-        ? razorpayKeySecret.value()
-        : 'bKqN5kUJ8wmXx5d0RBkS4NXI'
+      key_id: RAZORPAY_KEY_ID.value(),
+      key_secret: RAZORPAY_KEY_SECRET.value()
     });
 
     await instance.subscriptions.cancel(

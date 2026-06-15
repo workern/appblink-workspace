@@ -1,6 +1,6 @@
 import { onCall } from 'firebase-functions/https';
 import { graphApiRequest } from './common';
-import { checkRequest } from '../../utils';
+import { checkRequest } from '../../utils/data.utils';
 import { z } from 'zod';
 
 const registerSchema = z.object({

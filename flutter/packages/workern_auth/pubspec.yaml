@@ -2,7 +2,6 @@ name: workern_auth
 description: 'A reusable authentication package for Workern Flutter applications with Firebase support.'
 publish_to: 'none'
 resolution: workspace
-
 version: 1.0.0+1
 
 environment:
@@ -19,8 +18,6 @@ dependencies:
   # UI Widgets
   workern_widgets:
     path: ../workern_widgets
-  workern_services:
-    path: ../workern_services
 
   # Firebase
   firebase_core: ^4.4.0

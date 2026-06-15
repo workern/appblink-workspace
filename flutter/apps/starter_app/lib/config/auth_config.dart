@@ -10,7 +10,7 @@ String get GOOGLE_CLIENT_ID {
     return '';
   } else if (defaultTargetPlatform == TargetPlatform.android) {
     // Android Google Client ID from Firebase Console
-    return 'YOUR_OAUTH_CLIENT_ID_WEB_1';
+    return '524580981259-edbo4ah8o3hd4sfbvgvindsejr306dr7.apps.googleusercontent.com';
   } else if (kIsWeb) {
     // Web Google Client ID from Firebase Console
     return '524580981259-REPLACE_WITH_WEB_CLIENT_ID.apps.googleusercontent.com';

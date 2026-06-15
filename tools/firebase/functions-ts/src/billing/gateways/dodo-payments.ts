@@ -1,8 +1,9 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import axios from 'axios';
-import { dodoApiKey, isProduction } from '../../global';
-import { checkRequest, getUser } from '../../utils';
+import { DODO_API_KEY, isProduction } from '../../global';
+import { checkRequest } from '../../utils/data.utils';
 import { z } from 'zod';
+import { getUser } from '../../utils/firebase.utils';
 
 // Initialize Dodo API client
 const DODO_API_BASE_URL = isProduction
@@ -23,7 +24,7 @@ export async function createDodoSubscriptionSession(details: {
     );
   }
 
-  const apiKey = dodoApiKey.value();
+  const apiKey = DODO_API_KEY.value();
   if (!apiKey) {
     throw new HttpsError('internal', 'Dodo API key is not set');
   }
@@ -71,7 +72,7 @@ export async function createDodoSubscriptionSession(details: {
 export const createDodoSubscription = onCall(
   {
     enforceAppCheck: true,
-    secrets: [dodoApiKey]
+    secrets: [DODO_API_KEY]
   },
   async (request) => {
     const { productId } = request.data;

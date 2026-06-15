@@ -1,7 +1,7 @@
 import { onCall } from 'firebase-functions/https';
 import { graphApiRequest } from './common';
 import { z } from 'zod';
-import { checkRequest } from '../../utils';
+import { checkRequest } from '../../utils/data.utils';
 
 export const getBlockedUsers = onCall(async (request) => {
   const schema = z.object({ phoneNumberId: z.string().nonempty() });

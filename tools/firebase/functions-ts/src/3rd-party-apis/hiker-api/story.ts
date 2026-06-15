@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { logger } from 'firebase-functions';
 import { SaveType, SearchResult } from '@workern/models';
-import { db } from '../../global';
+import { db, HIKER_API_KEY } from '../../global';
 import { MediaItem } from './types';
-import { getAutoId } from '../../utils';
+import { getAutoId } from '../../utils/firebase.utils';
 import {
   NormalizedStoryResult,
   StoryMention,
@@ -22,8 +22,16 @@ import {
 
 // ============== HikerAPI Configuration ==============
 const HIKER_API_BASE_URL = 'https://api.hikerapi.com';
-const HIKER_API_KEY =
-  process.env.HIKER_API_KEY || '4nz29ve9zoqx654p9ux4s8s7lf1ra8wf';
+
+const getHikerApiKey = (): string => {
+  const key = HIKER_API_KEY.value();
+  if (!key) {
+    throw new Error(
+      'HIKER_API_KEY is not configured. Please set the environment variable.'
+    );
+  }
+  return key;
+};
 
 // ============== HikerAPI Functions ==============
 
@@ -35,18 +43,19 @@ export interface HikerAPIStoryOptions {
   safe_int?: boolean; // Convert all big integers to strings
 }
 
-function getInstagramUserDocRef(username: string) {
+function getInstagramUserDocRef(username: string, appId: string) {
   const normalized = username.trim().toLowerCase();
   return db
     .collection('apps')
-    .doc('save-nest')
+    .doc(appId)
     .collection('instagramUsers')
     .doc(normalized);
 }
 
 async function upsertInstagramUserCache(
   username: string,
-  stories: InstagramStoriesResult
+  stories: InstagramStoriesResult,
+  appId: string
 ) {
   try {
     const user = stories.reel?.user;
@@ -54,7 +63,7 @@ async function upsertInstagramUserCache(
       return;
     }
 
-    const docRef = getInstagramUserDocRef(username);
+    const docRef = getInstagramUserDocRef(username, appId);
     const existing = await docRef.get();
     const existingData = existing.data() as
       | Partial<InstagramUserCache>
@@ -97,11 +106,7 @@ export async function getStoriesUsingHikerByUserId(
   options?: HikerAPIStoryOptions
 ): Promise<InstagramStoriesResult> {
   try {
-    if (!HIKER_API_KEY) {
-      throw new Error(
-        'HIKER_API_KEY is not configured. Please set the environment variable.'
-      );
-    }
+    const apiKey = getHikerApiKey();
 
     logger.info('Fetching stories from HikerAPI by user ID', { userId });
 
@@ -122,7 +127,7 @@ export async function getStoriesUsingHikerByUserId(
     const response = await axios.get(`${HIKER_API_BASE_URL}/v2/user/stories`, {
       headers: {
         accept: 'application/json',
-        'x-access-key': HIKER_API_KEY
+        'x-access-key': apiKey
       },
       params
     });
@@ -157,18 +162,15 @@ export async function getStoriesUsingHikerByUserId(
  */
 export async function getStoriesByUsername(
   username: string,
-  options?: HikerAPIStoryOptions
+  options: HikerAPIStoryOptions | undefined,
+  appId: string
 ): Promise<InstagramStoriesResult> {
   try {
-    if (!HIKER_API_KEY) {
-      throw new Error(
-        'HIKER_API_KEY is not configured. Please set the environment variable.'
-      );
-    }
+    const apiKey = getHikerApiKey();
 
     logger.info('Fetching stories from HikerAPI by username', { username });
 
-    const usernameDoc = await getInstagramUserDocRef(username).get();
+    const usernameDoc = await getInstagramUserDocRef(username, appId).get();
     const cachedData = usernameDoc.data() as
       | Partial<InstagramUserCache>
       | undefined;
@@ -185,7 +187,7 @@ export async function getStoriesByUsername(
           options
         );
 
-        await upsertInstagramUserCache(username, storiesByUserId);
+        await upsertInstagramUserCache(username, storiesByUserId, appId);
         return storiesByUserId;
       } catch (cachedFetchError) {
         logger.warn('Cached igUserId fetch failed, falling back to username', {
@@ -215,7 +217,7 @@ export async function getStoriesByUsername(
       {
         headers: {
           accept: 'application/json',
-          'x-access-key': HIKER_API_KEY
+          'x-access-key': apiKey
         },
         params
       }
@@ -227,7 +229,7 @@ export async function getStoriesByUsername(
       itemCount: response.data.reel?.items?.length || 0
     });
 
-    await upsertInstagramUserCache(username, response.data);
+    await upsertInstagramUserCache(username, response.data, appId);
 
     return response.data;
   } catch (error: unknown) {
@@ -252,11 +254,7 @@ export async function getStoryById(
   options?: HikerAPIStoryOptions
 ): Promise<InstagramStoriesResult> {
   try {
-    if (!HIKER_API_KEY) {
-      throw new Error(
-        'HIKER_API_KEY is not configured. Please set the environment variable.'
-      );
-    }
+    const apiKey = getHikerApiKey();
 
     logger.info('Fetching story from HikerAPI by ID', { storyId });
 
@@ -277,7 +275,7 @@ export async function getStoryById(
     const response = await axios.get(`${HIKER_API_BASE_URL}/v2/story/by/id`, {
       headers: {
         accept: 'application/json',
-        'x-access-key': HIKER_API_KEY
+        'x-access-key': apiKey
       },
       params
     });
@@ -311,11 +309,7 @@ export async function getStoryByUrl(
   options?: HikerAPIStoryOptions
 ): Promise<InstagramStoriesResult> {
   try {
-    if (!HIKER_API_KEY) {
-      throw new Error(
-        'HIKER_API_KEY is not configured. Please set the environment variable.'
-      );
-    }
+    const apiKey = getHikerApiKey();
 
     logger.info('Fetching story from HikerAPI by URL', { url });
 
@@ -336,7 +330,7 @@ export async function getStoryByUrl(
     const response = await axios.get(`${HIKER_API_BASE_URL}/v2/story/by/url`, {
       headers: {
         accept: 'application/json',
-        'x-access-key': HIKER_API_KEY
+        'x-access-key': apiKey
       },
       params
     });
@@ -366,11 +360,7 @@ export async function getStoryByUrl(
  */
 export async function resolveShareUrl(shareUrl: string): Promise<unknown> {
   try {
-    if (!HIKER_API_KEY) {
-      throw new Error(
-        'HIKER_API_KEY is not configured. Please set the environment variable.'
-      );
-    }
+    const apiKey = getHikerApiKey();
 
     logger.info('Resolving share URL using HikerAPI', { shareUrl });
 
@@ -378,7 +368,7 @@ export async function resolveShareUrl(shareUrl: string): Promise<unknown> {
     const response = await axios.get(`${HIKER_API_BASE_URL}/v1/share/by/url`, {
       headers: {
         accept: 'application/json',
-        'x-access-key': HIKER_API_KEY
+        'x-access-key': apiKey
       },
       params: {
         url: shareUrl
@@ -689,10 +679,11 @@ function buildNormalizedStoryResult(
  */
 export async function getNormalizedStoriesByUsername(
   username: string,
-  options?: HikerAPIStoryOptions
+  options: HikerAPIStoryOptions | undefined,
+  appId: string
 ): Promise<NormalizedStoryResult | null> {
   try {
-    const storiesData = await getStoriesByUsername(username, options);
+    const storiesData = await getStoriesByUsername(username, options, appId);
 
     if (
       !storiesData.reel ||

@@ -4,7 +4,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { acceptPendingInvitesForUser } from './workspaces/accept-invite';
 import { z } from 'zod';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/https';
-import { getUserClaims } from './utils';
+import { getUserClaims } from './utils/firebase.utils';
 /**
  * Creates a new user document and initializes their workspace when they sign up
  * Sets up default spaces, work history, qualifications, and app-specific configurations
@@ -45,8 +45,6 @@ exports.writeNewUserToFirestore = functions.auth
       balance: 0.0,
       paypalEmail: '',
       currency: 'USD',
-      rating: { publisher: 0, worker: 0 },
-      visibilities: ['PUBLIC', email, uid],
       createdAt: FieldValue.serverTimestamp()
     };
 
@@ -56,65 +54,8 @@ exports.writeNewUserToFirestore = functions.auth
     const batch = db.batch();
     const promises: Promise<any>[] = [];
     batch.set(userRef, userData);
-    // // ============================================================
-    // // Set up work history and qualifications
-    // // ============================================================
-    // const workHistory = new WorkHistory();
-    // batch.set(
-    //   userRef.collection('details').doc('workHistory'),
-    //   workHistory.forFirestore()
-    // );
 
-    // Object.keys(workHistory).forEach((key) => {
-    //   batch.set(
-    //     userRef.collection('qualifications').doc(key),
-    //     new UserQualification({
-    //       id: key,
-    //       value: key === 'approvalRate' ? 100 : 0,
-    //       group: 'workHistory',
-    //       valueType: 'number'
-    //     }).forFirestore()
-    //   );
-    // });
-
-    // ============================================================
-    // Set up user documents
-    // ============================================================
-
-    // batch.set(db.collection('usersPublicData').doc(uid), {
-    //   uid,
-    //   name: name || null,
-    //   rating: { publisher: 0, worker: 0 }
-    // });
-
-    // ============================================================
-    // Commit batch and handle phone number verification
-    // ============================================================
-    // promises.push(
-    //   batch.commit().then(() => {
-    //     if (!phoneNumber) return Promise.resolve();
-
-    //     try {
-    //       const phoneUtil =
-    //         require('google-libphonenumber').PhoneNumberUtil.getInstance();
-    //       const number = phoneUtil.parseAndKeepRawInput(phoneNumber);
-    //       const regionCode = phoneUtil.getRegionCodeForNumber(number);
-
-    //       if (regionCode) {
-    //         return rtdb
-    //           .ref('users')
-    //           .child(uid)
-    //           .child('qualifications')
-    //           .child('verifiedMobileNumberCountry')
-    //           .set(regionCode);
-    //       }
-    //     } catch (error) {
-    //       log('Error parsing phone number:', error);
-    //     }
-
-    //     return Promise.resolve();
-    //   })
-    // );
+    promises.push(batch.commit());
 
     promises.push(
       acceptPendingInvitesForUser(
@@ -128,9 +69,6 @@ exports.writeNewUserToFirestore = functions.auth
       )
     );
 
-    // ============================================================
-    // Execute all promises and complete user creation
-    // ============================================================
     return Promise.all(promises).then(() => {
       log(`✅ User created successfully: ${uid}`);
     });
@@ -144,28 +82,26 @@ exports.onUserDeleted = functions.auth
     promises.push(db.recursiveDelete(db.collection('users').doc(uid)));
     promises.push(db.collection('usersPublicData').doc(uid).delete());
     promises.push(db.collection('userClaims').doc(uid).delete());
-    // promises.push(
-    //   db
-    //     .collectionGroup('members')
-    //     .where('info.uid', '==', uid)
-    //     .get()
-    //     .then(async (snaps) => {
-    //       if (!snaps.empty) {
-    //         const subPromises = [];
-    //         snaps.forEach(async (snap) => {
-    //           subPromises.push(
-    //             snap.ref.parent.parent.get().then(async (spaceSnap) => {
-    //               return deleteMemberWork(
-    //                 spaceSnap.data() as Space<Date>,
-    //                 snap.ref.id
-    //               );
-    //             })
-    //           );
-    //         });
-    //         return Promise.all(subPromises);
-    //       }
-    //     })
-    // );
+    // Remove the deleted user from any space/workspace member collections they
+    // belonged to. The offerings app's deleteMemberWork is NOT called here —
+    // we do a direct recursive delete of their member doc instead, which is
+    // sufficient for cross-app cleanup. App-specific cleanup (notifications,
+    // work history, etc.) should be handled by each app's own triggers.
+    promises.push(
+      db
+        .collectionGroup('members')
+        .where('info.uid', '==', uid)
+        .get()
+        .then(async (snaps) => {
+          if (!snaps.empty) {
+            const batch = db.batch();
+            snaps.forEach((snap) => {
+              batch.delete(snap.ref);
+            });
+            return batch.commit();
+          }
+        })
+    );
     return Promise.all(promises)
       .then(() => {
         log('User deleted!');

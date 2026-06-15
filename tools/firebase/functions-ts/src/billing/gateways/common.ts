@@ -3,7 +3,6 @@ import {
   admin,
   db,
   defaultSuccessResult,
-  firestoreWriteTimestamp,
   transactionsByIdCollection
 } from '../../global';
 import { Transaction } from '../../models/transactions/transaction';
@@ -18,11 +17,15 @@ import {
   PurchasableProduct,
   UserSubscription
 } from '@workern/models';
-
 import {
   grantRevenueCatEntitlement,
   revokeRevenueCatEntitlement
 } from './revenue-cat';
+import {
+  runInTransactionSuccessHooks,
+  runPostCommitSuccessHooks,
+  runInTransactionFailedHooks
+} from './transaction-hooks';
 
 /**
  * Resolves the workern APPID for a given entitlement identifier by reading
@@ -301,24 +304,35 @@ export function onTransactionSuccessful(
   return db
     .runTransaction(async (t) => {
       const user = (await t.get(userRef)).data();
-      const transaction = new Transaction((await t.get(transactionRef)).data());
+      const transactionSnapshot = await t.get(transactionRef);
+      const transaction = new Transaction(transactionSnapshot.data());
       if (!user) {
         throw new HttpsError('not-found', 'User not found');
       }
-      if (!transaction) {
+      if (!transactionSnapshot.exists) {
         throw new HttpsError('not-found', 'Transaction not found');
       }
+
+      let finalResult: Record<string, any> = {};
+
       if (user != null && transaction?.state == TRANSACTION_STATE_PENDING) {
         const notes = transaction.notes;
         transaction.message = messages[langCode].transaction.successMessage;
         transaction.finalizedAt = FieldValue.serverTimestamp();
         transaction.processor.data = gatewayData;
-
         transaction.state = TransactionState.SUCCESSFUL;
+
         if (transaction.reason == TransactionReason.DEPOSIT) {
           t.update(userRef, {
             balance: user.balance + transaction.amount.value
           });
+        } else {
+          // Delegate to the registered app-side hook (if any).
+          const hookResult = await runInTransactionSuccessHooks(
+            transaction.reason,
+            { transaction, gatewayData, t, langCode }
+          );
+          finalResult = { ...finalResult, ...hookResult };
         }
 
         t.update(transactionRef, transaction.forFirestore('admin'));
@@ -328,9 +342,9 @@ export function onTransactionSuccessful(
         );
       }
       log('Completed transaction processing');
-      return Promise.resolve(transaction);
+      return finalResult;
     })
-    .then(async (result: any) => {
+    .then(async (result: Record<string, any>) => {
       log(result);
 
       if (
@@ -343,9 +357,10 @@ export function onTransactionSuccessful(
         });
       }
 
+      // Run any registered postCommit hooks (e.g. notifications, activateTask).
+      await runPostCommitSuccessHooks(transaction.reason, transaction, result);
 
-        return defaultSuccessResult;
-      
+      return defaultSuccessResult;
     });
 }
 
@@ -374,9 +389,15 @@ export function onTransactionFailed(
         transaction.message = messages[langCode].transaction.successMessage;
         transaction.finalizedAt = FieldValue.serverTimestamp();
         transaction.processor.data = gatewayData;
-
         transaction.state = TransactionState.FAILED;
-  
+
+        // Delegate failure handling to the registered app-side hook (if any).
+        await runInTransactionFailedHooks(transaction.reason, {
+          transaction,
+          gatewayData,
+          t,
+          langCode
+        });
 
         t.update(transactionRef, transaction.forFirestore('admin'));
         t.update(

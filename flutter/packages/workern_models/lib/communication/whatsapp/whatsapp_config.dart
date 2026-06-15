@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:workern_utils/workern_utils.dart';
 import '../../common/base.dart';
 
 /// Stored at: users/{shopOwnerId}/mySpaces/nikat/whatsappConfig

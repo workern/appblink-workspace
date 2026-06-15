@@ -81,7 +81,7 @@ export function addWorkspaceOwnerToBatch(
     {
       workspaceId,
       name: workspaceName,
-      ownerId: owner.uid,
+      owner: { uid: owner.uid, name: owner.displayName ?? '' },
       createdAt: now,
       updatedAt: now
     },

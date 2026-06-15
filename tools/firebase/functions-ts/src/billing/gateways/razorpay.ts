@@ -3,13 +3,14 @@ import {
   deployOptions,
   isProduction,
   transactionsByIdCollection,
-  razorpayKeyId,
-  razorpayKeySecret,
-  razorpayWebhookSecret,
+  RAZORPAY_KEY_ID,
+  RAZORPAY_KEY_SECRET,
+  RAZORPAY_WEBHOOK_SECRET,
   rtdb,
   db,
   functionsBaseURL,
-  REVENUE_CAT_API_KEY
+  REVENUE_CAT_API_KEY,
+  IP_DATA_API_KEY
 } from '../../global';
 import { HttpsError } from 'firebase-functions/v1/https';
 import {
@@ -19,7 +20,7 @@ import {
 } from 'firebase-functions/v2/https';
 import { TRANSACTION_STATE_PENDING } from '../../constants';
 import { messages } from '../../constants/messages';
-import { getAutoId, getUser } from '../../utils';
+import { getAutoId, getUser } from '../../utils/firebase.utils';
 import { validateWebhookSignature } from 'razorpay/dist/utils/razorpay-utils';
 import { Transaction } from '../../models/transactions/transaction';
 import {
@@ -29,13 +30,16 @@ import {
   revokeAppProductEntitlement,
   upsertUserSubscriptionDoc
 } from './common';
+import { runPostWebhookHooks } from './transaction-hooks';
 
 import { TransactionType } from '../../enums/transactions/transaction-type';
 import { TransactionReason } from '../../enums/transactions/transaction-reason';
-import { TransactionProcessorID } from '@workern/models';
+import { TransactionProcessorID } from '../../enums/transactions/transaction-processor-id';
 import { Timestamp } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { checkRequest, getCurrencyDataFromRequest, convertUSDToINR } from '../../utils';
+import { checkRequest } from '../../utils/data.utils';
+import { getCurrencyDataFromRequest } from '../../utils/networking.utils';
+import { convertUSDToINR } from '../../utils/forex.utils';
 import { Amount } from '@workern/models';
 import { GatewayOrderAndFirestoreEntryResponse } from './types';
 const Razorpay = require('razorpay');
@@ -87,23 +91,13 @@ interface SubscriptionCreateResponse {
   offer_id: string | null;
   remaining_count: number;
 }
-export const razorpayProducts = {
-  US: {
-    monthly: isProduction ? 'plan_DdU6JfwqiHaGIh' : 'item_NfVngzKTWlkZCj',
-    annual: isProduction ? 'plan_I5kO4OevcvHf22' : 'item_NfVpWjLhecoM2X'
-  },
-  IN: {
-    monthly: isProduction ? 'item_NXvpRFCPCOG8NQ' : 'item_NfVl8kBgjZiQqb',
-    annual: isProduction ? 'plan_I5kKmshOoAOF2y' : 'item_NfVmHsZt6Sfa20'
-  }
-};
 
 exports.createOrder = onCall(
   {
     ...deployOptions,
     // minInstances: 1,
     memory: '512MiB',
-    secrets: [razorpayKeyId, razorpayKeySecret]
+    secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, IP_DATA_API_KEY]
   },
   async (request) => {
     const schema = z.object({
@@ -160,7 +154,10 @@ export async function createOrderForBalanceTopup(
   const transactionData = {
     amount: data.amount,
     notes: {
-     
+      ...(data.taskId &&
+        data.spaceId && {
+          task: { id: data.taskId, spaceId: data.spaceId }
+        }),
       ...(data.productId && { productId: data.productId }),
       source: data.source
     }
@@ -188,7 +185,7 @@ export async function createOrderForBalanceTopup(
       );
       await batch.commit();
       return {
-        key: isProduction ? razorpayKeyId.value() : 'rzp_test_Rm3ZpwsyNst8nl',
+        key: RAZORPAY_KEY_ID.value(),
         amount: order.amount_due,
         currency: order.currency,
         name: 'Workern',
@@ -227,7 +224,7 @@ exports.verifyPayment = onRequest(
     memory: '512MiB',
     // minInstances: 1,
     region: 'asia-south2',
-    secrets: [razorpayKeyId, razorpayKeySecret, REVENUE_CAT_API_KEY]
+    secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, REVENUE_CAT_API_KEY]
   },
   async (req, res) => {
     const referer = req.headers['referer'] || 'No referer';
@@ -236,9 +233,7 @@ exports.verifyPayment = onRequest(
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
       req.body;
     console.log('Razorpay verify payment body:', req.body);
-    const secret = isProduction
-      ? razorpayKeySecret.value()
-      : 'bKqN5kUJ8wmXx5d0RBkS4NXI';
+    const secret = RAZORPAY_KEY_SECRET.value();
     const body = razorpay_order_id + '|' + razorpay_payment_id;
 
     try {
@@ -289,7 +284,7 @@ exports.webHookHandler = onRequest(
     // minInstances: 1,
     memory: '512MiB',
     region: 'asia-south2',
-    secrets: [razorpayWebhookSecret, REVENUE_CAT_API_KEY]
+    secrets: [RAZORPAY_WEBHOOK_SECRET, REVENUE_CAT_API_KEY]
   },
   async (req, res) => {
     const data = req.body;
@@ -300,7 +295,7 @@ exports.webHookHandler = onRequest(
       !Razorpay.validateWebhookSignature(
         rawBody.toString(),
         signature,
-        razorpayWebhookSecret.value()
+        RAZORPAY_WEBHOOK_SECRET.value()
       )
     ) {
       log('Failed to validate webhook signature');
@@ -326,35 +321,11 @@ exports.webHookHandler = onRequest(
             data.payload
           );
 
-          // Update website sender information if websiteId exists
-          if (notes.websiteId && notes.source === 'eGiftsApp') {
-            const buyerEmail = paymentPayload?.email || '';
-            const buyerName = paymentPayload?.notes?.name || '';
-
-            if (buyerEmail || buyerName) {
-              const websiteRef = db.doc(
-                `apps/eGiftsApp/customWebsites/${notes.websiteId}`
-              );
-              const userWebsiteRef = db.doc(
-                `users/${transaction.uid}/mySpaces/eGiftsApp/valentineWebsites/${notes.websiteId}`
-              );
-
-              const updateData: any = {};
-              if (buyerEmail) updateData['sender.email'] = buyerEmail;
-              if (buyerName) updateData['sender.name'] = buyerName;
-
-              const batch = db.batch();
-              batch.update(websiteRef, updateData);
-              batch.update(userWebsiteRef, updateData);
-              await batch.commit();
-
-              log('Updated website sender info:', {
-                websiteId: notes.websiteId,
-                buyerEmail,
-                buyerName
-              });
-            }
-          }
+          await runPostWebhookHooks(transaction.reason, {
+            transaction,
+            gatewayData: data.payload,
+            gateway: 'razorpay'
+          });
 
           if (result?.successful) {
             log('Successfully handled successful transaction.');
@@ -420,10 +391,11 @@ exports.webHookHandler = onRequest(
 
     const handlePaymentFailed = async () => {
       const orderPayload = data?.payload?.order?.entity;
+      const paymentPayload = data?.payload?.payment?.entity;
 
-      const notes = orderPayload?.notes;
+      const notes = orderPayload?.notes || paymentPayload?.notes || {};
 
-      if (notes.transactionId) {
+      if (notes?.transactionId) {
         const transaction = new Transaction(
           (
             await transactionsByIdCollection.doc(notes.transactionId).get()
@@ -442,7 +414,7 @@ exports.webHookHandler = onRequest(
           }
         } else {
           await transactionsByIdCollection.doc(notes.transactionId).update({
-            'processor.data.order': orderPayload,
+            'processor.data.order': orderPayload || null,
             'processor.data.payment': data.payload.payment || null
           });
           log('Transaction already processed. Updated processor data.');
@@ -871,10 +843,8 @@ export function createRazorpayOrder(
 ): Promise<OrderCreateResponse> {
   const orderId = transactionsByIdCollection.doc().id;
   const instance = new Razorpay({
-    key_id: isProduction ? razorpayKeyId.value() : 'rzp_test_Rm3ZpwsyNst8nl',
-    key_secret: isProduction
-      ? razorpayKeySecret.value()
-      : 'bKqN5kUJ8wmXx5d0RBkS4NXI'
+    key_id: RAZORPAY_KEY_ID.value(),
+    key_secret: RAZORPAY_KEY_SECRET.value()
   });
 
   return instance.orders.create({
@@ -908,10 +878,8 @@ export function createRazorpaySubscription(details: {
   } = details;
 
   const instance = new Razorpay({
-    key_id: isProduction ? razorpayKeyId.value() : 'rzp_test_Rm3ZpwsyNst8nl',
-    key_secret: isProduction
-      ? razorpayKeySecret.value()
-      : 'bKqN5kUJ8wmXx5d0RBkS4NXI'
+    key_id: RAZORPAY_KEY_ID.value(),
+    key_secret: RAZORPAY_KEY_SECRET.value()
   });
 
   const payload: Record<string, any> = {
@@ -1043,9 +1011,7 @@ export async function createRazorpaySubscriptionAndFirestoreEntry(details: {
         gateway: {
           name: TransactionProcessorID.RAZORPAY,
           data: {
-            key: isProduction
-              ? razorpayKeyId.value()
-              : 'rzp_test_Rm3ZpwsyNst8nl',
+            key: RAZORPAY_KEY_ID.value(),
             subscription_id: subscriptionResponse.id,
             short_url: subscriptionResponse.short_url,
             name: appName,
@@ -1156,9 +1122,7 @@ export async function createRazorpayOrderAndFirestoreEntry(details: {
         gateway: {
           name: TransactionProcessorID.RAZORPAY,
           data: {
-            key: isProduction
-              ? razorpayKeyId.value()
-              : 'rzp_test_Rm3ZpwsyNst8nl',
+            key: RAZORPAY_KEY_ID.value(),
             amount: orderCreationResponse.amount_due, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
             currency: orderCreationResponse.currency,
             name: appName,

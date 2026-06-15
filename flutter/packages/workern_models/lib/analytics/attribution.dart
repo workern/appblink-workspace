@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../common/base.dart';
 import 'package:workern_utils/workern_utils.dart';
 
@@ -137,6 +138,7 @@ class AttributionLink extends Base {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'id': id,

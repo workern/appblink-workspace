@@ -14,16 +14,16 @@
 
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
-import { checkRequest } from '../utils';
+import { checkRequest } from '../utils/data.utils';
 import {
   db,
   deployOptions,
   isProduction,
-  razorpayKeyId,
-  razorpayKeySecret,
-  lemonSqueezyApiKey,
-  dodoApiKey,
-  stripeApiKey
+  RAZORPAY_KEY_ID,
+  RAZORPAY_KEY_SECRET,
+  LEMON_SQUEEZY_API_KEY,
+  DODO_API_KEY,
+  STRIPE_API_KEY
 } from '../global';
 import axios from 'axios';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -59,12 +59,8 @@ function assertGlobalAdmin(request: any): void {
 // ─── Razorpay helpers ─────────────────────────────────────────────────────────
 
 function razorpayAuth() {
-  const keyId = isProduction
-    ? razorpayKeyId.value()
-    : 'rzp_test_Rm3ZpwsyNst8nl';
-  const keySecret = isProduction
-    ? razorpayKeySecret.value()
-    : 'bKqN5kUJ8wmXx5d0RBkS4NXI';
+  const keyId = RAZORPAY_KEY_ID.value();
+  const keySecret = RAZORPAY_KEY_SECRET.value();
   return { auth: { username: keyId, password: keySecret } };
 }
 
@@ -122,7 +118,7 @@ async function createRazorpayPlan(input: {
 // ─── Stripe helpers ───────────────────────────────────────────────────────────
 
 function stripeHeaders() {
-  const key = stripeApiKey.value();
+  const key = STRIPE_API_KEY.value();
   return { Authorization: `Bearer ${key}` };
 }
 
@@ -194,7 +190,7 @@ function dodoBaseUrl() {
 }
 
 function dodoHeaders() {
-  return { Authorization: `Bearer ${dodoApiKey.value()}` };
+  return { Authorization: `Bearer ${DODO_API_KEY.value()}` };
 }
 
 async function listDodoProducts(): Promise<GatewayProduct[]> {
@@ -251,7 +247,7 @@ async function createDodoProduct(input: {
 
 async function listLemonSqueezyVariants(): Promise<GatewayProduct[]> {
   const apiKey = isProduction
-    ? lemonSqueezyApiKey.value()
+    ? LEMON_SQUEEZY_API_KEY.value()
     : 'test-key-fallback';
 
   const resp = await axios.get('https://api.lemonsqueezy.com/v1/variants', {
@@ -289,11 +285,11 @@ export const fetchgatewayproducts = onCall(
     ...deployOptions,
     region: 'asia-south2',
     secrets: [
-      razorpayKeyId,
-      razorpayKeySecret,
-      lemonSqueezyApiKey,
-      dodoApiKey,
-      stripeApiKey
+      RAZORPAY_KEY_ID,
+      RAZORPAY_KEY_SECRET,
+      LEMON_SQUEEZY_API_KEY,
+      DODO_API_KEY,
+      STRIPE_API_KEY
     ]
   },
   async (request): Promise<{ gateway: string; products: GatewayProduct[] }> => {
@@ -356,7 +352,7 @@ export const creategatewayproduct = onCall(
   {
     ...deployOptions,
     region: 'asia-south2',
-    secrets: [razorpayKeyId, razorpayKeySecret, dodoApiKey, stripeApiKey]
+    secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, DODO_API_KEY, STRIPE_API_KEY]
   },
   async (request): Promise<{ gateway: string; product: GatewayProduct }> => {
     await checkRequest(request, createGatewayProductSchema, false);

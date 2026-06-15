@@ -1,7 +1,7 @@
 import { onCall } from 'firebase-functions/https';
 import { graphApiRequest } from './common';
 import { z } from 'zod';
-import { checkRequest } from '../../utils';
+import { checkRequest } from '../../utils/data.utils';
 
 /**
  * Retrieve extended credit lines for a business

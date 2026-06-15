@@ -10,7 +10,7 @@ import {
 import {
   db,
   deployOptions,
-  lemonSqueezyApiKey,
+  LEMON_SQUEEZY_API_KEY,
   transactionsByIdCollection,
   firestoreWriteTimestamp,
   isProduction,
@@ -29,9 +29,10 @@ import {
 } from './common';
 import { Amount } from '@workern/models';
 import crypto from 'crypto';
-import { getAutoId } from '../../utils';
-import { TransactionProcessorID } from '@workern/models';
+import { getAutoId } from '../../utils/firebase.utils';
+import { TransactionProcessorID } from '../../enums/transactions/transaction-processor-id';
 import { GatewayOrderAndFirestoreEntryResponse } from './types';
+import { runPostWebhookHooks } from './transaction-hooks';
 // Store ID and Variant ID from Lemon Squeezy dashboard
 const LEMONSQUEEZY_STORE_ID = isProduction ? '119118' : '119118'; // Replace with your store ID
 
@@ -64,7 +65,7 @@ export async function createLemonSqueezyCheckoutAndFirestoreEntry(details: {
     // Setup Lemon Squeezy with API key
     lemonSqueezySetup({
       apiKey: isProduction
-        ? lemonSqueezyApiKey.value()
+        ? LEMON_SQUEEZY_API_KEY.value()
         : 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5NGQ1OWNlZi1kYmI4LTRlYTUtYjE3OC1kMjU0MGZjZDY5MTkiLCJqdGkiOiIyYjQ2ZGY5ZmMxYTVhNmU5ODFiNGFiYjU2NDdlY2VkZjA2ZjNhM2E3M2I3NDg4ZWIxYjI4MzJiOWFkM2FkYzE5MzU5MDk3NjM4ZjhmMzRiNiIsImlhdCI6MTc3MDE4OTQ0OS4zMzgwMDUsIm5iZiI6MTc3MDE4OTQ0OS4zMzgwMDgsImV4cCI6MTc4NTgwMTYwMC4wMzQ0MDcsInN1YiI6IjMwOTkwMDAiLCJzY29wZXMiOltdfQ.J3dUOYUEXJeeijejxa3jDmaUure1Y4o2UVrxrQll1q5saI_0ENnoLBKIisT_K6iwlF-zsu-d0TqQPNRaBGg_BG3gacLI42ystPljwS1J6iO0OMm5S_YroZPODVc-Rq9iQPqxyy9Qu_qGQ4HLTtCW4Bi4GdaMYDbQ8rak7aCrEn1aHN1LN8x1HFdu73qJBsJAT4WqKZkffr4YwR_iL1aaYkjrAqUK5mdvGHr_0Ms6IVY8kCuaRmlI8li1kvQWxtvor_FKwGaG_HbqghG5nzcWNRkC1dLiNxttca4LDEn2mK5m5GALboskT0J4Zt8Yub3w_DtyVrI0mEaOSzeKqphYtykUIFcsjcMsrPi5IrkrcyfGJ87h6DGwHLB8YIhLCx7NSowLOQls6Es7xE_04VtJ01TkMyq3ycXNTZi3DtTNFveRTb_oHV6N5Y1mmFE7Z7_rrVZC1dEHejrk4Fw-IKZven_Y6MXMIkhjwAXj11yKczwiO7ea41mUQkoRXpLWeynY_hpLQUcrCPj-1U_HY_3dex7InhcPpe3fD2AaAXf_XYOgUcDzU1Ac9GB_Seuyd6G1CV0NO-DcKOaJv5Ds7aRtCv8KIzbzlr0LOpTCJ-asq6DBM3KRH-fKqKKZI7tkxAY7egcWrqDnrHeOhDsrgTQWVglWSXqqb2bNMW5MEOz_sR4',
       onError: (err) => {
         error('Lemon Squeezy setup error:', err);
@@ -174,7 +175,7 @@ function getLemonSqueezyTransaction(
   },
   uid: string,
   type = TransactionType.CREDIT,
-  reason = TransactionReason.APP_PRODUCT_PURCHASE
+  reason = TransactionReason.CUSTOM_WEBSITE_PURCHASE
 ): Transaction {
   const transactionId = getAutoId();
 
@@ -203,7 +204,7 @@ export const webHookHandler = onRequest(
     ...deployOptions,
     memory: '512MiB',
     region: 'asia-south2',
-    secrets: [lemonSqueezyApiKey, REVENUE_CAT_API_KEY]
+    secrets: [LEMON_SQUEEZY_API_KEY, REVENUE_CAT_API_KEY]
   },
   async (req, res) => {
     try {
@@ -320,8 +321,11 @@ export const webHookHandler = onRequest(
           // Process successful payment
           await onTransactionSuccessful(transaction, event);
 
-   
-    
+          await runPostWebhookHooks(transaction.reason, {
+            transaction,
+            gatewayData: event,
+            gateway: 'lemonsqueezy'
+          });
 
           log('Payment processed successfully:', transactionId);
           res.status(200).send({ success: true });

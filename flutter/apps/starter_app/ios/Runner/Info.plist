@@ -33,7 +33,7 @@
 				<string>REVERSED_CLIENT_ID</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>com.googleusercontent.apps.398043146216-ogi38ljukde735npp1ot4m4n4a7o2hl9</string>
+					<string>com.googleusercontent.apps.524580981259-nc5q11boap5ivv6l7pigrm6ntn5hcnl3</string>
 				</array>
 			</dict>
 			<dict>
@@ -53,6 +53,7 @@
 				</array>
 			</dict>
 			<dict>
+				<!-- URL scheme flutter_sharing_intent uses to redirect back to the host app -->
 				<key>CFBundleTypeRole</key>
 				<string>Editor</string>
 				<key>CFBundleURLName</key>
@@ -60,16 +61,6 @@
 				<key>CFBundleURLSchemes</key>
 				<array>
 					<string>SharingMedia-com.workern.starterApp</string>
-				</array>
-			</dict>
-			<dict>
-				<key>CFBundleTypeRole</key>
-				<string>Editor</string>
-				<key>CFBundleURLName</key>
-				<string>firebase_phone_auth</string>
-				<key>CFBundleURLSchemes</key>
-				<array>
-					<string>app-1-398043146216-ios-9396d8b634798e57bea65d</string>
 				</array>
 			</dict>
 		</array>
@@ -98,9 +89,26 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
-		<key>UIViewControllerBasedStatusBarAppearance</key>
-		<false/>
-		<key>ITSAppUsesNonExemptEncryption</key>
-		<false/>
-	</dict>
-</plist>
+                <key>ITSAppUsesNonExemptEncryption</key>
+                <false/>
+                <key>UIApplicationSceneManifest</key>
+                <dict>
+                        <key>UIApplicationSupportsMultipleScenes</key>
+                        <false/>
+                        <key>UISceneConfigurations</key>
+                        <dict>
+                                <key>UIWindowSceneSessionRoleApplication</key>
+                                <array>
+                                        <dict>
+                                                <key>UISceneClassName</key>
+                                                <string>UIWindowScene</string>
+                                                <key>UISceneConfigurationName</key>
+                                                <string>flutter</string>
+                                                <key>UISceneDelegateClassName</key>
+                                                <string>FlutterSceneDelegate</string>
+                                                <key>UISceneStoryboardFile</key>
+                                                <string>Main</string>
+                                        </dict>
+                                </array>
+                        </dict>
+                </dict>

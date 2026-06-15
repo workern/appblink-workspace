@@ -1,9 +1,10 @@
 import { onCall } from 'firebase-functions/https';
 import { graphApiRequest } from './common';
-import { checkRequest } from '../../utils';
+import { checkRequest } from '../../utils/data.utils';
 import { z } from 'zod';
 import { db } from '../../global';
 import { FieldValue } from 'firebase-admin/firestore';
+import WhatsApp from 'whatsapp';
 import { whatsappAccessToken } from './constants';
 import { log } from 'firebase-functions/logger';
 // --- Template Management Functions ---

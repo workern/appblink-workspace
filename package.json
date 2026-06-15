@@ -10,7 +10,7 @@
     "emulators": "source tools/firebase/functions-py/venv/bin/activate ; npx gulp kill-ports ; firebase emulators:start --only firestore,functions,auth,ui,storage,extensions --import=tools/firebase/saved-firebase-emulators-data --export-on-exit=tools/firebase/saved-firebase-emulators-data --project workern-app",
     "get:gemini:secret": "firebase functions:secrets:access GEMINI_API_KEY",
     "update:angular": "npx npm-check-updates -u --filter '@angular/*' --filter '@angular-devkit/*' --filter 'angular-eslint' --filter '@schematics/angular' ; npm install",
-    "starter-app":"nx serve ng-starter-app"
+    "starter-app": "nx serve ng-starter-app"
   },
   "keywords": [],
   "author": "",
@@ -42,8 +42,10 @@
     "express": "^5.2.1",
     "firebase": "^12.9.0",
     "geofire-common": "^6.0.0",
+    "gsap": "^3.15.0",
     "lodash": "^4.17.21",
     "marked": "^17.0.4",
+    "ngx-markdown": "^22.0.0",
     "rxjs": "^7.8.2",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1",

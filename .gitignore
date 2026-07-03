@@ -122,7 +122,7 @@ assets/**/social-media/
 
 # AppBlink extension data — task metadata and images are local only
 .appblink/
-*/.kotlin/
+**/.kotlin/
 *.vsix
 **/out/
 tools/github/n8n

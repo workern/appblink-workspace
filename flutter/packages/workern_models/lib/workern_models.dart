@@ -9,3 +9,4 @@ export 'verification/index.dart';
 export 'workspaces/index.dart';
 export 'apps/index.dart' hide Campaign, CampaignStatus;
 export 'media/index.dart';
+export 'marketing/index.dart';

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:workern_auth/workern_auth.dart';
 import 'adaptive_dialog.dart';
 
@@ -176,7 +177,18 @@ class WorkernAppBar extends ConsumerWidget implements PreferredSizeWidget {
           (showBackButton
               ? IconButton(
                   icon: Icon(Icons.arrow_back, color: effectiveForegroundColor),
-                  onPressed: onBackPressed ?? () => Navigator.pop(context),
+                  onPressed: onBackPressed ??
+                      () {
+                        try {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/');
+                          }
+                        } catch (_) {
+                          Navigator.maybePop(context);
+                        }
+                      },
                   tooltip: 'Back',
                 )
               : null),
@@ -224,7 +236,7 @@ class WorkernAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ],
           ),
         ],
-        if (showProfileAction && isUserLoggedIn)
+        if (showProfileAction)
           IconButton(
             icon: Icon(
               Icons.account_circle_outlined,

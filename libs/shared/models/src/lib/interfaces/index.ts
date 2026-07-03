@@ -10,3 +10,4 @@ export * from './billing';
 export * from './communication';
 export * from './workspaces';
 export * from './space';
+export * from './marketing';

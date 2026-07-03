@@ -67,6 +67,7 @@ export class Transaction {
 
     transaction.amount = Object.assign({}, this.amount);
     if (this.processor) {
+      transaction.processor = Object.assign({}, this.processor);
       if (entity === 'frontend_user') {
         delete transaction.processor.data;
       }

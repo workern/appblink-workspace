@@ -75,6 +75,7 @@ final class WorkernSnackbar {
     SnackBar snackBar, {
     bool clearExisting = true,
   }) {
+    if (!context.mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     if (clearExisting) {
       messenger.hideCurrentSnackBar();
@@ -88,6 +89,7 @@ final class WorkernSnackbar {
     Duration? duration,
     bool clearExisting = true,
   }) {
+    if (!context.mounted) return;
     final resolvedTheme = _resolvedTheme(context);
 
     final snackBar = SnackBar(

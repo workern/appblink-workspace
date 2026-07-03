@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 class FirebaseUsageTracker {
@@ -218,5 +219,63 @@ class FirebaseUsageTracker {
       });
       _mergeEntityBreakdown(entityBreakdown);
     }
+  }
+}
+
+extension QuerySnapshotUsageTracker<T> on Stream<QuerySnapshot<T>> {
+  Stream<QuerySnapshot<T>> trackUsage(String entity) {
+    return map((snapshot) {
+      FirebaseUsageTracker.instance.recordFirestoreRead(
+        count: snapshot.docs.length,
+        bytes: FirebaseUsageTracker.instance.estimateBytes(
+          snapshot.docs.map((doc) => doc.data()).toList(),
+        ),
+        entity: entity,
+      );
+      return snapshot;
+    });
+  }
+}
+
+extension DocumentSnapshotUsageTracker<T> on Stream<DocumentSnapshot<T>> {
+  Stream<DocumentSnapshot<T>> trackUsage(String entity) {
+    return map((snapshot) {
+      if (snapshot.exists) {
+        FirebaseUsageTracker.instance.recordFirestoreRead(
+          count: 1,
+          bytes: FirebaseUsageTracker.instance.estimateBytes(snapshot.data()),
+          entity: entity,
+        );
+      }
+      return snapshot;
+    });
+  }
+}
+
+extension FutureDocumentSnapshotUsageTracker<T> on Future<DocumentSnapshot<T>> {
+  Future<DocumentSnapshot<T>> trackUsage(String entity) async {
+    final snapshot = await this;
+    if (snapshot.exists) {
+      FirebaseUsageTracker.instance.recordFirestoreRead(
+        count: 1,
+        bytes: FirebaseUsageTracker.instance.estimateBytes(snapshot.data()),
+        entity: entity,
+      );
+    }
+    return snapshot;
+  }
+}
+
+extension FutureQuerySnapshotUsageTracker<T> on Future<QuerySnapshot<T>> {
+  Future<QuerySnapshot<T>> trackUsage(String entity) async {
+    final snapshot = await this;
+    FirebaseUsageTracker.instance.recordFirestoreRead(
+      count: snapshot.docs.length,
+      bytes: FirebaseUsageTracker.instance.estimateBytes(
+        snapshot.docs.map((doc) => doc.data()).toList(),
+      ),
+      entity: entity,
+    );
+    return snapshot;
   }
 }

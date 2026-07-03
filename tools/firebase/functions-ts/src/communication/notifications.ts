@@ -2,6 +2,8 @@ import { admin, db, firestoreWriteTimestamp } from '../global';
 import { Notification } from '../models/notification';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { WorkernNotification } from '@workern/models';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { z } from 'zod';
 
 interface DeviceToken {
   platform: string;
@@ -49,10 +51,10 @@ export function sendNotification(
  * - Comprehensive logging for debugging
  * - Error resilience with partial success handling
  */
-export const onNotificationCreated = onDocumentCreated(
+export const oncreate = onDocumentCreated(
   {
     document: 'users/{uid}/mySpaces/{spaceId}/notifications/{notificationId}',
-    region: 'asia-south1'
+    region: 'asia-south2'
   },
   async (event) => {
     try {
@@ -67,6 +69,20 @@ export const onNotificationCreated = onDocumentCreated(
       });
 
       // Get device tokens for this space
+      const userDoc = await admin.firestore().collection('users').doc(uid).get();
+      if (!userDoc.exists) {
+        console.warn(`User document not found for uid: ${uid}`);
+        return;
+      }
+      const userData = userDoc.data();
+      const fcmTokens = userData?.fcmTokens || {};
+      console.log(`🔍 Debug user FCM configuration:`, {
+        uid,
+        hasFcmTokensField: !!userData?.fcmTokens,
+        allSpacesWithTokens: Object.keys(fcmTokens),
+        tokensForTargetSpace: fcmTokens[spaceId] || null
+      });
+
       const deviceTokens = await getDeviceTokensForSpace(uid, spaceId);
 
       if (deviceTokens.length === 0) {
@@ -82,6 +98,8 @@ export const onNotificationCreated = onDocumentCreated(
         event.params.notificationId,
         spaceId
       );
+
+      console.log('📦 FCM Payload:', JSON.stringify(message, null, 2));
 
       // Send to all devices and track results
       const results = await sendToAllDevices(message, deviceTokens);
@@ -133,6 +151,43 @@ async function getDeviceTokensForSpace(
 }
 
 /**
+ * Helper: Map spaceId to Android Notification Channel ID
+ */
+function getChannelIdForSpace(spaceId: string): string {
+  switch (spaceId) {
+    case 'nikat':
+    case 'nikat-shop-manager':
+      return 'orders';
+    case 'nikat-delivery':
+      return 'delivery_notifications';
+    case 'workern-admin':
+      return 'admin_notifications';
+    case 'turk-guru':
+      return 'turk_guru_channel';
+    case 'app-blink':
+      return 'app_blink_channel';
+    case 'net-worth-calculator':
+      return 'net_worth_calculator_channel';
+    case 'save-nest':
+      return 'save_nest_channel';
+    case 'utsav':
+      return 'utsav_channel';
+    case 'deskflow-pro':
+      return 'deskflow_pro_channel';
+    case 'pravah':
+      return 'pravah_channel';
+    case 'gallery-cleaner':
+      return 'gallery_cleaner_channel';
+    case 'content-creator':
+    case 'promotions':
+    case 'starter-app':
+      return 'starter_app_channel';
+    default:
+      return `${spaceId.replace(/-/g, '_')}_channel`;
+  }
+}
+
+/**
  * Helper: Build FCM message payload
  */
 function buildFCMMessage(
@@ -140,24 +195,41 @@ function buildFCMMessage(
   notificationId: string,
   spaceId: string
 ) {
+  const channelId = getChannelIdForSpace(spaceId);
   return {
     notification: {
       title: notification.title,
-      body: notification.description
+      body: notification.description,
+      ...(notification.imageUrl ? { image: notification.imageUrl } : {})
     },
     data: {
       notificationId: notificationId,
       spaceId: spaceId,
       type: notification.type,
+      ...(notification.imageUrl ? { imageUrl: notification.imageUrl } : {}),
       ...(notification.data || {})
     },
     android: {
       ttl: 24 * 60 * 60, // 24 hours
-      priority: 'high' as const
+      priority: 'high' as const,
+      notification: {
+        channelId: channelId,
+        priority: 'high' as const,
+        sound: 'default',
+        defaultSound: true,
+        defaultVibrateTimings: true,
+        icon: 'ic_launcher'
+      }
     },
     apns: {
       headers: {
         'apns-priority': '10'
+      },
+      payload: {
+        aps: {
+          'mutable-content': 1,
+          sound: 'default'
+        }
       }
     }
   };
@@ -170,18 +242,42 @@ async function sendToAllDevices(
   message: any,
   deviceTokens: DeviceToken[]
 ): Promise<SendResult[]> {
+  console.log(`📡 Sending FCM message to ${deviceTokens.length} devices...`);
+
+  const hasCredentials = !!process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
+
+  if (isEmulator && !hasCredentials) {
+    console.warn(
+      '⚠️ Skipping FCM delivery in Emulator because GOOGLE_APPLICATION_CREDENTIALS is not set. ' +
+      'To receive actual push notifications on your device, set GOOGLE_APPLICATION_CREDENTIALS ' +
+      'pointing to your service account key JSON file before starting the emulators.'
+    );
+    return deviceTokens.map(({ platform, token }) => ({
+      platform,
+      token,
+      success: false,
+      reason: 'emulator-missing-credentials'
+    }));
+  }
+
   return Promise.all(
     deviceTokens.map(({ platform, token }) =>
       admin
         .messaging()
         .send({ ...message, token } as any)
-        .then(() => {
-          console.log(`✅ Sent to ${platform}`);
+        .then((response) => {
+          console.log(`✅ Successfully sent to ${platform}. Message ID: ${response}`);
           return { platform, token, success: true };
         })
         .catch((error) => {
-          console.error(`Error sending to ${platform}:`, error.code);
-          return { platform, token, success: false, reason: error.code };
+          console.error(`❌ Failed to send to ${platform}:`, {
+            code: error.code,
+            message: error.message,
+            stack: error.stack,
+            error
+          });
+          return { platform, token, success: false, reason: error.code || error.message };
         })
     )
   );
@@ -252,3 +348,75 @@ function logDeliverySummary(results: SendResult[]): void {
     failed: failureCount
   });
 }
+
+/**
+ * Callable: Marks a notification as seen or unseen.
+ * Path: users/{uid}/mySpaces/{spaceId}/notifications/{notificationId}
+ */
+export const markseen = onCall({ region: 'asia-south2' }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Must be authenticated');
+  }
+
+  const schema = z.object({
+    spaceId: z.string().min(1),
+    notificationId: z.string().min(1),
+    seen: z.boolean().optional().default(true)
+  });
+
+  const result = schema.safeParse(request.data);
+  if (!result.success) {
+    throw new HttpsError('invalid-argument', result.error.issues[0].message);
+  }
+
+  const { spaceId, notificationId, seen } = result.data;
+  const userId = request.auth.uid;
+
+  await db
+    .collection('users')
+    .doc(userId)
+    .collection('mySpaces')
+    .doc(spaceId)
+    .collection('notifications')
+    .doc(notificationId)
+    .update({
+      seen,
+      updatedAt: firestoreWriteTimestamp
+    });
+
+  return { success: true };
+});
+
+/**
+ * Callable: Deletes a notification.
+ * Path: users/{uid}/mySpaces/{spaceId}/notifications/{notificationId}
+ */
+export const remove = onCall({ region: 'asia-south2' }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Must be authenticated');
+  }
+
+  const schema = z.object({
+    spaceId: z.string().min(1),
+    notificationId: z.string().min(1)
+  });
+
+  const result = schema.safeParse(request.data);
+  if (!result.success) {
+    throw new HttpsError('invalid-argument', result.error.issues[0].message);
+  }
+
+  const { spaceId, notificationId } = result.data;
+  const userId = request.auth.uid;
+
+  await db
+    .collection('users')
+    .doc(userId)
+    .collection('mySpaces')
+    .doc(spaceId)
+    .collection('notifications')
+    .doc(notificationId)
+    .delete();
+
+  return { success: true };
+});

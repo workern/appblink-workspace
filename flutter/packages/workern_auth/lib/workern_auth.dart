@@ -33,3 +33,6 @@ export 'screens/account_profile_screen.dart';
 
 // Widgets
 export 'widgets/auth_snackbar.dart';
+
+// Utils
+export 'utils/auth_guard.dart';

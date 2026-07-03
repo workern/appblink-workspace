@@ -93,7 +93,7 @@ class WorkernThemeSwitcherState extends State<WorkernThemeSwitcher> {
   }
 
   void cycleThemeMode() {
-    const modes = [ThemeMode.system, ThemeMode.light, ThemeMode.dark];
+    const modes = [ThemeMode.light, ThemeMode.dark];
     setState(() {
       _themeMode = modes[(modes.indexOf(_themeMode) + 1) % modes.length];
     });

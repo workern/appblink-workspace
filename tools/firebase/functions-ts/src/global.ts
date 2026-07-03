@@ -56,6 +56,7 @@ export const RAZORPAY_WEBHOOK_SECRET = defineSecret('RAZORPAY_WEBHOOK_SECRET');
 export const cronKey = defineSecret('CRON_KEY');
 export const SENDGRID_API_KEY = defineSecret('SENDGRID_API_KEY');
 export const OPENAI_API_KEY = defineSecret('OPENAI_API_KEY');
+export const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 export const AUTOMATION_ENCRYPTION_KEY = defineSecret(
   'AUTOMATION_ENCRYPTION_KEY'
 );
@@ -80,9 +81,18 @@ export const HIKER_API_KEY = defineSecret('HIKER_API_KEY');
 export const GOOGLE_PLACES_API_KEY = defineSecret('GOOGLE_PLACES_API_KEY');
 export const defaultSuccessResult = { successful: true };
 
+export const deployOptions512 = {
+  region: 'asia-south2',
+  memory: '512MiB' as any
+};
+
+export const deployOptions512Scheduler = {
+  region: 'us-central1',
+  memory: '512MiB' as any
+};
 
 export const deployOptions = {
   cors: true,
-  region: ['asia-south2'],
-  memory: '512MiB' as any
+  ...deployOptions512
 };
+

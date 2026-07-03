@@ -3,7 +3,7 @@ import { Base } from '../../common';
 /**
  * Stored at: users/{shopOwnerId}/mySpaces/${APPID.NIKAT}/whatsappConfig
  *
- * Holds the WhatsApp Business Account connection info for a Nikat shop owner.
+ * Holds the WhatsApp Business Account connection info for a Nikat business owner.
  * Populated after the shop owner completes the Embedded Signup flow.
  */
 export interface WhatsAppConfig extends Base {

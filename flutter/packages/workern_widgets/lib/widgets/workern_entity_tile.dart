@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'workern_image_viewer.dart';
 
 /// A rich entity list tile: letter-avatar · name · optional badge · optional
 /// trailing label · optional ghost edit button.
@@ -17,6 +18,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 /// | `trailing` | `String?` | Optional. Shown on the right — typically a price or count. |
 /// | `onEdit` | `VoidCallback?` | Optional. Shows a ghost edit icon button. Hidden if null. |
 /// | `useGlass` | `bool` | If true, applies a backdrop filter and semi-transparent background. |
+/// | `imageUrl` | `String?` | Optional. Renders the image at imageUrl in place of the letter avatar. |
 ///
 /// ## Typical use-cases
 /// - Inventory / product items (badge = stock status, trailing = price)
@@ -67,6 +69,9 @@ class WorkernEntityTile extends StatelessWidget {
   /// If true, applies a glassmorphic effect.
   final bool useGlass;
 
+  /// Optional image URL to display in place of the initials avatar.
+  final String? imageUrl;
+
   const WorkernEntityTile({
     super.key,
     required this.name,
@@ -75,6 +80,7 @@ class WorkernEntityTile extends StatelessWidget {
     required this.onTap,
     this.onEdit,
     this.useGlass = false,
+    this.imageUrl,
   });
 
   @override
@@ -98,7 +104,7 @@ class WorkernEntityTile extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              // ── Letter avatar ──────────────────────────────────────────
+              // ── Letter avatar / Image ──────────────────────────────────
               Container(
                 width: 48,
                 height: 48,
@@ -109,13 +115,32 @@ class WorkernEntityTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: tt.titleMedium?.copyWith(
-                    color: cs.onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: imageUrl != null && imageUrl!.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: WorkernImageViewer(
+                          imageUrl: imageUrl!,
+                          fit: BoxFit.cover,
+                          width: 48,
+                          height: 48,
+                          errorWidget: Center(
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : '?',
+                              style: tt.titleMedium?.copyWith(
+                                color: cs.onPrimaryContainer,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    : Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : '?',
+                        style: tt.titleMedium?.copyWith(
+                          color: cs.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
               // ── Name + badge ───────────────────────────────────────────

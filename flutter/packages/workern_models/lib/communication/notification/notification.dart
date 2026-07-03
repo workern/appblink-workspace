@@ -1,3 +1,5 @@
+import 'package:workern_utils/workern_utils.dart';
+
 /// Notification data model for Workern apps (matches TypeScript WorkernNotification)
 class WorkernNotification {
   final String id;
@@ -29,12 +31,8 @@ class WorkernNotification {
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       type: json['type'] ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'].toDate().toString())
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'].toDate().toString())
-          : DateTime.now(),
+      createdAt: parseTimestamp(json['createdAt']) ?? DateTime.now(),
+      updatedAt: parseTimestamp(json['updatedAt']) ?? DateTime.now(),
       seen: json['seen'] ?? false,
       imageUrl: json['imageUrl'],
       data: json['data'],
@@ -54,5 +52,30 @@ class WorkernNotification {
       'imageUrl': imageUrl,
       'data': data,
     };
+  }
+
+  /// Copy with helper for state updates and future extension
+  WorkernNotification copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? type,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? seen,
+    String? imageUrl,
+    Map<String, dynamic>? data,
+  }) {
+    return WorkernNotification(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      type: type ?? this.type,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      seen: seen ?? this.seen,
+      imageUrl: imageUrl ?? this.imageUrl,
+      data: data ?? this.data,
+    );
   }
 }

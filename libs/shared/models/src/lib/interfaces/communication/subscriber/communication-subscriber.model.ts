@@ -53,4 +53,7 @@ export interface CommunicationSubscriber<T = Date> extends Base<T> {
 
   /** ISO timestamp of when the subscriber most recently interacted (e.g., placed order) */
   lastInteractionAt: T;
+
+  /** Audience tags assigned to this subscriber (e.g. ['VIP', 'Summer Sale']) */
+  tags?: string[];
 }

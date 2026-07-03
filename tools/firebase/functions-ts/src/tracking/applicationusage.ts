@@ -30,7 +30,10 @@ const reportUsageSchema = z.object({
     storageDownloads: z.number().int().min(0).default(0),
     storageDeletes: z.number().int().min(0).default(0),
     storageUploadBytes: z.number().int().min(0).default(0),
-    storageDownloadBytes: z.number().int().min(0).default(0)
+    storageDownloadBytes: z.number().int().min(0).default(0),
+    aiCalls: z.number().int().min(0).default(0),
+    aiInputTokens: z.number().int().min(0).default(0),
+    aiOutputTokens: z.number().int().min(0).default(0)
   }),
   functionCallsByName: z.record(z.string(), z.number().int().min(0)).optional(),
   entityBreakdown: z
@@ -41,6 +44,16 @@ const reportUsageSchema = z.object({
         creates: z.number().int().min(0).optional(),
         updates: z.number().int().min(0).optional(),
         deletes: z.number().int().min(0).optional()
+      })
+    )
+    .optional(),
+  aiBreakdown: z
+    .record(
+      z.string(),
+      z.object({
+        calls: z.number().int().min(0).optional(),
+        inputTokens: z.number().int().min(0).optional(),
+        outputTokens: z.number().int().min(0).optional()
       })
     )
     .optional()
@@ -73,6 +86,34 @@ function sanitizeKey(input?: string): string | undefined {
   return input.replace(/[./#$\[\]]/g, '_').toLowerCase();
 }
 
+export async function ensureAppUserTracking(
+  appId: string,
+  uid: string
+): Promise<void> {
+  try {
+    const appUserRef = db.doc(`apps/${appId}/users/${uid}`);
+    const appUserSnap = await appUserRef.get();
+    if (!appUserSnap.exists) {
+      const now = new Date();
+      const monthKey = getMonthKey(now);
+      const dayKey = getDayKey(now);
+
+      await appUserRef.set({
+        uid,
+        createdAt: firestoreWriteTimestamp,
+        firstActiveMonth: monthKey,
+        firstActiveDay: dayKey
+      });
+    }
+  } catch (err) {
+    logger.warn('[ensureAppUserTracking] failed to write app user registration', {
+      appId,
+      uid,
+      err
+    });
+  }
+}
+
 // ─── Backend usage recorder ───────────────────────────────────────────────────
 
 export interface EntityOps {
@@ -92,7 +133,11 @@ export interface BackendUsageMetrics {
   storageDeletes?: number;
   storageUploadBytes?: number;
   storageDownloadBytes?: number;
+  aiCalls?: number;
+  aiInputTokens?: number;
+  aiOutputTokens?: number;
   entityBreakdown?: Record<string, EntityOps>;
+  aiBreakdown?: Record<string, { calls?: number; inputTokens?: number; outputTokens?: number }>;
 }
 
 export async function recordBackendUsage(
@@ -126,6 +171,9 @@ export async function recordBackendUsage(
     const storageDeletes = metrics.storageDeletes ?? 0;
     const storageUploadBytes = metrics.storageUploadBytes ?? 0;
     const storageDownloadBytes = metrics.storageDownloadBytes ?? 0;
+    const aiCalls = metrics.aiCalls ?? 0;
+    const aiInputTokens = metrics.aiInputTokens ?? 0;
+    const aiOutputTokens = metrics.aiOutputTokens ?? 0;
 
     const entityIncrements: Record<
       string,
@@ -149,6 +197,25 @@ export async function recordBackendUsage(
       }
     }
 
+    const aiIncrements: Record<
+      string,
+      ReturnType<typeof firestoreIncrement>
+    > = {};
+    if (metrics.aiBreakdown) {
+      for (const [rawAction, stats] of Object.entries(metrics.aiBreakdown)) {
+        const safeAction = rawAction.replace(/[./#$\[\]]/g, '_').toLowerCase();
+        if (stats.calls)
+          aiIncrements[`aiOps.${safeAction}.calls`] =
+            firestoreIncrement(stats.calls);
+        if (stats.inputTokens)
+          aiIncrements[`aiOps.${safeAction}.inputTokens`] =
+            firestoreIncrement(stats.inputTokens);
+        if (stats.outputTokens)
+          aiIncrements[`aiOps.${safeAction}.outputTokens`] =
+            firestoreIncrement(stats.outputTokens);
+      }
+    }
+
     const userIncrement = {
       'metrics.firestoreReads': firestoreIncrement(reads),
       'metrics.firestoreCreates': firestoreIncrement(creates),
@@ -159,8 +226,12 @@ export async function recordBackendUsage(
       'metrics.storageDeletes': firestoreIncrement(storageDeletes),
       'metrics.storageUploadBytes': firestoreIncrement(storageUploadBytes),
       'metrics.storageDownloadBytes': firestoreIncrement(storageDownloadBytes),
+      'metrics.aiCalls': firestoreIncrement(aiCalls),
+      'metrics.aiInputTokens': firestoreIncrement(aiInputTokens),
+      'metrics.aiOutputTokens': firestoreIncrement(aiOutputTokens),
       [`functionCallsByName.${safeFn}`]: firestoreIncrement(1),
       ...entityIncrements,
+      ...aiIncrements,
       updatedAt: now
     };
 
@@ -174,7 +245,11 @@ export async function recordBackendUsage(
       'totals.storageDeletes': firestoreIncrement(storageDeletes),
       'totals.storageUploadBytes': firestoreIncrement(storageUploadBytes),
       'totals.storageDownloadBytes': firestoreIncrement(storageDownloadBytes),
+      'totals.aiCalls': firestoreIncrement(aiCalls),
+      'totals.aiInputTokens': firestoreIncrement(aiInputTokens),
+      'totals.aiOutputTokens': firestoreIncrement(aiOutputTokens),
       ...entityIncrements,
+      ...aiIncrements,
       updatedAt: now
     };
 
@@ -194,8 +269,12 @@ export async function recordBackendUsage(
       'metrics.storageDeletes': firestoreIncrement(storageDeletes),
       'metrics.storageUploadBytes': firestoreIncrement(storageUploadBytes),
       'metrics.storageDownloadBytes': firestoreIncrement(storageDownloadBytes),
+      'metrics.aiCalls': firestoreIncrement(aiCalls),
+      'metrics.aiInputTokens': firestoreIncrement(aiInputTokens),
+      'metrics.aiOutputTokens': firestoreIncrement(aiOutputTokens),
       [`functionCallsByName.${safeFn}`]: firestoreIncrement(1),
       ...entityIncrements,
+      ...aiIncrements,
       updatedAt: now
     };
 
@@ -327,6 +406,44 @@ function mergeEntityOperationCounts(
   return merged;
 }
 
+function mergeAiOperationCounts(
+  existingAiOps: Record<string, { calls?: number; inputTokens?: number; outputTokens?: number }> | undefined,
+  incomingAiOps:
+    | Record<
+        string,
+        {
+          calls?: number;
+          inputTokens?: number;
+          outputTokens?: number;
+        }
+      >
+    | undefined
+) {
+  const merged: Record<string, { calls: number; inputTokens: number; outputTokens: number }> = {};
+
+  if (existingAiOps) {
+    for (const [action, stats] of Object.entries(existingAiOps)) {
+      merged[action] = {
+        calls: stats.calls ?? 0,
+        inputTokens: stats.inputTokens ?? 0,
+        outputTokens: stats.outputTokens ?? 0
+      };
+    }
+  }
+
+  if (incomingAiOps) {
+    for (const [rawAction, stats] of Object.entries(incomingAiOps)) {
+      const action = rawAction.replace(/[./#$\[\]]/g, '_').toLowerCase();
+      merged[action] = merged[action] ?? { calls: 0, inputTokens: 0, outputTokens: 0 };
+      merged[action].calls += stats.calls ?? 0;
+      merged[action].inputTokens += stats.inputTokens ?? 0;
+      merged[action].outputTokens += stats.outputTokens ?? 0;
+    }
+  }
+
+  return merged;
+}
+
 function toMetrics(data?: Partial<FirebaseUsageMetrics>): FirebaseUsageMetrics {
   return {
     firestoreReads: data?.firestoreReads ?? 0,
@@ -341,7 +458,10 @@ function toMetrics(data?: Partial<FirebaseUsageMetrics>): FirebaseUsageMetrics {
     storageDownloads: data?.storageDownloads ?? 0,
     storageDeletes: data?.storageDeletes ?? 0,
     storageUploadBytes: data?.storageUploadBytes ?? 0,
-    storageDownloadBytes: data?.storageDownloadBytes ?? 0
+    storageDownloadBytes: data?.storageDownloadBytes ?? 0,
+    aiCalls: data?.aiCalls ?? 0,
+    aiInputTokens: data?.aiInputTokens ?? 0,
+    aiOutputTokens: data?.aiOutputTokens ?? 0
   };
 }
 
@@ -360,7 +480,7 @@ export const reportusage = onCall(
       throw new HttpsError('invalid-argument', parsed.error.message);
     }
 
-    const { appId, metrics, source, functionCallsByName, entityBreakdown } =
+    const { appId, metrics, source, functionCallsByName, entityBreakdown, aiBreakdown } =
       parsed.data;
     const uid = request.auth.uid;
     const dayKey = getDayKey();
@@ -407,7 +527,10 @@ export const reportusage = onCall(
       storageUploadBytes:
         existingMetrics.storageUploadBytes + metrics.storageUploadBytes,
       storageDownloadBytes:
-        existingMetrics.storageDownloadBytes + metrics.storageDownloadBytes
+        existingMetrics.storageDownloadBytes + metrics.storageDownloadBytes,
+      aiCalls: existingMetrics.aiCalls + metrics.aiCalls,
+      aiInputTokens: existingMetrics.aiInputTokens + metrics.aiInputTokens,
+      aiOutputTokens: existingMetrics.aiOutputTokens + metrics.aiOutputTokens
     };
     const nextDailyMetrics = {
       firestoreReads:
@@ -438,7 +561,10 @@ export const reportusage = onCall(
       storageUploadBytes:
         existingDailyMetrics.storageUploadBytes + metrics.storageUploadBytes,
       storageDownloadBytes:
-        existingDailyMetrics.storageDownloadBytes + metrics.storageDownloadBytes
+        existingDailyMetrics.storageDownloadBytes + metrics.storageDownloadBytes,
+      aiCalls: existingDailyMetrics.aiCalls + metrics.aiCalls,
+      aiInputTokens: existingDailyMetrics.aiInputTokens + metrics.aiInputTokens,
+      aiOutputTokens: existingDailyMetrics.aiOutputTokens + metrics.aiOutputTokens
     };
 
     const cost = estimateFirebaseCostForUsage(
@@ -468,6 +594,14 @@ export const reportusage = onCall(
         | Record<string, Record<string, number>>
         | undefined,
       entityBreakdown
+    );
+    const mergedAiOps = mergeAiOperationCounts(
+      existing?.aiOps as any,
+      aiBreakdown
+    );
+    const dailyAiOps = mergeAiOperationCounts(
+      existingDaily?.aiOps as any,
+      aiBreakdown
     );
 
     const owner = {
@@ -503,8 +637,12 @@ export const reportusage = onCall(
         storageDeletes: nextMetrics.storageDeletes,
         storageUploadBytes: nextMetrics.storageUploadBytes,
         storageDownloadBytes: nextMetrics.storageDownloadBytes,
+        aiCalls: nextMetrics.aiCalls,
+        aiInputTokens: nextMetrics.aiInputTokens,
+        aiOutputTokens: nextMetrics.aiOutputTokens,
         functionCallsByName: perFunction,
         entityOps: mergedEntityOps,
+        aiOps: mergedAiOps,
         cost,
         pricing,
         createdAt: existing?.createdAt ?? firestoreWriteTimestamp,
@@ -537,13 +675,33 @@ export const reportusage = onCall(
         storageDeletes: nextDailyMetrics.storageDeletes,
         storageUploadBytes: nextDailyMetrics.storageUploadBytes,
         storageDownloadBytes: nextDailyMetrics.storageDownloadBytes,
+        aiCalls: nextDailyMetrics.aiCalls,
+        aiInputTokens: nextDailyMetrics.aiInputTokens,
+        aiOutputTokens: nextDailyMetrics.aiOutputTokens,
         functionCallsByName: dailyFunctionCalls,
         entityOps: dailyEntityOps,
+        aiOps: dailyAiOps,
         createdAt: existingDaily?.createdAt ?? firestoreWriteTimestamp,
         updatedAt: firestoreWriteTimestamp
       },
       { merge: true }
     );
+
+    const summaryAiIncrements: Record<string, any> = {};
+    if (aiBreakdown) {
+      for (const [rawAction, stats] of Object.entries(aiBreakdown)) {
+        const safeAction = rawAction.replace(/[./#$\[\]]/g, '_').toLowerCase();
+        if (stats.calls)
+          summaryAiIncrements[`totals.aiOps.${safeAction}.calls`] =
+            firestoreIncrement(stats.calls);
+        if (stats.inputTokens)
+          summaryAiIncrements[`totals.aiOps.${safeAction}.inputTokens`] =
+            firestoreIncrement(stats.inputTokens);
+        if (stats.outputTokens)
+          summaryAiIncrements[`totals.aiOps.${safeAction}.outputTokens`] =
+            firestoreIncrement(stats.outputTokens);
+      }
+    }
 
     await buildSummaryRef(appId, monthKey).set(
       {
@@ -572,8 +730,12 @@ export const reportusage = onCall(
           storageDownloads: firestoreIncrement(metrics.storageDownloads),
           storageDeletes: firestoreIncrement(metrics.storageDeletes),
           storageUploadBytes: firestoreIncrement(metrics.storageUploadBytes),
-          storageDownloadBytes: firestoreIncrement(metrics.storageDownloadBytes)
-        }
+          storageDownloadBytes: firestoreIncrement(metrics.storageDownloadBytes),
+          aiCalls: firestoreIncrement(metrics.aiCalls),
+          aiInputTokens: firestoreIncrement(metrics.aiInputTokens),
+          aiOutputTokens: firestoreIncrement(metrics.aiOutputTokens)
+        },
+        ...summaryAiIncrements
       },
       { merge: true }
     );
@@ -605,8 +767,12 @@ export const reportusage = onCall(
           storageDownloads: firestoreIncrement(metrics.storageDownloads),
           storageDeletes: firestoreIncrement(metrics.storageDeletes),
           storageUploadBytes: firestoreIncrement(metrics.storageUploadBytes),
-          storageDownloadBytes: firestoreIncrement(metrics.storageDownloadBytes)
-        }
+          storageDownloadBytes: firestoreIncrement(metrics.storageDownloadBytes),
+          aiCalls: firestoreIncrement(metrics.aiCalls),
+          aiInputTokens: firestoreIncrement(metrics.aiInputTokens),
+          aiOutputTokens: firestoreIncrement(metrics.aiOutputTokens)
+        },
+        ...summaryAiIncrements
       },
       { merge: true }
     );
@@ -655,12 +821,16 @@ export const getdashboard = onCall(
       storageDownloads: 0,
       storageDeletes: 0,
       storageUploadBytes: 0,
-      storageDownloadBytes: 0
+      storageDownloadBytes: 0,
+      aiCalls: 0,
+      aiInputTokens: 0,
+      aiOutputTokens: 0
     };
 
     // Aggregated per-function call counts and per-entity ops across all users
     const functionCallsByName: Record<string, number> = {};
     const entityOps: Record<string, Record<string, number>> = {};
+    const aiOps: Record<string, { calls: number; inputTokens: number; outputTokens: number }> = {};
 
     function mergeEntityOps(
       target: Record<string, Record<string, number>>,
@@ -671,6 +841,18 @@ export const getdashboard = onCall(
         for (const [op, count] of Object.entries(ops)) {
           target[entity]![op] = (target[entity]![op] ?? 0) + (count as number);
         }
+      }
+    }
+
+    function mergeAiOps(
+      target: Record<string, { calls: number; inputTokens: number; outputTokens: number }>,
+      source: Record<string, { calls?: number; inputTokens?: number; outputTokens?: number }>
+    ) {
+      for (const [action, stats] of Object.entries(source)) {
+        target[action] = target[action] ?? { calls: 0, inputTokens: 0, outputTokens: 0 };
+        target[action].calls += stats.calls ?? 0;
+        target[action].inputTokens += stats.inputTokens ?? 0;
+        target[action].outputTokens += stats.outputTokens ?? 0;
       }
     }
 
@@ -690,6 +872,9 @@ export const getdashboard = onCall(
       totals.storageDeletes += metrics.storageDeletes;
       totals.storageUploadBytes += metrics.storageUploadBytes;
       totals.storageDownloadBytes += metrics.storageDownloadBytes;
+      totals.aiCalls += metrics.aiCalls;
+      totals.aiInputTokens += metrics.aiInputTokens;
+      totals.aiOutputTokens += metrics.aiOutputTokens;
 
       // Aggregate function call counts
       const userFnCalls = (data.functionCallsByName ?? {}) as Record<
@@ -708,11 +893,19 @@ export const getdashboard = onCall(
       >;
       mergeEntityOps(entityOps, userEntityOps);
 
+      // Aggregate AI ops
+      const userAiOps = (data.aiOps ?? {}) as Record<
+        string,
+        { calls?: number; inputTokens?: number; outputTokens?: number }
+      >;
+      mergeAiOps(aiOps, userAiOps);
+
       return {
         uid: data?.owner?.uid ?? docSnap.id,
         name: data?.owner?.name ?? docSnap.id,
         metrics,
         entityOps: userEntityOps,
+        aiOps: userAiOps,
         cost: estimateFirebaseCostForUsage(
           metrics,
           DEFAULT_FIREBASE_BLAZE_PRICING,
@@ -811,25 +1004,52 @@ export const getdashboard = onCall(
           ).data().count || 1
         );
 
+        const start = new Date(`${dayKey}T00:00:00.000Z`);
+        const end = new Date(`${dayKey}T23:59:59.999Z`);
+        const newUsersSnap = await db.collection('apps')
+          .doc(appId)
+          .collection('users')
+          .where('createdAt', '>=', start)
+          .where('createdAt', '<=', end)
+          .count()
+          .get();
+        const newUsers = newUsersSnap.data().count ?? 0;
+
         return {
           dayKey,
           activeUsers: dayActiveUsers,
+          newUsers,
           totals: dayTotals
         };
       })
     );
+
+    const startOfMonth = new Date(`${monthKey}-01T00:00:00.000Z`);
+    const nextMonth = new Date(startOfMonth);
+    nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+
+    const monthSignupsSnap = await db.collection('apps')
+      .doc(appId)
+      .collection('users')
+      .where('createdAt', '>=', startOfMonth)
+      .where('createdAt', '<', nextMonth)
+      .count()
+      .get();
+    const newUsersThisMonth = monthSignupsSnap.data().count ?? 0;
 
     return {
       successful: true,
       appId,
       monthKey,
       activeUsers,
+      newUsersThisMonth,
       totals,
       totalCost,
       averageCostPerUserUsd: avgCostPerUser,
       suggestedPricing: suggestion,
       functionCallsByName,
       entityOps,
+      aiOps,
       perUser: perUser
         .sort((a, b) => b.cost.totalUsd - a.cost.totalUsd)
         .slice(0, 200),
@@ -838,3 +1058,5 @@ export const getdashboard = onCall(
     };
   }
 );
+
+export { TrackedFirestore } from './tracked-firestore';

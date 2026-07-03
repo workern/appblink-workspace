@@ -1,14 +1,27 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert' as convert;
+import 'package:flutter_google_places_sdk/flutter_google_places_sdk.dart';
+import 'package:geocoding/geocoding.dart';
 import 'location_service.dart';
 
+/// Service for Google Places (autocomplete + place details) and geocoding.
+///
+/// Everything goes through native SDKs — zero HTTP calls:
+/// - Autocomplete / Place Details → [FlutterGooglePlacesSdk] (native iOS/Android Places SDK)
+///   Works with iOS bundle-ID-restricted API keys.
+/// - Reverse / Forward geocoding   → [geocoding] package (native device geocoder, no API key)
 class PlacesService {
-  /// Search for places using Google Places Autocomplete API
+  // ── Native SDK instance ───────────────────────────────────────────────────
+
+  FlutterGooglePlacesSdk _sdk(String apiKey) => FlutterGooglePlacesSdk(apiKey);
+
+  // ── Autocomplete ──────────────────────────────────────────────────────────
+
+  /// Search for places using the native Google Places Autocomplete SDK.
   ///
-  /// Returns a list of place predictions with place_id, description, and distance
-  /// If fields parameter is provided, fetches detailed place information for each result
+  /// Returns a list of predictions with keys:
+  ///   `placeId`, `description`, `mainText`, `secondaryText`
+  ///
+  /// If [fields] is provided, place details are fetched and merged under `'details'`.
   Future<List<Map<String, dynamic>>> searchPlaces({
     required String query,
     required String apiKey,
@@ -18,229 +31,230 @@ class PlacesService {
     List<String>? fields,
   }) async {
     try {
-      debugPrint('🔍 Searching places for: $query');
+      debugPrint('🔍 Searching places (native SDK) for: $query');
 
-      var url =
-          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$apiKey';
+      final sdk = _sdk(apiKey);
 
-      // Add location bias if coordinates provided
+      // Build optional location bias rectangle
+      LatLngBounds? locationBias;
       if (latitude != null && longitude != null) {
-        url += '&location=$latitude,$longitude';
-        if (radiusMeters != null) {
-          url += '&radius=$radiusMeters';
-        }
+        final delta = ((radiusMeters ?? 50000) / 111_000.0);
+        locationBias = LatLngBounds(
+          southwest: LatLng(lat: latitude - delta, lng: longitude - delta),
+          northeast: LatLng(lat: latitude + delta, lng: longitude + delta),
+        );
       }
 
-      final response = await http.get(Uri.parse(url));
+      final response = await sdk.findAutocompletePredictions(
+        query,
+        locationBias: locationBias,
+      );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final predictions = data['predictions'] as List? ?? [];
+      debugPrint('✅ Found ${response.predictions.length} places');
 
-        debugPrint('✅ Found ${predictions.length} places');
+      final results = response.predictions.map((p) {
+        return <String, dynamic>{
+          'placeId': p.placeId,
+          'description': p.fullText,
+          'mainText': p.primaryText,
+          'secondaryText': p.secondaryText,
+        };
+      }).toList();
 
-        List<Map<String, dynamic>> results = predictions.map((p) {
-          return {
-            'placeId': p['place_id'] as String,
-            'description': p['description'] as String,
-            'mainText': p['structured_formatting']?['main_text'] as String?,
-            'secondaryText':
-                p['structured_formatting']?['secondary_text'] as String?,
-          };
-        }).toList();
-
-        // If fields are specified, fetch detailed information for each place
-        if (fields != null && fields.isNotEmpty) {
-          final detailedResults = await Future.wait(
-            results.map((place) async {
-              final placeId = place['placeId'] as String;
-              final details = await fetchPlaceDetails(
-                placeId,
-                apiKey,
-                fields: fields,
-              );
-
-              if (details != null) {
-                // Merge autocomplete data with detailed data
-                return {...place, 'details': details};
-              }
-              return place;
-            }),
-          );
-
-          return detailedResults;
-        }
-
-        return results;
-      } else {
-        debugPrint('❌ Failed to search places: ${response.statusCode}');
-        return [];
+      // Optionally fetch details for each prediction
+      if (fields != null && fields.isNotEmpty) {
+        final detailed = await Future.wait(
+          results.map((place) async {
+            final details = await fetchPlaceDetails(
+              place['placeId'] as String,
+              apiKey,
+              fields: fields,
+            );
+            return details != null ? {...place, 'details': details} : place;
+          }),
+        );
+        return detailed;
       }
+
+      return results;
     } catch (e) {
-      debugPrint('❌ Error searching places: $e');
+      debugPrint('❌ Error searching places (native SDK): $e');
       return [];
     }
   }
 
-  /// Fetch detailed information about a place from Google Places API
+  // ── Place Details ─────────────────────────────────────────────────────────
+
+  /// Fetch detailed information about a place using the native Places SDK.
   ///
-  /// Optional fields parameter specifies which fields to return (e.g., 'name', 'geometry', 'formatted_address')
-  /// See: https://developers.google.com/maps/documentation/places/web-service/place-details#fields
+  /// Returns a map that mirrors the shape of the old Places REST API response
+  /// so all existing callers continue to work without changes.
   static Future<Map<String, dynamic>?> fetchPlaceDetails(
     String placeId,
     String googleApiKey, {
     List<String>? fields,
   }) async {
     try {
-      var url =
-          'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$googleApiKey';
+      final sdk = FlutterGooglePlacesSdk(googleApiKey);
+      final placeFields = _mapToPlaceFields(fields);
 
-      // Add fields parameter if specified
-      if (fields != null && fields.isNotEmpty) {
-        final fieldsParam = fields.join(',');
-        url += '&fields=$fieldsParam';
+      final response = await sdk.fetchPlace(placeId, fields: placeFields);
+      final place = response.place;
+      if (place == null) return null;
+
+      final result = <String, dynamic>{'place_id': placeId};
+
+      if (place.name != null) result['name'] = place.name;
+      if (place.address != null) result['formatted_address'] = place.address;
+      if (place.websiteUri != null) result['url'] = place.websiteUri.toString();
+      if (place.phoneNumber != null) {
+        result['formatted_phone_number'] = place.phoneNumber;
+      }
+      if (place.rating != null) result['rating'] = place.rating;
+
+      // geometry.location — mirrors REST API shape
+      final latLng = place.latLng;
+      if (latLng != null) {
+        result['geometry'] = {
+          'location': {'lat': latLng.lat, 'lng': latLng.lng},
+        };
       }
 
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final data = convert.json.decode(response.body);
-        if (data['status'] == 'OK') {
-          return data['result'];
-        }
+      // address_components — mirrors REST API shape
+      if (place.addressComponents != null) {
+        result['address_components'] = place.addressComponents!
+            .map(
+              (c) => {
+                'long_name': c.name,
+                'short_name': c.shortName,
+                'types': c.types.map((t) => t.toString()).toList(),
+              },
+            )
+            .toList();
       }
-      return null;
+
+      // photos — photo_reference mirrors REST shape
+      if (place.photoMetadatas != null && place.photoMetadatas!.isNotEmpty) {
+        result['photos'] = place.photoMetadatas!
+            .map((m) => {'photo_reference': m.photoReference})
+            .toList();
+      }
+
+      return result;
     } catch (e) {
-      print('Error fetching place details: $e');
+      debugPrint('❌ Error fetching place details (native SDK): $e');
       return null;
     }
   }
 
-  /// Reverse geocode coordinates to get address components
+  /// Maps string field names (old HTTP API convention) → [PlaceField] enum.
+  static List<PlaceField> _mapToPlaceFields(List<String>? fields) {
+    if (fields == null || fields.isEmpty) {
+      return [PlaceField.Id, PlaceField.Name, PlaceField.Address, PlaceField.Location];
+    }
+    final mapped = <PlaceField>{PlaceField.Id};
+    for (final f in fields) {
+      switch (f.toLowerCase()) {
+        case 'place_id':
+        case 'id':
+          mapped.add(PlaceField.Id);
+        case 'name':
+        case 'display_name':
+          mapped.add(PlaceField.Name);
+        case 'formatted_address':
+        case 'address':
+          mapped.add(PlaceField.Address);
+        case 'geometry':
+        case 'latlng':
+        case 'location':
+          mapped.add(PlaceField.Location);
+        case 'photos':
+          mapped.add(PlaceField.PhotoMetadatas);
+        case 'phone_number':
+        case 'formatted_phone_number':
+          mapped.add(PlaceField.PhoneNumber);
+        case 'website_uri':
+        case 'url':
+          mapped.add(PlaceField.WebsiteUri);
+        case 'address_components':
+          mapped.add(PlaceField.AddressComponents);
+        case 'rating':
+          mapped.add(PlaceField.Rating);
+        case 'types':
+          mapped.add(PlaceField.Types);
+      }
+    }
+    return mapped.toList();
+  }
+
+  // ── Reverse Geocoding (native device geocoder — no API key needed) ─────────
+
+  /// Reverse geocode coordinates to address components using the device's
+  /// native geocoding service. No API key, no HTTP, no quotas.
   ///
-  /// Returns a map with keys: street, city, state, postalCode, area, subLocality
-  /// All values are nullable strings
+  /// Returns a map with: street, city, state, postalCode, area, subLocality.
   Future<Map<String, String?>> reverseGeocode({
     required double latitude,
     required double longitude,
-    required String apiKey,
+    required String apiKey, // kept for API compatibility, not used
   }) async {
     try {
-      debugPrint('🔄 Reverse geocoding: $latitude, $longitude');
+      debugPrint('🔄 Reverse geocoding (native): $latitude, $longitude');
 
-      final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=$apiKey',
-      );
+      final placemarks = await placemarkFromCoordinates(latitude, longitude);
 
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final results = data['results'] as List? ?? [];
-
-        if (results.isEmpty) {
-          debugPrint('⚠️ No results from reverse geocoding');
-          return {
-            'street': null,
-            'city': null,
-            'state': null,
-            'postalCode': null,
-            'area': null,
-            'subLocality': null,
-          };
-        }
-
-        final result = results.first;
-        final components = result['address_components'] as List? ?? [];
-
-        debugPrint('📦 Raw address components: $components');
-
-        // Extract components - map ALL types, not just the first one
-        final Map<String, String> mapped = {};
-        final Map<String, String> shortMapped = {};
-
-        for (var c in components) {
-          final types = c['types'] as List? ?? [];
-          final longName = c['long_name'] as String?;
-          final shortName = c['short_name'] as String?;
-
-          for (var type in types) {
-            if (longName != null) mapped[type] = longName;
-            if (shortName != null) shortMapped[type] = shortName;
-          }
-        }
-
-        debugPrint('🗺️ Mapped address components: $mapped');
-
-        final street =
-            (mapped['route'] != null && mapped['street_number'] != null)
-            ? '${mapped['street_number']} ${mapped['route']}'
-            : (mapped['route'] ?? mapped['sublocality'] ?? '');
-        final city =
-            mapped['locality'] ?? mapped['administrative_area_level_2'];
-        final state = shortMapped['administrative_area_level_1'];
-        final postalCode = mapped['postal_code'];
-        final subLocality =
-            mapped['sublocality'] ??
-            mapped['sublocality_level_1'] ??
-            mapped['sublocality_level_2'];
-        final area = subLocality;
-
-        debugPrint(
-          '✅ Extracted - Street: $street, City: $city, State: $state, Postal Code: $postalCode, Area: $area, SubLocality: $subLocality',
-        );
-
-        return {
-          'street': street,
-          'city': city,
-          'state': state,
-          'postalCode': postalCode,
-          'area': area,
-          'subLocality': subLocality,
-        };
-      } else {
-        debugPrint('❌ Failed to reverse geocode: ${response.statusCode}');
-        return {
-          'street': null,
-          'city': null,
-          'state': null,
-          'postalCode': null,
-          'area': null,
-          'subLocality': null,
-        };
+      if (placemarks.isEmpty) {
+        debugPrint('⚠️ No placemarks from native reverse geocoding');
+        return _emptyAddress();
       }
-    } catch (e) {
-      debugPrint('❌ Error reverse geocoding: $e');
-      return {
-        'street': null,
-        'city': null,
-        'state': null,
-        'postalCode': null,
-        'area': null,
-        'subLocality': null,
+
+      final p = placemarks.first;
+      debugPrint('📦 Placemark: $p');
+
+      final street = [p.name, p.street]
+          .where((s) => s != null && s.isNotEmpty && s != p.locality)
+          .join(', ')
+          .trim();
+
+      final result = {
+        'street': street.isNotEmpty ? street : p.thoroughfare,
+        'city': p.locality ?? p.administrativeArea,
+        'state': p.administrativeArea,
+        'postalCode': p.postalCode,
+        'area': p.subLocality ?? p.subAdministrativeArea,
+        'subLocality': p.subLocality,
       };
+
+      debugPrint('✅ Reverse geocoded: $result');
+      return result;
+    } catch (e) {
+      debugPrint('❌ Error reverse geocoding (native): $e');
+      return _emptyAddress();
     }
   }
 
-  /// Reverse geocode the user's current location
+  static Map<String, String?> _emptyAddress() => {
+    'street': null,
+    'city': null,
+    'state': null,
+    'postalCode': null,
+    'area': null,
+    'subLocality': null,
+  };
+
+  // ── Reverse geocode current location ──────────────────────────────────────
+
+  /// Convenience: get current GPS position then reverse geocode it natively.
   ///
-  /// This is a convenience method that combines location fetching and reverse geocoding
-  ///
-  /// Throws [LocationException] if location cannot be obtained (no permission,
-  /// service disabled, etc.) so callers can react with specific UI.
-  /// Throws generic [Exception] for network/geocoding errors.
+  /// Throws [LocationException] if location permission is denied.
   Future<Map<String, dynamic>> reverseGeocodeCurrentLocation({
     required String apiKey,
   }) async {
     debugPrint('📍 Getting current location for reverse geocoding');
-
     final locationService = LocationService();
-    // Let LocationException propagate — caller handles UI (open settings, etc.)
     final position = await locationService.getCurrentPosition();
-
     debugPrint('📍 Got position: ${position.latitude}, ${position.longitude}');
 
-    // Reverse geocode the position
     final addressDetails = await reverseGeocode(
       latitude: position.latitude,
       longitude: position.longitude,
@@ -250,12 +264,14 @@ class PlacesService {
     return {'position': position, 'address': addressDetails};
   }
 
-  /// Forward geocode an address string to latitude/longitude coordinates.
+  // ── Forward Geocoding (native device geocoder — no API key needed) ─────────
+
+  /// Forward geocode an address to coordinates using the device's native
+  /// geocoding service. No API key, no HTTP, no quotas.
   ///
-  /// Builds a query from the provided components for the best accuracy.
-  /// Returns `null` if no result is found or an error occurs.
+  /// Returns `null` if no result is found.
   Future<Map<String, double>?> forwardGeocode({
-    required String apiKey,
+    required String apiKey, // kept for API compatibility, not used
     String? street,
     String? city,
     String? state,
@@ -272,33 +288,19 @@ class PlacesService {
 
     if (parts.isEmpty) return null;
 
-    final address = Uri.encodeComponent(parts.join(', '));
-    final url =
-        'https://maps.googleapis.com/maps/api/geocode/json?address=$address&key=$apiKey';
+    final address = parts.join(', ');
+    debugPrint('🔍 Forward geocoding (native): $address');
 
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body) as Map<String, dynamic>;
-        final results = data['results'] as List?;
-        if (results != null && results.isNotEmpty) {
-          final location =
-              results[0]['geometry']?['location'] as Map<String, dynamic>?;
-          if (location != null) {
-            final lat = (location['lat'] as num?)?.toDouble();
-            final lng = (location['lng'] as num?)?.toDouble();
-            if (lat != null && lng != null) {
-              debugPrint('✅ Forward geocoded to: $lat, $lng');
-              return {'lat': lat, 'lng': lng};
-            }
-          }
-        }
-        debugPrint('⚠️ Forward geocode returned no results for: $address');
-      } else {
-        debugPrint('❌ Forward geocode failed: ${response.statusCode}');
+      final locations = await locationFromAddress(address);
+      if (locations.isNotEmpty) {
+        final loc = locations.first;
+        debugPrint('✅ Forward geocoded to: ${loc.latitude}, ${loc.longitude}');
+        return {'lat': loc.latitude, 'lng': loc.longitude};
       }
+      debugPrint('⚠️ Forward geocode returned no results');
     } catch (e) {
-      debugPrint('❌ Error forward geocoding: $e');
+      debugPrint('❌ Error forward geocoding (native): $e');
     }
     return null;
   }

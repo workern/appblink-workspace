@@ -118,6 +118,7 @@ class User extends Equatable {
   final List<UserAddress> addresses;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? notificationSound;
 
   const User({
     required this.uid,
@@ -128,6 +129,7 @@ class User extends Equatable {
     required this.addresses,
     this.createdAt,
     this.updatedAt,
+    this.notificationSound = 'default',
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -144,6 +146,7 @@ class User extends Equatable {
           [],
       createdAt: _parseDateTime(json['createdAt']),
       updatedAt: _parseDateTime(json['updatedAt']),
+      notificationSound: json['notificationSound'] ?? 'default',
     );
   }
 
@@ -179,6 +182,7 @@ class User extends Equatable {
       'addresses': addresses.map((a) => a.toJson()).toList(),
       if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+      'notificationSound': notificationSound ?? 'default',
     };
   }
 
@@ -201,6 +205,7 @@ class User extends Equatable {
     List<UserAddress>? addresses,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? notificationSound,
   }) {
     return User(
       uid: uid ?? this.uid,
@@ -211,6 +216,7 @@ class User extends Equatable {
       addresses: addresses ?? this.addresses,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      notificationSound: notificationSound ?? this.notificationSound,
     );
   }
 
@@ -224,5 +230,6 @@ class User extends Equatable {
     addresses,
     createdAt,
     updatedAt,
+    notificationSound,
   ];
 }

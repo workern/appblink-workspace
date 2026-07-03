@@ -47,6 +47,14 @@ class FirebaseInitConfig {
   /// the user interacts with the app. Only runs in production (not emulators).
   final List<String> warmupFunctions;
 
+  /// Whether to force reCAPTCHA verification for Android phone auth.
+  /// Set to true when running debug builds on physical devices that don't
+  /// have their SHA-1 fingerprint registered in Firebase Console.
+  /// This bypasses Play Integrity / SmsRetriever and uses the reCAPTCHA
+  /// WebView instead, which works without SHA fingerprints.
+  /// Has no effect on iOS or on builds with a registered SHA fingerprint.
+  final bool forceAndroidRecaptcha;
+
   const FirebaseInitConfig({
     required this.firebaseOptions,
     this.googleClientId,
@@ -58,6 +66,7 @@ class FirebaseInitConfig {
     this.backgroundMessageHandler,
     this.useEmulators,
     this.warmupFunctions = const [],
+    this.forceAndroidRecaptcha = false,
   });
 }
 
@@ -79,15 +88,39 @@ class FirebaseInitializer {
       _functionsTargetDescription = 'Production (asia-south2)';
 
       // Initialize Firebase Core only if not already initialized
-      if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(options: config.firebaseOptions);
-        debugPrint('✅ Firebase Core initialized');
-      } else {
-        debugPrint('⚠️ Firebase Core already initialized');
+      try {
+        if (Firebase.apps.isEmpty) {
+          await Firebase.initializeApp(options: config.firebaseOptions);
+          debugPrint('✅ Firebase Core initialized');
+        } else {
+          debugPrint('⚠️ Firebase Core already initialized');
+        }
+      } catch (e) {
+        if (e is FirebaseException && e.code == 'duplicate-app') {
+          debugPrint('⚠️ Firebase Core already initialized (duplicate-app caught)');
+        } else if (e.toString().contains('duplicate-app')) {
+          debugPrint('⚠️ Firebase Core already initialized (duplicate-app string match)');
+        } else {
+          rethrow;
+        }
       }
 
       // Initialize Firebase App Check
-      await _initializeAppCheck();
+        await _initializeAppCheck();
+
+      // If the debug build's SHA fingerprint isn't registered in Firebase
+      // Console, Play Integrity and SmsRetriever will fail and the automatic
+      // reCAPTCHA fallback gets silently canceled by the system (17093 error).
+      // Forcing reCAPTCHA mode skips Play Integrity entirely and opens the
+      // reCAPTCHA WebView directly — this works without SHA fingerprints.
+      if (config.forceAndroidRecaptcha) {
+        try {
+          await FirebaseAuth.instance.setSettings(forceRecaptchaFlow: true);
+          debugPrint('✅ Android phone auth: forced reCAPTCHA mode (no Play Integrity)');
+        } catch (e) {
+          debugPrint('⚠️ Could not set reCAPTCHA mode: $e');
+        }
+      }
 
       // Initialize Remote Config with defaults
       await _initializeRemoteConfig();

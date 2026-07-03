@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:workern_services/workern_services.dart';
 
 class WorkernImageViewer extends StatelessWidget {
   final String imageUrl;
@@ -22,7 +23,7 @@ class WorkernImageViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CachedNetworkImage(
-      imageUrl: imageUrl,
+      imageUrl: patchEmulatorUrl(imageUrl),
       fit: fit,
       width: width,
       height: height,
@@ -112,7 +113,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
   @override
   Widget build(BuildContext context) {
     Widget image = CachedNetworkImage(
-      imageUrl: widget.imageUrl,
+      imageUrl: patchEmulatorUrl(widget.imageUrl),
       fit: BoxFit.contain,
       placeholder: (context, url) => const Center(
         child: CircularProgressIndicator(color: Colors.white),

@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import '../helpers/feedback/workern_snackbar.dart';
 import 'workern_skeleton_loader.dart';
 
 class MemberRoleOption {
@@ -17,6 +19,7 @@ class WorkspaceMembersScreen<T> extends StatefulWidget {
   final bool isLoading;
   final bool isInviting;
   final bool isRemoving;
+  final bool showInviteComingSoon;
 
   // Callbacks
   final Future<void> Function(String email, String role) onInvite;
@@ -49,6 +52,7 @@ class WorkspaceMembersScreen<T> extends StatefulWidget {
     this.isLoading = false,
     this.isInviting = false,
     this.isRemoving = false,
+    this.showInviteComingSoon = false,
   });
 
   @override
@@ -216,42 +220,53 @@ class _WorkspaceMembersScreenState<T> extends State<WorkspaceMembersScreen<T>> {
         itemCount: 4,
       );
     }
-
+ 
     final isCurrentUserOwner = _isOwner(widget.members);
-
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+ 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                const Icon(Icons.group_outlined, size: 24),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Team Members',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+            Expanded(
+              child: Row(
+                children: [
+                  const Icon(Icons.group_outlined, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Team Members',
+                          style: tt.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          '${widget.members.length} member${widget.members.length == 1 ? '' : 's'}',
+                          style: tt.bodySmall?.copyWith(
+                                color: cs.onSurfaceVariant,
+                              ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    Text(
-                      '${widget.members.length} member${widget.members.length == 1 ? '' : 's'}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-            if (isCurrentUserOwner)
+            if (isCurrentUserOwner) ...[
+              const SizedBox(width: 12),
               ShadButton(
                 size: ShadButtonSize.sm,
-                onPressed: () => _showInviteSheet(context),
+                onPressed: widget.showInviteComingSoon
+                    ? () => WorkernSnackbar.show(context, 'This feature is coming soon.')
+                    : () => _showInviteSheet(context),
                 child: const Row(
                   children: [
                     Icon(Icons.person_add_alt, size: 16),
@@ -260,6 +275,7 @@ class _WorkspaceMembersScreenState<T> extends State<WorkspaceMembersScreen<T>> {
                   ],
                 ),
               ),
+            ],
           ],
         ),
         const Divider(height: 32),
@@ -292,7 +308,9 @@ class _WorkspaceMembersScreenState<T> extends State<WorkspaceMembersScreen<T>> {
                   if (isCurrentUserOwner) ...[
                     const SizedBox(height: 24),
                     ShadButton.outline(
-                      onPressed: () => _showInviteSheet(context),
+                      onPressed: widget.showInviteComingSoon
+                          ? () => WorkernSnackbar.show(context, 'This feature is coming soon.')
+                          : () => _showInviteSheet(context),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -322,97 +340,131 @@ class _WorkspaceMembersScreenState<T> extends State<WorkspaceMembersScreen<T>> {
               final canAct = isCurrentUserOwner || isSelf;
               final photoUrl = widget.getPhotoUrl(member);
 
-              return ShadCard(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    ShadAvatar(
-                      photoUrl.isNotEmpty ? photoUrl : 'https://i.pravatar.cc/150?u=$uid',
-                      placeholder: Text(_getInitials(member)),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                widget.getName(member).isNotEmpty
-                                    ? widget.getName(member)
-                                    : (widget.getEmail(member).isNotEmpty
-                                        ? widget.getEmail(member)
-                                        : widget.getId(member)),
-                                style: const TextStyle(fontWeight: FontWeight.w500),
+              final radius = BorderRadius.circular(16);
+              return ClipRRect(
+                borderRadius: radius,
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? cs.surface.withValues(alpha: 0.6)
+                          : cs.surface.withValues(alpha: 0.8),
+                      borderRadius: radius,
+                      border: Border.all(
+                        color: cs.outlineVariant.withValues(alpha: 0.4),
+                      ),
+                      boxShadow: Theme.of(context).brightness == Brightness.light
+                          ? [
+                              BoxShadow(
+                                color: cs.shadow.withValues(alpha: 0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                              if (isSelf) ...[
-                                const SizedBox(width: 6),
-                                Text(
-                                  '(you)',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    fontSize: 12,
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      children: [
+                        ShadAvatar(
+                          photoUrl.isNotEmpty ? photoUrl : 'https://i.pravatar.cc/150?u=$uid',
+                          placeholder: Text(_getInitials(member)),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      widget.getName(member).isNotEmpty
+                                          ? widget.getName(member)
+                                          : (widget.getEmail(member).isNotEmpty
+                                              ? widget.getEmail(member)
+                                              : widget.getId(member)),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      maxLines: 1,
+                                    ),
                                   ),
+                                  if (isSelf) ...[
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '(you)',
+                                      style: TextStyle(
+                                        color: cs.onSurfaceVariant,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              if (widget.getEmail(member).isNotEmpty &&
+                                  widget.getName(member).isNotEmpty)
+                                Text(
+                                  widget.getEmail(member),
+                                  style: TextStyle(
+                                    color: cs.onSurfaceVariant,
+                                    fontSize: 13,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  maxLines: 1,
                                 ),
-                              ],
                             ],
                           ),
-                          if (widget.getEmail(member).isNotEmpty &&
-                              widget.getName(member).isNotEmpty)
-                            Text(
-                              widget.getEmail(member),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                fontSize: 13,
-                              ),
+                        ),
+                        const SizedBox(width: 12),
+                        if (isOwner)
+                          ShadBadge(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star, size: 12),
+                                const SizedBox(width: 4),
+                                Text(_getRoleLabel(roleValue)),
+                              ],
                             ),
+                          )
+                        else if (isCurrentUserOwner && !isSelf && widget.availableRoles.isNotEmpty)
+                          ShadSelect<String>(
+                            initialValue: roleValue,
+                            onChanged: (newRole) {
+                              if (newRole != null && newRole != roleValue) {
+                                widget.onUpdateRole(member, newRole);
+                              }
+                            },
+                            options: widget.availableRoles
+                                .map((r) => ShadOption(value: r.value, child: Text(r.label)))
+                                .toList(),
+                            selectedOptionBuilder: (context, value) =>
+                                Text(_getRoleLabel(value)),
+                          )
+                        else
+                          ShadBadge.secondary(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.person, size: 12),
+                                const SizedBox(width: 4),
+                                Text(_getRoleLabel(roleValue)),
+                              ],
+                            ),
+                          ),
+                        if (canAct && !isOwner) ...[
+                          const SizedBox(width: 8),
+                          ShadButton.ghost(
+                            onPressed: () => _confirmRemove(context, member),
+                            child: const Icon(Icons.person_remove),
+                          ),
                         ],
-                      ),
+                      ],
                     ),
-                    if (isOwner)
-                      ShadBadge(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.star, size: 12),
-                            const SizedBox(width: 4),
-                            Text(_getRoleLabel(roleValue)),
-                          ],
-                        ),
-                      )
-                    else if (isCurrentUserOwner && !isSelf && widget.availableRoles.isNotEmpty)
-                      ShadSelect<String>(
-                        initialValue: roleValue,
-                        onChanged: (newRole) {
-                          if (newRole != null && newRole != roleValue) {
-                            widget.onUpdateRole(member, newRole);
-                          }
-                        },
-                        options: widget.availableRoles
-                            .map((r) => ShadOption(value: r.value, child: Text(r.label)))
-                            .toList(),
-                        selectedOptionBuilder: (context, value) =>
-                            Text(_getRoleLabel(value)),
-                      )
-                    else
-                      ShadBadge.secondary(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.person, size: 12),
-                            const SizedBox(width: 4),
-                            Text(_getRoleLabel(roleValue)),
-                          ],
-                        ),
-                      ),
-                    if (canAct && !isOwner) ...[
-                      const SizedBox(width: 8),
-                      ShadButton.ghost(
-                        onPressed: () => _confirmRemove(context, member),
-                        child: const Icon(Icons.person_remove),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
               );
             },

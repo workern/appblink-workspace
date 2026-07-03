@@ -10,7 +10,7 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   firebase_auth.User? get currentUser => _auth.currentUser;
-  Stream<firebase_auth.User?> get authStateChanges => _auth.authStateChanges();
+  Stream<firebase_auth.User?> get authStateChanges => _auth.userChanges();
 
   /// Fetches user data from Firestore
   Future<User?> getUserData(String userId) async {
@@ -75,6 +75,18 @@ class AuthService {
     required String password,
   }) async {
     return _auth.signInWithEmailAndPassword(email: email, password: password);
+  }
+
+  /// Signs in anonymously as a guest.
+  Future<firebase_auth.UserCredential> signInAnonymously() async {
+    try {
+      final credential = await _auth.signInAnonymously();
+      debugPrint('✅ Signed in anonymously: ${credential.user?.uid}');
+      return credential;
+    } catch (e) {
+      debugPrint('❌ Error signing in anonymously: $e');
+      rethrow;
+    }
   }
 
   /// Configures the Android debug reCAPTCHA flow.

@@ -8,6 +8,7 @@
  */
 
 import { onRequest } from 'firebase-functions/v2/https';
+import { ensureAppUserTracking } from '../tracking/applicationusage';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { logger } from 'firebase-functions';
@@ -415,6 +416,12 @@ export const ensureworkspace = onRequest(
       });
     });
 
+    try {
+      void ensureAppUserTracking(appId, uid);
+    } catch (e) {
+      logger.error('Failed to log workspaces-ensureworkspace user tracking', e);
+    }
+
     logger.info('workspaces-ensureworkspace success', {
       uid,
       appId,
@@ -802,8 +809,14 @@ export const updatemember = onRequest(
     if (!(await requireWorkspaceMemberForApp(appId, workspaceId, uid, res)))
       return;
 
-    const wsSnap = await workspaceRefForApp(appId, workspaceId).get();
-    const isOwner = wsSnap.data()?.['owner']?.['uid'] === uid;
+    const wsRef = workspaceRefForApp(appId, workspaceId);
+    const [wsSnap, callerMemberSnap] = await Promise.all([
+      wsRef.get(),
+      wsRef.collection('members').doc(uid).get()
+    ]);
+    const isOwner =
+      wsSnap.data()?.['owner']?.['uid'] === uid ||
+      callerMemberSnap.data()?.['role'] === 'owner';
 
     if (displayName !== undefined && uid !== memberUid && !isOwner) {
       res.status(403).json({
@@ -960,13 +973,24 @@ export const transferownership = onRequest(
     const wsRef = workspaceRefForApp(appId, workspaceId);
     const now = new Date().toISOString();
 
-    const wsSnap = await wsRef.get();
+    const currentOwnerRef = wsRef.collection('members').doc(uid);
+    const targetMemberRef = wsRef.collection('members').doc(targetUid);
+    const [wsSnap, currentOwnerSnap, targetMemberSnap] = await Promise.all([
+      wsRef.get(),
+      currentOwnerRef.get(),
+      targetMemberRef.get()
+    ]);
+
     if (!wsSnap.exists) {
       res.status(404).json({ error: 'Workspace not found' });
       return;
     }
 
-    if (wsSnap.data()?.['owner']?.['uid'] !== uid) {
+    const isOwner =
+      wsSnap.data()?.['owner']?.['uid'] === uid ||
+      currentOwnerSnap.data()?.['role'] === 'owner';
+
+    if (!isOwner) {
       res.status(403).json({
         error: 'Only the current workspace owner can transfer ownership'
       });
@@ -980,13 +1004,6 @@ export const transferownership = onRequest(
       return;
     }
 
-    const currentOwnerRef = wsRef.collection('members').doc(uid);
-    const targetMemberRef = wsRef.collection('members').doc(targetUid);
-    const [currentOwnerSnap, targetMemberSnap] = await Promise.all([
-      currentOwnerRef.get(),
-      targetMemberRef.get()
-    ]);
-
     if (!currentOwnerSnap.exists) {
       res.status(404).json({ error: 'Current owner membership not found' });
       return;
@@ -995,6 +1012,7 @@ export const transferownership = onRequest(
       res.status(404).json({ error: 'Target member not found' });
       return;
     }
+
 
     const currentOwnerFunctionalRoles =
       (currentOwnerSnap.data()?.['functionalRoles'] as string[] | undefined) ??
@@ -1266,13 +1284,20 @@ export const remove = onRequest(
     const { appId, workspaceId } = parsed;
     const wsRef = workspaceRefForApp(appId, workspaceId);
 
-    const wsSnap = await wsRef.get();
+    const [wsSnap, callerMemberSnap] = await Promise.all([
+      wsRef.get(),
+      wsRef.collection('members').doc(uid).get()
+    ]);
     if (!wsSnap.exists) {
       res.status(404).json({ error: 'Workspace not found' });
       return;
     }
 
-    if (wsSnap.data()?.['owner']?.['uid'] !== uid) {
+    const isOwner =
+      wsSnap.data()?.['owner']?.['uid'] === uid ||
+      callerMemberSnap.data()?.['role'] === 'owner';
+
+    if (!isOwner) {
       res
         .status(403)
         .json({ error: 'Only the workspace owner can delete a workspace' });

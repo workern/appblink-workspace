@@ -75,9 +75,14 @@ class WorkernLocationSearchBar extends StatefulWidget {
       _WorkernLocationSearchBarState();
 }
 
+class _SuggestionsNotifier extends ChangeNotifier {
+  void rebuild() => notifyListeners();
+}
+
 class _WorkernLocationSearchBarState extends State<WorkernLocationSearchBar> {
   final SearchController _searchController = SearchController();
   final PlacesService _placesService = PlacesService();
+  final _SuggestionsNotifier _suggestionsNotifier = _SuggestionsNotifier();
 
   // ── State ─────────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _results = [];
@@ -86,10 +91,6 @@ class _WorkernLocationSearchBarState extends State<WorkernLocationSearchBar> {
 
   // Debounce
   Timer? _debounce;
-
-  // Zero-width-space trick to force suggestionsBuilder to rebuild
-  // (same pattern as SearchMixin in save_nest).
-  static const String _zws = '\u200B';
 
   @override
   void initState() {
@@ -101,6 +102,7 @@ class _WorkernLocationSearchBarState extends State<WorkernLocationSearchBar> {
   void dispose() {
     _debounce?.cancel();
     _searchController.dispose();
+    _suggestionsNotifier.dispose();
     super.dispose();
   }
 
@@ -136,14 +138,14 @@ class _WorkernLocationSearchBarState extends State<WorkernLocationSearchBar> {
     list.remove(query.trim());
     await prefs.setStringList(widget.recentSearchesKey, list);
     await _loadRecentSearches();
-    _rebuildSuggestions();
+    _suggestionsNotifier.rebuild();
   }
 
   Future<void> _clearAllRecentSearches() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(widget.recentSearchesKey);
     if (mounted) setState(() => _recentSearches = []);
-    _rebuildSuggestions();
+    _suggestionsNotifier.rebuild();
   }
 
   // ── Search ────────────────────────────────────────────────────────────────
@@ -182,9 +184,7 @@ class _WorkernLocationSearchBarState extends State<WorkernLocationSearchBar> {
             _results = results;
             _isLoading = false;
           });
-          // Safe to call here — this is an async callback, not a keystroke
-          // handler, so the cursor is not being actively edited.
-          _rebuildSuggestions();
+          _suggestionsNotifier.rebuild();
         }
       } catch (e) {
         debugPrint('❌ WorkernLocationSearchBar places error: $e');
@@ -193,108 +193,105 @@ class _WorkernLocationSearchBarState extends State<WorkernLocationSearchBar> {
     });
   }
 
-  /// Forces [suggestionsBuilder] to re-run without losing the cursor position
-  /// (same zero-width-space trick used in save_nest's SearchMixin).
-  void _rebuildSuggestions() {
-    if (_searchController.isOpen) {
-      final prev = _searchController.value;
-      _searchController.value = prev.copyWith(text: '$_zws${prev.text}');
-      _searchController.value = prev;
-    }
-  }
-
   // ── Suggestion items ──────────────────────────────────────────────────────
 
   List<Widget> _buildSuggestions(
     BuildContext context,
     SearchController controller,
   ) {
-    final cs = Theme.of(context).colorScheme;
-    final accent = widget.primaryColor ?? cs.primary;
-    final query = controller.text.replaceAll(_zws, '');
+    return [
+      ListenableBuilder(
+        listenable: Listenable.merge([controller, _suggestionsNotifier]),
+        builder: (context, _) {
+          final cs = Theme.of(context).colorScheme;
+          final accent = widget.primaryColor ?? cs.primary;
+          final query = controller.text.trim();
 
-    // ── Loading shimmer ────────────────────────────────────────────────────
-    if (_isLoading) {
-      return [
-        SizedBox(
-          height: 360,
-          child: ListView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5,
-            itemBuilder: (_, __) => Skeletonizer(
-              enabled: true,
-              child: _PlaceListTile(
+          // ── Loading shimmer ────────────────────────────────────────────────────
+          if (_isLoading) {
+            return SizedBox(
+              height: 360,
+              child: ListView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 5,
+                itemBuilder: (_, __) => Skeletonizer(
+                  enabled: true,
+                  child: _PlaceListTile(
+                    icon: Icons.location_on_outlined,
+                    iconColor: accent,
+                    mainText: 'Loading placeholder name',
+                    secondaryText: 'City, State, Country',
+                    onTap: () {},
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // ── Empty query — show recent searches or empty state ──────────────────
+          if (query.isEmpty) {
+            if (_recentSearches.isEmpty) {
+              return _buildEmptyState(context, accent);
+            }
+            return _buildRecentSearchesSection(context, controller, accent);
+          }
+
+          // ── No results ─────────────────────────────────────────────────────────
+          if (_results.isEmpty) {
+            return SizedBox(
+              height: 360,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.location_off_outlined,
+                        size: 56, color: cs.onSurface.withValues(alpha: 0.25)),
+                    const SizedBox(height: 14),
+                    Text(
+                      'No results found',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Try different keywords or check spelling',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: cs.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          // ── Results ────────────────────────────────────────────────────────────
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: _results.map((place) {
+              return _PlaceListTile(
                 icon: Icons.location_on_outlined,
                 iconColor: accent,
-                mainText: 'Loading placeholder name',
-                secondaryText: 'City, State, Country',
-                onTap: () {},
-              ),
-            ),
-          ),
-        ),
-      ];
-    }
-
-    // ── Empty query — show recent searches or empty state ──────────────────
-    if (query.isEmpty) {
-      if (_recentSearches.isEmpty) {
-        return [_buildEmptyState(context, accent)];
-      }
-      return [_buildRecentSearchesSection(context, controller, accent)];
-    }
-
-    // ── No results ─────────────────────────────────────────────────────────
-    if (_results.isEmpty) {
-      return [
-        SizedBox(
-          height: 360,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.location_off_outlined,
-                    size: 56, color: cs.onSurface.withValues(alpha: 0.25)),
-                const SizedBox(height: 14),
-                Text(
-                  'No results found',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurface.withValues(alpha: 0.7),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Try different keywords or check spelling',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: cs.onSurface.withValues(alpha: 0.4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ];
-    }
-
-    // ── Results ────────────────────────────────────────────────────────────
-    return _results.map((place) {
-      return _PlaceListTile(
-        icon: Icons.location_on_outlined,
-        iconColor: accent,
-        mainText: place['mainText'] ?? place['description'] ?? '',
-        secondaryText: place['secondaryText'],
-        onTap: () {
-          final label =
-              (place['mainText'] ?? place['description'] ?? '').toString();
-          _saveRecentSearch(label);
-          controller.closeView(null);
-          widget.onPlaceSelected(place);
+                mainText: place['mainText'] ?? place['description'] ?? '',
+                secondaryText: place['secondaryText'],
+                onTap: () {
+                  final label =
+                      (place['mainText'] ?? place['description'] ?? '').toString();
+                  _saveRecentSearch(label);
+                  controller.closeView(null);
+                  widget.onPlaceSelected(place);
+                },
+              );
+            }).toList(),
+          );
         },
-      );
-    }).toList();
+      ),
+    ];
   }
 
   Widget _buildEmptyState(BuildContext context, Color accent) {
@@ -416,7 +413,6 @@ class _WorkernLocationSearchBarState extends State<WorkernLocationSearchBar> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final accent = widget.primaryColor ?? cs.primary;
 
     return SearchAnchor(
       searchController: _searchController,

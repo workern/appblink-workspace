@@ -7,3 +7,4 @@ export 'src/firebase_usage_tracker.dart';
 export 'src/firestore_usage_service.dart';
 export 'src/providers.dart';
 export 'src/teams_service.dart';
+export 'src/url_helper.dart';

@@ -88,11 +88,12 @@ class _NotificationsView extends StatelessWidget {
             // Call the custom callback if provided
             onNotificationTap?.call(notification);
           },
-          onMarkAsRead: (notificationId) {
+          onMarkAsRead: (notificationId, seen) {
             notif_service.WorkernNotificationService.markAsSeen(
               userId: userId,
               spaceId: spaceId,
               notificationId: notificationId,
+              seen: seen,
             );
           },
           onDelete: (notificationId) {

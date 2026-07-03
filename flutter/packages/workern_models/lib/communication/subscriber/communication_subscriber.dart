@@ -49,6 +49,10 @@ class CommunicationSubscriber extends Base {
   /// ISO timestamp of when the subscriber most recently interacted
   final DateTime lastInteractionAt;
 
+  /// Audience tags assigned by the shop owner (e.g. "VIP", "Summer Sale").
+  /// Used to filter campaign targets.
+  final List<String> tags;
+
   CommunicationSubscriber({
     required super.id,
     required super.createdAt,
@@ -63,6 +67,7 @@ class CommunicationSubscriber extends Base {
     required this.consentGiven,
     required this.source,
     required this.lastInteractionAt,
+    this.tags = const [],
   });
 
   factory CommunicationSubscriber.fromJson(Map<String, dynamic> json) {
@@ -85,6 +90,10 @@ class CommunicationSubscriber extends Base {
       lastInteractionAt: (json['lastInteractionAt'] is Timestamp)
           ? (json['lastInteractionAt'] as Timestamp).toDate()
           : parseTimestamp(json['lastInteractionAt']) ?? DateTime.now(),
+      tags: (json['tags'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
     );
   }
 
@@ -97,6 +106,7 @@ class CommunicationSubscriber extends Base {
     'consentGiven': consentGiven,
     'source': source.name,
     'lastInteractionAt': Timestamp.fromDate(lastInteractionAt),
+    'tags': tags,
     if (owner != null) 'owner': owner!.toJson(),
     if (space != null) 'space': space!.toJson(),
   };
@@ -105,6 +115,7 @@ class CommunicationSubscriber extends Base {
     bool? consentGiven,
     CommunicationSubscriberSource? source,
     DateTime? lastInteractionAt,
+    List<String>? tags,
   }) {
     return CommunicationSubscriber(
       id: id,
@@ -120,6 +131,7 @@ class CommunicationSubscriber extends Base {
       consentGiven: consentGiven ?? this.consentGiven,
       source: source ?? this.source,
       lastInteractionAt: lastInteractionAt ?? this.lastInteractionAt,
+      tags: tags ?? this.tags,
     );
   }
 }

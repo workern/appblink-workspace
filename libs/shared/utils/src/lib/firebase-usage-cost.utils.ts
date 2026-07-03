@@ -12,6 +12,10 @@ export interface FirebaseUsageMetrics {
   storageDeletes: number;
   storageUploadBytes: number;
   storageDownloadBytes: number;
+  // AI usage
+  aiCalls: number;
+  aiInputTokens: number;
+  aiOutputTokens: number;
 }
 
 export interface FirebaseUsageEvent {
@@ -33,6 +37,9 @@ export interface FirebaseBlazePricingConfig {
   storageUploadOperationPer10kUsd: number;
   storageDownloadOperationPer10kUsd: number;
   storageNetworkPerGbUsd: number;
+  // AI pricing (USD per million tokens)
+  aiInputTokenPerMillionUsd: number;
+  aiOutputTokenPerMillionUsd: number;
   monthlyFreeTier: {
     firestoreReads: number;
     firestoreWrites: number;
@@ -45,6 +52,8 @@ export interface FirebaseBlazePricingConfig {
     storageUploads: number;
     storageDownloads: number;
     storageDownloadGb: number;
+    aiInputTokens: number;
+    aiOutputTokens: number;
   };
   pricingModel: {
     targetGrossMarginPct: number;
@@ -65,6 +74,7 @@ export interface FirebaseCostBreakdown {
   storageUploadsUsd: number;
   storageDownloadsUsd: number;
   storageNetworkUsd: number;
+  aiUsd: number;
   totalUsd: number;
 }
 
@@ -94,6 +104,9 @@ export const DEFAULT_FIREBASE_BLAZE_PRICING: FirebaseBlazePricingConfig = {
   storageUploadOperationPer10kUsd: 0.05,
   storageDownloadOperationPer10kUsd: 0.004,
   storageNetworkPerGbUsd: 0.12,
+  // AI Pricing (Defaults to Gemini 1.5 Flash approx rates)
+  aiInputTokenPerMillionUsd: 0.075,
+  aiOutputTokenPerMillionUsd: 0.3,
   // Spark-equivalent free tier included in Blaze, normalized monthly.
   monthlyFreeTier: {
     firestoreReads: 50_000 * 30,
@@ -104,9 +117,11 @@ export const DEFAULT_FIREBASE_BLAZE_PRICING: FirebaseBlazePricingConfig = {
     functionsNetworkGb: 5,
     functionsGbSeconds: 400_000,
     functionsCpuSeconds: 200_000,
-    storageUploads: 20_000 * 30,
-    storageDownloads: 50_000 * 30,
-    storageDownloadGb: 1 * 30
+    storageUploads: 50_000,
+    storageDownloads: 50_000,
+    storageDownloadGb: 10,
+    aiInputTokens: 0, // AI usually has no free tier in Blaze directly
+    aiOutputTokens: 0
   },
   pricingModel: {
     targetGrossMarginPct: 0.75,
@@ -129,7 +144,10 @@ export class FirebaseUsageTrackerEngine {
     storageDownloads: 0,
     storageDeletes: 0,
     storageUploadBytes: 0,
-    storageDownloadBytes: 0
+    storageDownloadBytes: 0,
+    aiCalls: 0,
+    aiInputTokens: 0,
+    aiOutputTokens: 0
   };
 
   constructor(initial?: Partial<FirebaseUsageMetrics>) {
@@ -200,6 +218,14 @@ export class FirebaseUsageTrackerEngine {
     });
   }
 
+  recordAiCall(inputTokens = 0, outputTokens = 0): void {
+    this.addMetrics({
+      aiCalls: 1,
+      aiInputTokens: Math.max(0, inputTokens),
+      aiOutputTokens: Math.max(0, outputTokens)
+    });
+  }
+
   snapshot(): FirebaseUsageMetrics {
     return { ...this.metrics };
   }
@@ -218,7 +244,10 @@ export class FirebaseUsageTrackerEngine {
       storageDownloads: 0,
       storageDeletes: 0,
       storageUploadBytes: 0,
-      storageDownloadBytes: 0
+      storageDownloadBytes: 0,
+      aiCalls: 0,
+      aiInputTokens: 0,
+      aiOutputTokens: 0
     };
   }
 
@@ -244,6 +273,9 @@ export class FirebaseUsageTrackerEngine {
     this.metrics.storageDeletes += metrics.storageDeletes ?? 0;
     this.metrics.storageUploadBytes += metrics.storageUploadBytes ?? 0;
     this.metrics.storageDownloadBytes += metrics.storageDownloadBytes ?? 0;
+    this.metrics.aiCalls += metrics.aiCalls ?? 0;
+    this.metrics.aiInputTokens += metrics.aiInputTokens ?? 0;
+    this.metrics.aiOutputTokens += metrics.aiOutputTokens ?? 0;
   }
 }
 
@@ -271,6 +303,8 @@ export function estimateFirebaseCostForUsage(
     pricing.monthlyFreeTier.storageDownloads / safeUsers;
   const freeStorageDownloadBytes =
     (pricing.monthlyFreeTier.storageDownloadGb * ONE_GB_IN_BYTES) / safeUsers;
+  const freeAiInputTokens = pricing.monthlyFreeTier.aiInputTokens / safeUsers;
+  const freeAiOutputTokens = pricing.monthlyFreeTier.aiOutputTokens / safeUsers;
 
   const billableReads = Math.max(0, usage.firestoreReads - freeReads);
   const billableWrites = Math.max(
@@ -314,6 +348,14 @@ export function estimateFirebaseCostForUsage(
     0,
     usage.storageDownloadBytes - freeStorageDownloadBytes
   );
+  const billableAiInputTokens = Math.max(
+    0,
+    usage.aiInputTokens - freeAiInputTokens
+  );
+  const billableAiOutputTokens = Math.max(
+    0,
+    usage.aiOutputTokens - freeAiOutputTokens
+  );
 
   const firestoreReadsUsd =
     (billableReads / 100_000) * pricing.firestoreReadPer100kUsd;
@@ -343,6 +385,10 @@ export function estimateFirebaseCostForUsage(
     (billableStorageDownloadBytes / ONE_GB_IN_BYTES) *
     pricing.storageNetworkPerGbUsd;
 
+  const aiUsd =
+    (billableAiInputTokens / 1_000_000) * pricing.aiInputTokenPerMillionUsd +
+    (billableAiOutputTokens / 1_000_000) * pricing.aiOutputTokenPerMillionUsd;
+
   const totalUsd =
     firestoreReadsUsd +
     firestoreWritesUsd +
@@ -354,7 +400,8 @@ export function estimateFirebaseCostForUsage(
     functionsCpuSecondsUsd +
     storageUploadsUsd +
     storageDownloadsUsd +
-    storageNetworkUsd;
+    storageNetworkUsd +
+    aiUsd;
 
   return {
     firestoreReadsUsd,
@@ -368,6 +415,7 @@ export function estimateFirebaseCostForUsage(
     storageUploadsUsd,
     storageDownloadsUsd,
     storageNetworkUsd,
+    aiUsd,
     totalUsd
   };
 }

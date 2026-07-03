@@ -2,6 +2,9 @@
 # Generated and managed by App Blink. Edit tools/fastlane/ios/Fastfile.template to update all apps.
 # App-specific data (contacts, review info, locales, what's new) lives in ios/metadata.json.
 
+Encoding.default_external = Encoding::UTF_8
+Encoding.default_internal = Encoding::UTF_8
+
 default_platform(:ios)
 
 platform :ios do
@@ -56,11 +59,28 @@ platform :ios do
     app.id
   end
 
+  desc "Test fetching the App Store build number using app_store_build_number"
+  lane :test_build_number_check do
+    begin
+      api_key = connect_api_key
+      build_number = app_store_build_number(
+        api_key: api_key,
+        app_identifier: CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier),
+        live: true
+      )
+      UI.success("app_store_build_number returned: #{build_number}")
+    rescue => e
+      UI.error("app_store_build_number failed: #{e.message}")
+    end
+  end
+
   desc "Rebuild archive with Flutter (fast, for code changes)"
   lane :flutter_archive do
     flutter_root = File.expand_path('../..', __dir__)
     sh("cd '#{flutter_root}' && flutter build ipa --release")
   end
+
+
 
   desc "Export IPA from existing archive (fast)"
   lane :export do
@@ -92,6 +112,52 @@ platform :ios do
     raw.split('+').first
   end
 
+  # Syncs pubspec.yaml build number with the latest TestFlight build number.
+  private_lane :sync_pubspec_build_number_with_testflight do |options|
+    api_key = options[:api_key]
+    pubspec_path = File.expand_path('../../pubspec.yaml', __dir__)
+    
+    if File.exist?(pubspec_path)
+      pubspec_content = File.read(pubspec_path)
+      version_match = pubspec_content.match(/^version:\s*(\S+)/)
+      
+      if version_match
+        full_version = version_match.captures.first
+        version_part, build_part = full_version.split('+')
+        current_pubspec_build = build_part ? build_part.to_i : 1
+        
+        UI.message("Current pubspec.yaml build number: #{current_pubspec_build} (version: #{version_part})")
+        
+        latest_tf_build = 0
+        begin
+          latest_tf_build = app_store_build_number(
+            api_key: api_key,
+            app_identifier: CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier),
+            version: version_part
+          ).to_i
+          UI.message("Latest TestFlight build number: #{latest_tf_build}")
+        rescue => e
+          UI.important("Could not fetch build number from TestFlight: #{e.message}. Defaulting to 0.")
+        end
+        
+        target_build = [current_pubspec_build, latest_tf_build + 1].max
+        
+        if target_build > current_pubspec_build
+          UI.success("Updating build number in pubspec.yaml from #{current_pubspec_build} to #{target_build}...")
+          new_version_line = "version: #{version_part}+#{target_build}"
+          updated_content = pubspec_content.gsub(/^version:\s*\S+/, new_version_line)
+          File.write(pubspec_path, updated_content)
+        else
+          UI.message("pubspec.yaml build number #{current_pubspec_build} is already up to date (TestFlight is #{latest_tf_build}).")
+        end
+      else
+        UI.important("Could not find version pattern in pubspec.yaml")
+      end
+    else
+      UI.important("pubspec.yaml not found at #{pubspec_path}")
+    end
+  end
+
   private_lane :latest_ipa_path do
     # Prefer app-level Flutter build output; keep fallbacks for robustness.
     candidate_dirs = [
@@ -111,6 +177,8 @@ platform :ios do
 
   desc "Build Flutter IPA and upload to TestFlight with metadata"
   lane :beta_with_metadata_new_build do
+    api_key = connect_api_key
+    sync_pubspec_build_number_with_testflight(api_key: api_key)
     flutter_archive
     beta_with_metadata_existing_build
   end
@@ -206,7 +274,7 @@ platform :ios do
       notes:         review_info['notes']
     }.compact
 
-    deliver(
+    deliver_args = {
       api_key: options[:api_key],
       app_version: target_version,
       submit_for_review: true,
@@ -224,11 +292,15 @@ platform :ios do
       run_precheck_before_submit: true,
       precheck_default_rule_level: :error,
       precheck_include_in_app_purchases: false
-    )
+    }
+
+    deliver(deliver_args)
   end
 
   private_lane :submission_info do
     require 'json'
+    metadata_json = load_metadata
+    store_info = metadata_json['appStoreInfo'] || {}
 
     defaults = {
       export_compliance_uses_encryption: false,
@@ -240,8 +312,6 @@ platform :ios do
       export_compliance_contains_third_party_cryptography: false,
       export_compliance_contains_proprietary_cryptography: false,
       export_compliance_available_on_french_store: false,
-      # content_rights_* removed: ASC rejects patching contentRightsDeclaration on already-live/in-review apps.
-      # These fields are managed automatically by App Store Connect.
       add_id_info_uses_idfa: false,
       add_id_info_serves_ads: false,
       add_id_info_tracks_action: false,
@@ -249,8 +319,35 @@ platform :ios do
       add_id_info_limits_tracking: true
     }
 
+    # App Store Connect API rejects patching contentRightsDeclaration on already-published apps.
+    # We use app_store_build_number to check if a live build exists; if it does, we omit content rights.
+    begin
+      api_key = connect_api_key
+      bundle_id = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+
+      app_store_build_number(
+        api_key: api_key,
+        app_identifier: bundle_id,
+        live: true
+      )
+      UI.message("[submission_info] Live version build found. Omit contentRightsDeclaration to prevent ASC rejection.")
+    rescue => e
+      UI.message("[submission_info] No live version/build found (or query failed: #{e.message}). Adding contentRightsDeclaration for the initial release.")
+      sub_info = metadata_json['submissionInfo'] || {}
+      
+      contains_third_party = store_info.key?('contentRightsContainsThirdPartyContent') ? store_info['contentRightsContainsThirdPartyContent'] : sub_info['contentRightsContainsThirdPartyContent']
+      has_rights = store_info.key?('contentRightsHasRights') ? store_info['contentRightsHasRights'] : sub_info['contentRightsHasRights']
+
+      unless contains_third_party.nil?
+        defaults[:content_rights_contains_third_party_content] = contains_third_party
+      end
+      unless has_rights.nil?
+        defaults[:content_rights_has_rights] = has_rights
+      end
+    end
+
     # Convert camelCase keys → snake_case symbols
-    overrides = (load_metadata['submissionInfo'] || {}).transform_keys do |k|
+    overrides = (metadata_json['submissionInfo'] || {}).transform_keys do |k|
       k.to_s
       .gsub(/([A-Z])/, '_\1')
       .downcase
@@ -308,6 +405,8 @@ platform :ios do
 
   desc "Build Flutter IPA, upload + submit for App Store review with auto-release"
   lane :production_with_metadata_new_build do
+    api_key = connect_api_key
+    sync_pubspec_build_number_with_testflight(api_key: api_key)
     flutter_archive
     production_with_metadata_existing_build
   end

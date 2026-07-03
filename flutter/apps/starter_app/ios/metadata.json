@@ -15,26 +15,26 @@
     "en-GB": "Initial release with core features"
   },
   "betaAppReviewInfo": {
-    "contactEmail": "support@workern.com",
-    "contactFirstName": "Kartik",
-    "contactLastName": "Watwani",
-    "contactPhone": "+911234567890",
-    "demoAccountName": "+911234567890",
-    "demoAccountPassword": "123456",
+    "contactEmail": "support@example.com",
+    "contactFirstName": "Test",
+    "contactLastName": "User",
+    "contactPhone": "+91111111111",
+    "demoAccountName": "+91111111111",
+    "demoAccountPassword": "555555",
     "notes": "Thank you for testing Starter App! Please test:\n• Core functionality\n• User interface\n• Performance\n\nPlease report any bugs or feedback to beta@starterappapp.com"
   },
   "appReviewInfo": {
-    "firstName": "Kartik",
-    "lastName": "Watwani",
-    "phoneNumber": "+911234567890",
-    "emailAddress": "support@workern.com",
-    "demoUser": "+911234567890",
-    "demoPassword": "123456",
+    "firstName": "Test",
+    "lastName": "User",
+    "phoneNumber": "+91111111111",
+    "emailAddress": "support@example.com",
+    "demoUser": "+91111111111",
+    "demoPassword": "555555",
     "notes": "Please test core functionality, UI responsiveness and onboarding flow. Demo account is pre-seeded with sample data."
   },
   "localizedAppInfo": {
     "default": {
-      "feedbackEmail": "beta@starterappapp.com",
+      "feedbackEmail": "beta@example.com",
       "description": "Thank you for testing Starter App! Please test the core features and report any issues."
     }
   },
@@ -45,9 +45,11 @@
   },
   "appStoreInfo": {
     "priceTier": 0,
-    "copyright": "2026 Workern Technologies",
+    "copyright": "2026",
     "contentRightsContainsThirdPartyContent": false,
-    "contentRightsHasRights": true
+    "contentRightsHasRights": true,
+    "primaryCategory": "BUSINESS",
+    "secondaryCategory": "UTILITIES"
   },
   "ageRating": {
     "alcoholTobaccoOrDrugUseOrReferences": "NONE",
@@ -168,5 +170,9 @@
         "DATA_LINKED_TO_YOU"
       ]
     }
-  ]
+  ],
+  "submissionInfo": {
+    "contentRightsContainsThirdPartyContent": false,
+    "contentRightsHasRights": true
+  }
 }

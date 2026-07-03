@@ -57,6 +57,9 @@ class Campaign extends Base {
   /// When the campaign dispatch completed (null if still sending).
   final DateTime? completedAt;
 
+  /// Optional image URL associated with the campaign.
+  final String? imageUrl;
+
   Campaign({
     required super.id,
     required super.createdAt,
@@ -73,6 +76,7 @@ class Campaign extends Base {
     required this.failCount,
     this.errors = const {},
     this.completedAt,
+    this.imageUrl,
   });
 
   factory Campaign.fromJson(Map<String, dynamic> json) {
@@ -107,6 +111,7 @@ class Campaign extends Base {
       failCount: (json['failCount'] as num?)?.toInt() ?? 0,
       errors: errors,
       completedAt: completedAt,
+      imageUrl: json['imageUrl'] as String?,
     );
   }
 
@@ -120,6 +125,7 @@ class Campaign extends Base {
         'successCount': successCount,
         'failCount': failCount,
         'errors': errors,
+        if (imageUrl != null) 'imageUrl': imageUrl,
         if (completedAt != null)
           'completedAt': Timestamp.fromDate(completedAt!),
         if (owner != null) 'owner': owner!.toJson(),

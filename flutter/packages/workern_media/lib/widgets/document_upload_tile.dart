@@ -34,6 +34,9 @@ class DocumentUploadTile extends StatefulWidget {
   /// Verification status for the document
   final VerificationStatus? verificationStatus;
 
+  /// Rejection reason if rejected
+  final String? rejectionReason;
+
   /// Whether to show verification status badge
   final bool showVerificationStatus;
 
@@ -51,6 +54,7 @@ class DocumentUploadTile extends StatefulWidget {
     this.subtitle,
     this.primaryColor,
     this.verificationStatus,
+    this.rejectionReason,
     this.showVerificationStatus = false,
     this.isOptional = true,
   });
@@ -504,18 +508,36 @@ class _DocumentUploadTileState extends State<DocumentUploadTile> {
             widget.verificationStatus != null)
           Padding(
             padding: const EdgeInsets.only(top: 8, left: 16),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(_getStatusIcon(), size: 16, color: _getStatusColor()),
-                const SizedBox(width: 6),
-                Text(
-                  _getStatusText(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _getStatusColor(),
-                    fontWeight: FontWeight.w500,
-                  ),
+                Row(
+                  children: [
+                    Icon(_getStatusIcon(), size: 16, color: _getStatusColor()),
+                    const SizedBox(width: 6),
+                    Text(
+                      _getStatusText(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _getStatusColor(),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
+                if (widget.verificationStatus == VerificationStatus.rejected &&
+                    widget.rejectionReason != null &&
+                    widget.rejectionReason!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Reason: ${widget.rejectionReason}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _getStatusColor(),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

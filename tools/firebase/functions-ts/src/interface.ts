@@ -4,6 +4,7 @@ export interface PublicUser {
   rating?: UserRatingInterface;
   email?: string;
 }
+export type PublicUserInterface = PublicUser;
 export interface WorkernCallableFunctionResponse {
   data: { successful: string; message: string };
 }

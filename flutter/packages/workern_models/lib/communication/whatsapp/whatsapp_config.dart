@@ -4,7 +4,7 @@ import '../../common/base.dart';
 
 /// Stored at: users/{shopOwnerId}/mySpaces/nikat/whatsappConfig
 ///
-/// Holds the WhatsApp Business Account connection info for a Nikat shop owner.
+/// Holds the WhatsApp Business Account connection info for a Nikat business owner.
 /// Populated after the shop owner completes the Embedded Signup flow.
 enum WhatsAppConnectionStatus { CONNECTED, DISCONNECTED, PENDING, ERROR }
 

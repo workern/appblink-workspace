@@ -50,6 +50,9 @@ class WorkernSplashScreen extends StatefulWidget {
   /// Color for [appNameFirstLine]. If null, defaults to a dynamic theme-based text color.
   final Color? textColor;
 
+  /// The route to navigate to after animation/loading completes.
+  final String nextRoute;
+
   const WorkernSplashScreen({
     super.key,
     required this.logo,
@@ -60,6 +63,7 @@ class WorkernSplashScreen extends StatefulWidget {
     required this.primaryColor,
     this.backgroundColor,
     this.textColor,
+    this.nextRoute = '/login',
   });
 
   @override
@@ -247,7 +251,14 @@ class _WorkernSplashScreenState extends State<WorkernSplashScreen>
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(12.0), // beautiful modern padding so the icon/image has breathing room
-            child: widget.logo,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: SizedBox(
+                width: _logoSize,
+                height: _logoSize,
+                child: widget.logo,
+              ),
+            ),
           ),
         ),
       ),

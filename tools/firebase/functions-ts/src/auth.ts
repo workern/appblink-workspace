@@ -76,17 +76,18 @@ exports.writeNewUserToFirestore = functions.auth
 
 exports.onUserDeleted = functions.auth
   .user()
-  .onDelete((userRecord, context) => {
+  .onDelete(async (userRecord, context) => {
     const uid = userRecord.uid;
     const promises = [];
+
+    // --- 1. Core User Data ---
     promises.push(db.recursiveDelete(db.collection('users').doc(uid)));
     promises.push(db.collection('usersPublicData').doc(uid).delete());
     promises.push(db.collection('userClaims').doc(uid).delete());
+
+    // --- 2. Membership Cleanup ---
     // Remove the deleted user from any space/workspace member collections they
-    // belonged to. The offerings app's deleteMemberWork is NOT called here —
-    // we do a direct recursive delete of their member doc instead, which is
-    // sufficient for cross-app cleanup. App-specific cleanup (notifications,
-    // work history, etc.) should be handled by each app's own triggers.
+    // belonged to across all apps.
     promises.push(
       db
         .collectionGroup('members')
@@ -102,12 +103,83 @@ exports.onUserDeleted = functions.auth
           }
         })
     );
+
+    // --- 3. App-Specific Data Cleanup (Global Collections) ---
+
+    // A. Nikat: Delete orders and reviews
+    promises.push(
+      db
+        .collection('apps/nikat/orders')
+        .where('owner.uid', '==', uid)
+        .get()
+        .then(async (snap) => {
+          const batch = db.batch();
+          snap.forEach((doc) => batch.delete(doc.ref));
+          if (snap.size > 0) await batch.commit();
+        })
+    );
+    promises.push(
+      db
+        .collection('apps/nikat/reviews')
+        .where('user.uid', '==', uid)
+        .get()
+        .then(async (snap) => {
+          const batch = db.batch();
+          snap.forEach((doc) => batch.delete(doc.ref));
+          if (snap.size > 0) await batch.commit();
+        })
+    );
+
+    // B. Nikat Business: Delete workspaces (shops) owned by user
+    promises.push(
+      db
+        .collection('apps/nikat-shop-manager/workspaces')
+        .where('owner.uid', '==', uid)
+        .get()
+        .then(async (snap) => {
+          for (const doc of snap.docs) {
+            const shopId = doc.id;
+
+            // 1. Delete item mirrors in global collections
+            const itemsSnap = await doc.ref.collection('items').select().get();
+            if (!itemsSnap.empty) {
+              const itemBatch = db.batch();
+              itemsSnap.docs.forEach((itemDoc) => {
+                itemBatch.delete(
+                  db.doc(`apps/nikat-shop-manager/items/${itemDoc.id}`)
+                );
+                itemBatch.delete(db.doc(`apps/nikat/items/${itemDoc.id}`));
+              });
+              await itemBatch.commit();
+            }
+
+            // 2. Delete workspace + shop mirrors
+            await db.recursiveDelete(doc.ref);
+            await db.doc(`apps/nikat-shop-manager/shops/${shopId}`).delete();
+            await db.doc(`apps/nikat/shops/${shopId}`).delete();
+          }
+        })
+    );
+
+    // C. App Blink: Delete workspaces owned by user
+    promises.push(
+      db
+        .collection('apps/app-blink/workspaces')
+        .where('ownerId', '==', uid)
+        .get()
+        .then(async (snap) => {
+          for (const doc of snap.docs) {
+            await db.recursiveDelete(doc.ref);
+          }
+        })
+    );
+
     return Promise.all(promises)
       .then(() => {
-        log('User deleted!');
+        log(`✅ Cleanup completed for deleted user: ${uid}`);
       })
       .catch((error) => {
-        log('Error deleting user data', error);
+        log(`❌ Error during cleanup for user ${uid}:`, error);
       });
   });
 

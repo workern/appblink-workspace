@@ -37,7 +37,7 @@ class WorkernAlertBanner extends StatelessWidget {
   final String message;
 
   /// Short call-to-action label shown on the right (e.g. "View", "Fix", "Retry").
-  final String actionLabel;
+  final String? actionLabel;
 
   /// Vertical padding inside the banner. Defaults to 12.
   final double verticalPadding;
@@ -49,7 +49,7 @@ class WorkernAlertBanner extends StatelessWidget {
   final bool useGlass;
 
   /// Called when the banner is tapped.
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const WorkernAlertBanner({
     super.key,
@@ -57,11 +57,11 @@ class WorkernAlertBanner extends StatelessWidget {
     required this.color,
     this.backgroundColor,
     required this.message,
-    required this.actionLabel,
+    this.actionLabel,
     this.verticalPadding = 12,
     this.borderRadius,
     this.useGlass = true,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -69,28 +69,26 @@ class WorkernAlertBanner extends StatelessWidget {
     final radius = borderRadius ?? BorderRadius.circular(12);
     final baseColor = backgroundColor ?? color.withValues(alpha: 0.1);
 
-    final content = InkWell(
-      onTap: onTap,
-      borderRadius: radius,
-      child: Padding(
-        padding:
-            EdgeInsets.symmetric(horizontal: 14, vertical: verticalPadding),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
+    final innerContent = Padding(
+      padding:
+          EdgeInsets.symmetric(horizontal: 14, vertical: verticalPadding),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
             ),
+          ),
+          if (actionLabel != null && actionLabel!.isNotEmpty) ...[
             Text(
-              actionLabel,
+              actionLabel!,
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w700,
@@ -100,9 +98,17 @@ class WorkernAlertBanner extends StatelessWidget {
             const SizedBox(width: 4),
             Icon(Icons.arrow_forward_ios_rounded, color: color, size: 12),
           ],
-        ),
+        ],
       ),
     );
+
+    final content = onTap != null
+        ? InkWell(
+            onTap: onTap,
+            borderRadius: radius,
+            child: innerContent,
+          )
+        : innerContent;
 
     if (useGlass) {
       return ClipRRect(

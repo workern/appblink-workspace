@@ -1,8 +1,14 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:crypto/crypto.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:firebase_auth/firebase_auth.dart'
     as fbAuth
     show
@@ -11,11 +17,16 @@ import 'package:firebase_auth/firebase_auth.dart'
         PhoneAuthCredential,
         MultiFactorResolver,
         UserCredential,
-        ConfirmationResult;
+        ConfirmationResult,
+        FirebaseAuthException,
+        OAuthProvider,
+        User;
+import 'package:provider/provider.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:firebase_ui_oauth_apple/firebase_ui_oauth_apple.dart';
 import 'package:workern_widgets/workern_widgets.dart';
+import '../providers/auth_provider.dart' as workern_auth;
 import '../models/country_code.dart';
 import 'otp_verification_screen.dart';
 import '../widgets/auth_snackbar.dart';
@@ -64,6 +75,12 @@ class LoginScreen extends StatefulWidget {
   /// If not provided, a default themed auth snackbar is used.
   final void Function(BuildContext context, String message)? onErrorMessage;
 
+  /// Whether to show a "Continue as Guest" or "Skip" button
+  final bool showSkipButton;
+
+  /// Callback when "Skip" is pressed
+  final VoidCallback? onSkip;
+
   const LoginScreen({
     super.key,
     this.appName = 'App',
@@ -76,6 +93,8 @@ class LoginScreen extends StatefulWidget {
     this.privacyPolicyUrl,
     this.contentPoliciesUrl,
     this.onErrorMessage,
+    this.showSkipButton = false,
+    this.onSkip,
   });
 
   @override
@@ -89,6 +108,7 @@ class _LoginScreenState extends State<LoginScreen>
   _AuthStep _currentStep = _AuthStep.enterPhone;
   String? _verificationId;
   String _phoneNumber = '';
+  StreamSubscription<fbAuth.User?>? _authSubscription;
 
   late final PhoneAuthProvider phoneProvider = PhoneAuthProvider()
     ..authListener = this
@@ -97,23 +117,32 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
-    // Initialize with India as default
     _selectedCountry = countryCodes.firstWhere(
       (c) => c.code == 'IN',
       orElse: () => countryCodes[0],
     );
 
-    // Check if user is already signed in
-    _checkInitialAuthState();
+    // Listen for OAuth sign-in completion (Google/Apple) and navigate explicitly
+    _authSubscription = fbAuth.FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (!mounted) return;
+      if (user != null && !user.isAnonymous && _currentStep != _AuthStep.enterOTP) {
+        debugPrint('✅ OAuth sign-in detected, navigating back');
+        _navigateAfterSignIn();
+      }
+    });
   }
 
-  void _checkInitialAuthState() {
-    // If user is already signed in, they shouldn't be on login screen
-    // The router should handle this, but as a fallback we check here
-    final currentUser = fbAuth.FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      debugPrint('⚠️ User already signed in: ${currentUser.uid}');
-      // Don't change state - let the router handle navigation
+  void _navigateAfterSignIn() {
+    if (!mounted) return;
+    try {
+      final from = GoRouterState.of(context).uri.queryParameters['from'];
+      if (from != null && from.isNotEmpty) {
+        GoRouter.of(context).go(Uri.decodeComponent(from));
+      } else {
+        GoRouter.of(context).go('/home');
+      }
+    } catch (_) {
+      GoRouter.of(context).go('/home');
     }
   }
 
@@ -137,6 +166,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _phoneController.dispose();
     super.dispose();
   }
@@ -164,11 +194,28 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
 
+    final dialCodeDigits = _selectedCountry.dialCode.replaceAll(RegExp(r'[^0-9]'), '');
+    final fullDigits = dialCodeDigits + digitsOnlyPhone;
     final phoneNumber = _selectedCountry.dialCode + digitsOnlyPhone;
+
+    // Intercept demo account phone number (+911234567891 or 1234567891)
+    if (fullDigits == '911234567891' || digitsOnlyPhone == '1234567891') {
+      setState(() {
+        _currentStep = _AuthStep.enterOTP;
+        _verificationId = 'demo_bypass';
+        _phoneNumber = phoneNumber;
+      });
+      return;
+    }
 
     setState(() => _currentStep = _AuthStep.loading);
     _phoneNumber = phoneNumber;
 
+    // Always use AuthAction.signIn for phone OTP — firebase_ui_auth calls
+    // verifyPhoneNumber() which generates a verification ID that is valid
+    // for BOTH linkWithCredential() and signInWithCredential(). Using
+    // AuthAction.link would call linkWithPhoneNumber() instead, producing a
+    // session that cannot be reused for signInWithCredential fallback.
     phoneProvider.sendVerificationCode(
       phoneNumber: phoneNumber,
       action: AuthAction.signIn,
@@ -181,10 +228,24 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
 
+    // Intercept demo bypass resend
+    final digitsOnly = _phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitsOnly.endsWith('1234567891')) {
+      if (mounted) {
+        setState(() {
+          _currentStep = _AuthStep.enterOTP;
+          _verificationId = 'demo_bypass';
+        });
+      }
+      return;
+    }
+
     if (mounted) {
       setState(() => _currentStep = _AuthStep.loading);
     }
 
+    // Same as _verifyPhoneNumber: always signIn mode so the verification ID
+    // works for both link and sign-in paths in OtpVerificationScreen.
     phoneProvider.sendVerificationCode(
       phoneNumber: _phoneNumber,
       action: AuthAction.signIn,
@@ -212,7 +273,9 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   void onVerificationCompleted(fbAuth.PhoneAuthCredential credential) {
-    // Auto sign-in if available (instant verification)
+    // Auto-verified (instant verification on Android with Play Integrity).
+    // Use AuthAction.signIn — if anonymous, OtpVerificationScreen handles
+    // linking manually via linkWithCredential().
     if (mounted) {
       setState(() => _currentStep = _AuthStep.loading);
       phoneProvider.onCredentialReceived(credential, AuthAction.signIn);
@@ -240,19 +303,31 @@ class _LoginScreenState extends State<LoginScreen>
   void onError(Object error) {
     if (mounted) {
       final errorMessage = _mapAuthErrorMessage(error, step: _currentStep);
-      // If OTP has already been sent, stay on OTP screen so the user can retry.
       final hasActiveOtpFlow = _verificationId != null;
       setState(() {
-        _currentStep = hasActiveOtpFlow
-            ? _AuthStep.enterOTP
-            : _AuthStep.enterPhone;
-        if (!hasActiveOtpFlow) {
-          _verificationId = null;
-        }
+        _currentStep = hasActiveOtpFlow ? _AuthStep.enterOTP : _AuthStep.enterPhone;
+        if (!hasActiveOtpFlow) _verificationId = null;
       });
-
       _showError(errorMessage);
       debugPrint('❌ Auth error: $error');
+    }
+  }
+
+  String _mapFirebaseAuthError(fbAuth.FirebaseAuthException e) {
+    switch (e.code) {
+      case 'account-exists-with-different-credential':
+        return 'An account already exists with a different sign-in method. Please use phone sign-in.';
+      case 'user-disabled':
+        return 'This account has been disabled. Please contact support.';
+      case 'network-request-failed':
+        return 'Network error. Please check your connection and try again.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please wait a moment before trying again.';
+      case 'popup-closed-by-user':
+      case 'canceled':
+        return '';
+      default:
+        return 'Sign in failed (${e.code}). Please try again.';
     }
   }
 
@@ -285,6 +360,14 @@ class _LoginScreenState extends State<LoginScreen>
       return 'Too many attempts. Please wait a moment before trying again.';
     }
 
+    if (message.contains('provider-already-linked')) {
+      return 'This phone number is already linked to your account.';
+    }
+
+    if (message.contains('credential-already-in-use')) {
+      return 'This phone number is registered to a different account. Please sign in instead.';
+    }
+
     if (step == _AuthStep.enterPhone) {
       return 'Could not send OTP right now. Please check your mobile number and try again.';
     }
@@ -308,9 +391,16 @@ class _LoginScreenState extends State<LoginScreen>
   void onConfirmationRequested(fbAuth.ConfirmationResult result) {}
 
   @override
-  void onCredentialLinked(fbAuth.AuthCredential credential) {}
+  void onCredentialLinked(fbAuth.AuthCredential credential) {
+    // Anonymous account successfully upgraded to phone account.
+    // The authStateChanges() stream will emit the updated non-anonymous user,
+    // which triggers AuthProvider.notifyListeners() and the router handles
+    // the redirect to home. No manual navigation needed here.
+    debugPrint('✅ Credential linked (anonymous → phone): ${credential.providerId}');
+  }
 
   void _showError(String message) {
+    if (message.isEmpty) return;
     final show = widget.onErrorMessage;
     if (show != null) {
       show(context, message);
@@ -318,6 +408,18 @@ class _LoginScreenState extends State<LoginScreen>
     }
 
     AuthSnackBar.showError(context, message);
+  }
+
+  String _generateNonce([int length = 32]) {
+    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
+  }
+
+  String _sha256OfString(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
   }
 
   @override
@@ -346,7 +448,7 @@ class _LoginScreenState extends State<LoginScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
                     // Header
                     if (widget.logo != null) ...[
                       Center(
@@ -501,31 +603,98 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                       const SizedBox(height: 24),
 
-                      // Sign in with Apple (iOS only, shown first per Apple guidelines)
-                      if (widget.showAppleSignIn && Platform.isIOS) ...[
-                        ScalePress(
-                          child: OAuthProviderButton(
-                            provider: AppleProvider(),
-                            action: AuthAction.signIn,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
+                      AuthStateListener<OAuthController>(
+                        listener: (oldState, newState, controller) {
+                          if (newState is AuthFailed) {
+                            final exception = newState.exception;
+                            debugPrint('🔴 OAuthController AuthFailed: ${exception.runtimeType} | $exception');
+                            if (exception is fbAuth.FirebaseAuthException) {
+                              debugPrint('🔴 FirebaseAuthException code: ${exception.code} | message: ${exception.message}');
+                              final credential = exception.credential;
+                              if (exception.code == 'credential-already-in-use' && credential != null) {
+                                controller.reset();
+                                debugPrint('⚠️ OAuth credential already in use. Signing in directly...');
+                                fbAuth.FirebaseAuth.instance
+                                    .signInWithCredential(credential)
+                                    .then((_) {
+                                  if (context.mounted) {
+                                    try {
+                                      context.read<workern_auth.AuthProvider>().reloadUser();
+                                    } catch (e) {
+                                      debugPrint('ℹ️ AuthProvider not found in context (skipping reload): $e');
+                                    }
+                                  }
+                                }).catchError((e) {
+                                  debugPrint('❌ Failed to sign in with conflicting credential: $e');
+                                  if (mounted) _showError('Sign in failed. Please try again.');
+                                });
+                                return true;
+                              }
+                              controller.reset();
+                              final msg = _mapFirebaseAuthError(exception);
+                              if (mounted) _showError(msg);
+                            } else {
+                              final errStr = exception.toString();
+                              debugPrint('🔴 Non-Firebase error: $errStr');
+                              controller.reset();
+                              if (!errStr.contains('canceled') && !errStr.contains('cancelled') &&
+                                  !errStr.contains('SignInWithAppleAuthorizationException')) {
+                                if (mounted) _showError('Sign in failed. Please try again.');
+                              }
+                            }
+                            return true;
+                          }
+                          return null;
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Sign in with Apple (iOS only, shown first per Apple guidelines)
+                            if (widget.showAppleSignIn && Platform.isIOS) ...[
+                              ScalePress(
+                                child: OAuthProviderButton(
+                                  provider: AppleProvider(),
+                                  action: (fbAuth.FirebaseAuth.instance.currentUser?.isAnonymous ?? false)
+                                      ? AuthAction.link
+                                      : AuthAction.signIn,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
 
-                      // Google Sign-In Button
-                      if (widget.googleClientId != null) ...[
-                        ScalePress(
-                          child: OAuthProviderButton(
-                            provider: GoogleProvider(clientId: widget.googleClientId!),
-                            action: AuthAction.signIn,
-                          ),
+                            // Google Sign-In Button
+                            if (widget.googleClientId != null) ...[
+                              ScalePress(
+                                child: OAuthProviderButton(
+                                  provider: GoogleProvider(clientId: widget.googleClientId!),
+                                  action: (fbAuth.FirebaseAuth.instance.currentUser?.isAnonymous ?? false)
+                                      ? AuthAction.link
+                                      : AuthAction.signIn,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
-                      const SizedBox(height: 32),
+                      ),
+                      const SizedBox(height: 12),
                     ],
 
                     // Footer
                     _buildPolicyFooter(context),
+
+                    if (widget.showSkipButton) ...[
+                      const SizedBox(height: 8),
+                      ScalePress(
+                        child: WorkernSecondaryButton(
+                          label: 'Continue as Guest',
+                          onPressed: widget.onSkip ?? () => context.go('/home'),
+                          borderColor: cs.outline,
+                          textColor: cs.onSurface,
+                          borderRadius: 8,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -546,9 +715,21 @@ class _LoginScreenState extends State<LoginScreen>
       primaryColor: widget.primaryColor,
       verificationId: _verificationId!,
       onVerified: () {
-        // Auth state will change automatically, no need to navigate
         if (mounted) {
           setState(() => _currentStep = _AuthStep.loading);
+          Future.delayed(const Duration(milliseconds: 150), () {
+            if (!mounted) return;
+            if (GoRouter.of(context).canPop()) {
+              context.pop();
+            } else {
+              final from = GoRouterState.of(context).uri.queryParameters['from'];
+              if (from != null && from.isNotEmpty) {
+                context.go(Uri.decodeComponent(from));
+              } else {
+                context.go('/home');
+              }
+            }
+          });
         }
       },
       onError: (error) {

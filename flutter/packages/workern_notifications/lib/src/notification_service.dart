@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:workern_models/workern_models.dart';
 import 'notification_handler.dart';
 
@@ -188,7 +190,7 @@ class WorkernNotificationService {
           sound: 'default',
         ),
       ),
-      payload: message.data.toString(),
+      payload: jsonEncode(message.data),
     );
 
     debugPrint('✅ Local notification shown');
@@ -197,12 +199,41 @@ class WorkernNotificationService {
   /// Handle notification tap
   static void _handleNotificationTap(RemoteMessage message) {
     debugPrint('👆 Notification tapped: ${message.data}');
+
+    final notificationId = message.data['notificationId'] as String?;
+    final spaceId = message.data['spaceId'] as String?;
+    if (_userId != null && notificationId != null && spaceId != null) {
+      markAsSeen(
+        userId: _userId!,
+        spaceId: spaceId,
+        notificationId: notificationId,
+      );
+    }
+
     _handler?.onNotificationTap(message.data);
   }
 
   /// Handle local notification tap
   static void _onNotificationTapped(NotificationResponse response) {
     debugPrint('👆 Local notification tapped: ${response.payload}');
+
+    if (response.payload != null && _userId != null) {
+      try {
+        final data = jsonDecode(response.payload!) as Map<String, dynamic>;
+        final notificationId = data['notificationId'] as String?;
+        final spaceId = data['spaceId'] as String?;
+        if (notificationId != null && spaceId != null) {
+          markAsSeen(
+            userId: _userId!,
+            spaceId: spaceId,
+            notificationId: notificationId,
+          );
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error parsing local notification payload: $e');
+      }
+    }
+
     _handler?.onLocalNotificationTap(response.payload);
   }
 
@@ -258,10 +289,14 @@ class WorkernNotificationService {
       debugPrint('🔑 FCM Token [$platform]: $token for space: $spaceId');
 
       // Add token to array in Firestore (handles multiple devices of same platform)
-      await _firestore.collection('users').doc(userId).update({
-        'fcmTokens.$spaceId.$platform': FieldValue.arrayUnion([token]),
+      await _firestore.collection('users').doc(userId).set({
+        'fcmTokens': {
+          spaceId: {
+            platform: FieldValue.arrayUnion([token]),
+          }
+        },
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
 
       debugPrint('✅ FCM token registered [$platform] for space: $spaceId');
 
@@ -269,10 +304,14 @@ class WorkernNotificationService {
       _messaging.onTokenRefresh.listen((newToken) {
         debugPrint(
             '🔄 FCM token refreshed [$platform]: $newToken for space: $spaceId');
-        _firestore.collection('users').doc(userId).update({
-          'fcmTokens.$spaceId.$platform': FieldValue.arrayUnion([newToken]),
+        _firestore.collection('users').doc(userId).set({
+          'fcmTokens': {
+            spaceId: {
+              platform: FieldValue.arrayUnion([newToken]),
+            }
+          },
           'updatedAt': FieldValue.serverTimestamp(),
-        });
+        }, SetOptions(merge: true));
       });
 
       return token;
@@ -298,10 +337,14 @@ class WorkernNotificationService {
 
       if (token != null) {
         // Remove token from array in Firestore
-        await _firestore.collection('users').doc(userId).update({
-          'fcmTokens.$spaceId.$platform': FieldValue.arrayRemove([token]),
+        await _firestore.collection('users').doc(userId).set({
+          'fcmTokens': {
+            spaceId: {
+              platform: FieldValue.arrayRemove([token]),
+            }
+          },
           'updatedAt': FieldValue.serverTimestamp(),
-        });
+        }, SetOptions(merge: true));
       }
 
       debugPrint('✅ FCM token unregistered [$platform] for space: $spaceId');
@@ -372,47 +415,45 @@ class WorkernNotificationService {
     }
   }
 
-  /// Mark notification as seen
+  /// Mark notification as seen / unseen via Cloud Function
   static Future<void> markAsSeen({
     required String userId,
     required String spaceId,
     required String notificationId,
+    bool seen = true,
   }) async {
     try {
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('mySpaces')
-          .doc(spaceId)
-          .collection('notifications')
-          .doc(notificationId)
-          .update({'seen': true});
+      final callable = FirebaseFunctions.instanceFor(region: 'asia-south2')
+          .httpsCallable('notifications-markseen');
+      await callable.call({
+        'spaceId': spaceId,
+        'notificationId': notificationId,
+        'seen': seen,
+      });
 
-      debugPrint('✅ Notification marked as seen: $notificationId');
+      debugPrint('✅ Notification marked as seen ($seen) via function: $notificationId');
     } catch (e) {
-      debugPrint('❌ Error marking notification as seen: $e');
+      debugPrint('❌ Error marking notification as seen ($seen) via function: $e');
     }
   }
 
-  /// Delete notification
+  /// Delete notification via Cloud Function
   static Future<void> deleteNotification({
     required String userId,
     required String spaceId,
     required String notificationId,
   }) async {
     try {
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('mySpaces')
-          .doc(spaceId)
-          .collection('notifications')
-          .doc(notificationId)
-          .delete();
+      final callable = FirebaseFunctions.instanceFor(region: 'asia-south2')
+          .httpsCallable('notifications-remove');
+      await callable.call({
+        'spaceId': spaceId,
+        'notificationId': notificationId,
+      });
 
-      debugPrint('✅ Notification deleted: $notificationId');
+      debugPrint('✅ Notification deleted via function: $notificationId');
     } catch (e) {
-      debugPrint('❌ Error deleting notification: $e');
+      debugPrint('❌ Error deleting notification via function: $e');
     }
   }
 }

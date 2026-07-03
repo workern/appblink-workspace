@@ -1,9 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:google_places_flutter/model/prediction.dart';
-import 'dart:convert';
 import 'dart:async';
-import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import 'package:flutter_google_places_sdk/flutter_google_places_sdk.dart';
 
+/// A legacy text-field-based location search widget.
+///
+/// Prefer [WorkernLocationSearchBar] for new screens — it uses [SearchAnchor]
+/// and recent-search history. This widget is kept for backward compatibility
+/// but has been migrated to the native [FlutterGooglePlacesSdk] so iOS
+/// bundle-ID-restricted API keys work correctly.
+///
+/// The [onPlaceSelected] callback receives a simple map with:
+///   `placeId`, `description`, `mainText`, `secondaryText`, `lat`, `lng`
 class LocationSearchField extends StatefulWidget {
   const LocationSearchField({
     super.key,
@@ -17,13 +24,19 @@ class LocationSearchField extends StatefulWidget {
     this.placeType,
   });
 
-  final Function(Prediction) onPlaceSelected;
+  /// Called when the user selects a place.
+  /// Map contains: `placeId`, `description`, `mainText`, `secondaryText`,
+  /// and optionally `lat` / `lng` when geometry is available.
+  final Function(Map<String, dynamic>) onPlaceSelected;
   final String googleApiKey;
   final double? latitude;
   final double? longitude;
   final String hintText;
   final bool showAsAppBarSearch;
   final Color? primaryColor;
+
+  /// Optional place type filter (e.g. `'establishment'`). Ignored on this
+  /// widget — provided for API compatibility with legacy callers.
   final String? placeType;
 
   @override
@@ -34,7 +47,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
   Timer? _debounceTimer;
-  List<Prediction> _predictions = [];
+  List<AutocompletePrediction> _predictions = [];
   bool _isLoading = false;
   OverlayEntry? _overlayEntry;
 
@@ -62,144 +75,96 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
     _debounceTimer?.cancel();
     if (_controller.text.isEmpty) {
       _removeOverlay();
-      setState(() {
-        _predictions = [];
-      });
+      setState(() => _predictions = []);
       return;
     }
-
-    _debounceTimer = Timer(const Duration(milliseconds: 600), () {
-      _fetchPredictions(_controller.text);
-    });
+    _debounceTimer = Timer(
+      const Duration(milliseconds: 600),
+      () => _fetchPredictions(_controller.text),
+    );
   }
 
   void _onFocusChanged() {
     if (!_focusNode.hasFocus) {
-      Future.delayed(const Duration(milliseconds: 200), () {
-        _removeOverlay();
-      });
+      Future.delayed(const Duration(milliseconds: 200), _removeOverlay);
     }
   }
 
   Future<void> _fetchPredictions(String input) async {
-    if (input.isEmpty) return;
-
+    if (input.isEmpty || !mounted) return;
     setState(() => _isLoading = true);
 
     try {
-      final requestBody = <String, dynamic>{
-        'input': input,
-        'languageCode': 'en',
-        'regionCode': 'IN',
-        'includedRegionCodes': ['in'],
-      };
+      final sdk = FlutterGooglePlacesSdk(widget.googleApiKey);
 
-      // Only add placeType filter when provided
-      if (widget.placeType != null) {
-        requestBody['includedPrimaryTypes'] = [widget.placeType];
-      }
-
-      // Add location bias if coordinates are available
+      LatLngBounds? bias;
       if (widget.latitude != null && widget.longitude != null) {
-        requestBody['locationBias'] = {
-          'circle': {
-            'center': {
-              'latitude': widget.latitude,
-              'longitude': widget.longitude,
-            },
-            'radius': 10000.0, // 10km radius for nearby results
-          },
-        };
+        const delta = 0.09; // ~10 km
+        bias = LatLngBounds(
+          southwest: LatLng(
+            lat: widget.latitude! - delta,
+            lng: widget.longitude! - delta,
+          ),
+          northeast: LatLng(
+            lat: widget.latitude! + delta,
+            lng: widget.longitude! + delta,
+          ),
+        );
       }
 
-      final response = await http.post(
-        Uri.parse('https://places.googleapis.com/v1/places:autocomplete'),
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': widget.googleApiKey,
-        },
-        body: json.encode(requestBody),
+      final response = await sdk.findAutocompletePredictions(
+        input,
+        locationBias: bias,
       );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final suggestions = data['suggestions'] as List<dynamic>? ?? [];
-
-        final predictions = suggestions
-            .where((s) => s['placePrediction'] != null)
-            .map((suggestion) {
-              final placePrediction = suggestion['placePrediction'];
-              final text = placePrediction['text'];
-
-              return Prediction(
-                description: text['text'] as String?,
-                placeId: placePrediction['placeId'] as String?,
-                reference: placePrediction['placeId'] as String?,
-                structuredFormatting: null,
-                terms: null,
-                types: (placePrediction['types'] as List<dynamic>?)
-                    ?.map((e) => e.toString())
-                    .toList(),
-              );
-            })
-            .toList();
-
+      if (mounted) {
         setState(() {
-          _predictions = predictions;
+          _predictions = response.predictions;
           _isLoading = false;
         });
-
         _showOverlay();
-      } else {
-        debugPrint('❌ Autocomplete API error: ${response.statusCode}');
-        debugPrint('Response: ${response.body}');
-        setState(() => _isLoading = false);
       }
     } catch (e) {
-      debugPrint('❌ Error fetching predictions: $e');
-      setState(() => _isLoading = false);
+      debugPrint('❌ Error fetching predictions (native SDK): $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _fetchPlaceDetails(String placeId) async {
+  Future<void> _selectPrediction(AutocompletePrediction prediction) async {
+    _controller.text = prediction.fullText ?? prediction.primaryText ?? '';
+    _removeOverlay();
+    setState(() => _predictions = []);
+    _focusNode.unfocus();
+
+    // Try to get geometry via fetchPlace
     try {
-      final response = await http.get(
-        Uri.parse(
-          'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=${widget.googleApiKey}',
-        ),
+      final sdk = FlutterGooglePlacesSdk(widget.googleApiKey);
+      final response = await sdk.fetchPlace(
+        prediction.placeId,
+        fields: [PlaceField.Id, PlaceField.Name, PlaceField.Location, PlaceField.Address],
       );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['status'] == 'OK') {
-          final result = data['result'];
-          final geometry = result['geometry'];
-          final location = geometry['location'];
-
-          final prediction = Prediction(
-            description: result['formatted_address'] as String?,
-            placeId: placeId,
-            lat: location['lat'].toString(),
-            lng: location['lng'].toString(),
-            reference: placeId,
-            structuredFormatting: null,
-            terms: null,
-            types: (result['types'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList(),
-          );
-
-          widget.onPlaceSelected(prediction);
-        }
-      }
+      final place = response.place;
+      widget.onPlaceSelected({
+        'placeId': prediction.placeId,
+        'description': prediction.fullText,
+        'mainText': prediction.primaryText,
+        'secondaryText': prediction.secondaryText,
+        if (place?.latLng != null) 'lat': place!.latLng!.lat.toString(),
+        if (place?.latLng != null) 'lng': place!.latLng!.lng.toString(),
+      });
     } catch (e) {
-      debugPrint('❌ Error fetching place details: $e');
+      // Fall back without coordinates
+      widget.onPlaceSelected({
+        'placeId': prediction.placeId,
+        'description': prediction.fullText,
+        'mainText': prediction.primaryText,
+        'secondaryText': prediction.secondaryText,
+      });
     }
   }
 
   void _showOverlay() {
     _removeOverlay();
-
     if (_predictions.isEmpty) return;
 
     final renderBox = context.findRenderObject() as RenderBox?;
@@ -226,31 +191,38 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
               padding: EdgeInsets.zero,
               shrinkWrap: true,
               itemCount: _predictions.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
+              separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final prediction = _predictions[index];
+                final p = _predictions[index];
                 return InkWell(
-                  onTap: () {
-                    _controller.text = prediction.description ?? '';
-                    _removeOverlay();
-                    setState(() {
-                      _predictions = [];
-                    });
-                    _focusNode.unfocus();
-                    if (prediction.placeId != null) {
-                      _fetchPlaceDetails(prediction.placeId!);
-                    }
-                  },
-                  child: Container(
+                  onTap: () => _selectPrediction(p),
+                  child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
                       children: [
                         const Icon(Icons.location_on_outlined),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            prediction.description ?? '',
-                            style: const TextStyle(fontSize: 14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                p.primaryText ?? p.fullText ?? '',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (p.secondaryText != null &&
+                                  p.secondaryText!.isNotEmpty)
+                                Text(
+                                  p.secondaryText!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ],

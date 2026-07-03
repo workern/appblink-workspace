@@ -27,9 +27,11 @@ dependencies:
   firebase_ui_oauth_google: ^2.0.1
   firebase_ui_oauth_apple: ^2.0.1
   sign_in_with_apple: ^6.1.4
+  crypto: ^3.0.3
 
   # State Management
   flutter_riverpod: ^3.1.0
+  provider: ^6.1.2
 
   # Routing
   go_router: ^14.0.0

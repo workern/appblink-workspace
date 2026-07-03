@@ -18,6 +18,7 @@ import 'package:workern_models/workern_models.dart';
 class SubscribersSection extends StatelessWidget {
   final List<CommunicationSubscriber> subscribers;
   final bool isLoading;
+  final bool isFetchingMore;
   final bool consentOnly;
   final int totalCount;
   final int consentedCount;
@@ -28,6 +29,7 @@ class SubscribersSection extends StatelessWidget {
     super.key,
     required this.subscribers,
     this.isLoading = false,
+    this.isFetchingMore = false,
     this.consentOnly = false,
     this.totalCount = 0,
     this.consentedCount = 0,
@@ -67,7 +69,7 @@ class SubscribersSection extends StatelessWidget {
           _SubscriberSkeleton()
         else if (subscribers.isEmpty)
           _EmptySubscribers(consentOnly: consentOnly)
-        else
+        else ...[
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -78,6 +80,18 @@ class SubscribersSection extends StatelessWidget {
               onTap: onSubscriberTapped,
             ),
           ),
+          if (isFetchingMore)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              ),
+            ),
+        ],
       ],
     );
   }
@@ -209,7 +223,16 @@ class _SubscriberTile extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
-    final initials = _initials(subscriber.displayName);
+    final isUid = subscriber.displayName == subscriber.userId ||
+        (subscriber.displayName.length >= 20 && !subscriber.displayName.contains(' '));
+    final hasPhone = subscriber.phone != null && subscriber.phone!.isNotEmpty;
+
+    final nameToDisplay = (isUid && hasPhone)
+        ? subscriber.phone!
+        : (isUid ? 'Subscriber' : subscriber.displayName);
+    final showAvatarIcon = isUid;
+    final initials = _initials(nameToDisplay);
+
     final sourceLabel = subscriber.source == CommunicationSubscriberSource.EXPLICIT
         ? 'Subscribed'
         : 'Ordered';
@@ -228,13 +251,19 @@ class _SubscriberTile extends StatelessWidget {
             CircleAvatar(
               radius: 20,
               backgroundColor: cs.primaryContainer,
-              child: Text(
-                initials,
-                style: tt.labelMedium?.copyWith(
-                  color: cs.onPrimaryContainer,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              child: showAvatarIcon
+                  ? Icon(
+                      Icons.person_rounded,
+                      color: cs.onPrimaryContainer,
+                      size: 20,
+                    )
+                  : Text(
+                      initials,
+                      style: tt.labelMedium?.copyWith(
+                        color: cs.onPrimaryContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
             ),
             const SizedBox(width: 12),
             // Name + phone
@@ -243,12 +272,21 @@ class _SubscriberTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    subscriber.displayName,
+                    nameToDisplay,
                     style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (subscriber.phone != null) ...[
+                  if (isUid) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      hasPhone ? 'No name provided' : 'No phone number',
+                      style: tt.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ] else if (subscriber.phone != null) ...[
                     const SizedBox(height: 1),
                     Text(
                       subscriber.phone!,

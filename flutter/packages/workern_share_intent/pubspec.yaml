@@ -2,6 +2,7 @@ name: workern_share_intent
 description: Decoupled sharing intent services and providers for Workern.
 version: 1.0.0
 publish_to: none
+resolution: workspace
 
 environment:
   sdk: ^3.11.0

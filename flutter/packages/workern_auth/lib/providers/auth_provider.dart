@@ -118,31 +118,58 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _firebaseUser != null;
+  bool get isAnonymous => _firebaseUser?.isAnonymous ?? false;
 
   AuthProvider() {
-    // Check if user is already signed in
-    // _firebaseUser = _authService.currentUser;
-    // if (_firebaseUser != null) {
-    //   debugPrint('🔐 User already signed in: ${_firebaseUser!.uid}');
-    //   _loadUserData(_firebaseUser!.uid);
-    // }
+    // Check if user is already signed in on boot
+    _firebaseUser = _authService.currentUser;
+    if (_firebaseUser != null) {
+      debugPrint('🔐 User already signed in on boot: ${_firebaseUser!.uid} (isAnonymous: ${_firebaseUser!.isAnonymous})');
+      _loadUserData(_firebaseUser!.uid);
+      _isLoading = false;
+    } else {
+      debugPrint('🚪 No cached user on boot, showing unauthenticated state');
+      _isLoading = false;
+    }
 
-    // Listen to auth state changes
+    // Listen to auth state changes for sign-ins/upgrades
     _authSubscription = _authService.authStateChanges.listen((
       firebase_auth.User? user,
     ) async {
-      debugPrint('🔄 Auth state changed: ${user?.uid ?? "null"}');
-      _firebaseUser = user;
+      debugPrint('🔄 Auth state changed: ${user?.uid ?? "null"} (isAnonymous: ${user?.isAnonymous})');
       if (user != null) {
-        debugPrint('🔐 User signed in: ${user.uid}');
-        await _loadUserData(user.uid);
+        _firebaseUser = user;
+        _isLoading = false;
+        debugPrint('🔐 User signed in/updated: ${user.uid}');
+        notifyListeners(); // Notify immediately so the router can redirect
+        await _loadUserData(user.uid); // Load profile data in background
       } else {
-        debugPrint('🚪 User signed out');
+        // User signed out — clear state and notify listeners.
+        // This can happen transiently when signInWithCredential replaces an
+        // anonymous session (Firebase briefly emits null before the new user).
+        // _signInAnonymously will be called by signOut() if needed;
+        // here we just update state so the router can react.
+        _firebaseUser = null;
         _appUser = null;
+        _isLoading = false;
+        notifyListeners();
       }
-      _isLoading = false;
-      notifyListeners();
     });
+  }
+
+  Future<void> _signInAnonymously({bool showLoading = true}) async {
+    try {
+      if (showLoading) {
+        _isLoading = true;
+        _errorMessage = null;
+        notifyListeners();
+      }
+      await _authService.signInAnonymously();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Failed to establish guest session';
+      notifyListeners();
+    }
   }
 
   /// Loads user data from Firestore
@@ -195,19 +222,28 @@ class AuthProvider extends ChangeNotifier {
     super.dispose();
   }
 
+  /// Reloads the current user state from Firebase and notifies listeners
+  Future<void> reloadUser() async {
+    _firebaseUser = _authService.currentUser;
+    debugPrint('🔄 Manually reloaded user: ${_firebaseUser?.uid} (isAnonymous: ${_firebaseUser?.isAnonymous})');
+    if (_firebaseUser != null) {
+      await _loadUserData(_firebaseUser!.uid);
+    }
+    _isLoading = false;
+    notifyListeners();
+  }
+
   /// Signs out the current user
   Future<void> signOut() async {
     try {
-      _isLoading = true;
       _errorMessage = null;
-      notifyListeners();
-
       await _authService.signOut();
 
       _firebaseUser = null;
       _appUser = null;
       _isLoading = false;
       notifyListeners();
+      debugPrint('🚪 Explicit sign out completed');
     } catch (e) {
       _isLoading = false;
       _errorMessage = e.toString();

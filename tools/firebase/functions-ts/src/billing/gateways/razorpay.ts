@@ -245,13 +245,21 @@ exports.verifyPayment = onRequest(
       log('Is valid signature', isValidSignature);
       if (isValidSignature) {
         // Update the order with payment details
-        const transactions = (
+        let transactions = (
           await transactionsByIdCollection
-            .where('processor.data.order.entity.id', '==', razorpay_order_id)
+            .where('processor.data.order.id', '==', razorpay_order_id)
             .get()
         ).docs;
 
-        if (transactions.length == 1) {
+        if (transactions.length === 0) {
+          transactions = (
+            await transactionsByIdCollection
+              .where('processor.data.order.entity.id', '==', razorpay_order_id)
+              .get()
+          ).docs;
+        }
+
+        if (transactions.length === 1) {
           const transactionSnap = transactions[0];
           const transaction = new Transaction(
             transactionSnap.data() as Transaction
@@ -262,6 +270,13 @@ exports.verifyPayment = onRequest(
           const redirectUrl = transaction.getRedirectURL();
 
           res.redirect(redirectUrl);
+        } else {
+          log('Transaction not found or multiple transactions found. Count:', transactions.length);
+          if (referer && referer.startsWith('http')) {
+            res.redirect(referer);
+          } else {
+            res.status(404).send('Transaction not found');
+          }
         }
 
         log('Payment verification successful');
@@ -340,7 +355,14 @@ exports.webHookHandler = onRequest(
             'processor.data.order': orderPayload,
             'processor.data.payment': data.payload.payment || null
           });
-          log('Transaction already processed. Updated processor data.');
+
+          await runPostWebhookHooks(transaction.reason, {
+            transaction,
+            gatewayData: data.payload,
+            gateway: 'razorpay'
+          });
+
+          log('Transaction already processed. Updated processor data and ran post-webhook hooks.');
           res.status(200).send({ successful: true });
           return Promise.resolve();
         }

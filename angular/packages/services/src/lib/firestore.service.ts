@@ -37,11 +37,58 @@ export class FirestoreService {
   }
 
   /**
+   * Get a single document from a DocumentReference and convert timestamps to dates
+   */
+  getDocFromRef<T = any>(
+    docRef: DocumentReference<any>,
+    entityName: string
+  ): Observable<T | undefined> {
+    return docData(docRef, { idField: 'id' as keyof T }).pipe(
+      map((data) => {
+        if (!data) return undefined;
+        return this.firestoreHelpers.convertTimestampsToDates(data) as T;
+      }),
+      tap((item) => {
+        if (!item) return;
+        this.usageTracker.recordFirestoreRead(
+          1,
+          this.usageTracker.estimateBytes(item),
+          entityName
+        );
+      })
+    );
+  }
+
+  /**
+   * Get a collection from a Query or CollectionReference and convert timestamps to dates
+   */
+  getCollectionFromRef<T = any>(
+    q: Query<any> | CollectionReference<any>,
+    entityName: string
+  ): Observable<T[]> {
+    return collectionData(q, { idField: 'id' as keyof T }).pipe(
+      map((items) =>
+        items.map((item) =>
+          this.firestoreHelpers.convertTimestampsToDates(item)
+        )
+      ),
+      tap((items) => {
+        const bytes = this.usageTracker.estimateBytes(items);
+        this.usageTracker.recordFirestoreRead(
+          items.length,
+          bytes,
+          entityName
+        );
+      })
+    );
+  }
+
+  /**
    * Get a single document and convert timestamps to dates
    */
   getDoc<T = any>(path: string): Observable<T | undefined> {
     const docRef = doc(this.firestore, path) as DocumentReference<T>;
-    return docData(docRef).pipe(
+    return docData(docRef, { idField: 'id' as keyof T }).pipe(
       map((data) => {
         if (!data) return undefined;
         return this.firestoreHelpers.convertTimestampsToDates(data) as T;
@@ -70,7 +117,7 @@ export class FirestoreService {
         ? (query(colRef, ...queryConstraints) as Query<T>)
         : colRef;
 
-    return collectionData(q).pipe(
+    return collectionData(q, { idField: 'id' as keyof T }).pipe(
       map((items) =>
         items.map((item) =>
           this.firestoreHelpers.convertTimestampsToDates(item)

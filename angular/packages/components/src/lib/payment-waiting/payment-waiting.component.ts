@@ -32,6 +32,14 @@ export class PaymentWaitingComponent implements OnInit, OnDestroy {
       if (bgColorParam) {
         // Support both hex colors and named colors
         this.backgroundColor = bgColorParam;
+
+        if (typeof document !== 'undefined') {
+          const startColor = bgColorParam.includes('gradient')
+            ? (bgColorParam.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))\s+0%/) || [])[1] || bgColorParam
+            : bgColorParam;
+          document.documentElement.style.setProperty('--background', startColor);
+          document.documentElement.style.setProperty('--color-background', startColor);
+        }
       }
 
       // Set a timeout to redirect to failure page if payment takes too long (5 minutes)

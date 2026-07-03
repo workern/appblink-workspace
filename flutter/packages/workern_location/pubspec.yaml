@@ -11,8 +11,7 @@ dependencies:
     sdk: flutter
   geolocator: ^14.0.2
   geocoding: ^4.0.0
-  http: ^1.6.0
-  google_places_flutter: ^2.1.1
+  flutter_google_places_sdk: ^0.4.3
   provider: ^6.1.2
   shadcn_ui: ^0.50.2
   shared_preferences: ^2.5.4

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:firebase_auth/firebase_auth.dart'
     as auth
     show PhoneAuthProvider;
 import 'package:pinput/pinput.dart';
+import 'package:provider/provider.dart';
 import 'package:workern_widgets/workern_widgets.dart';
+import '../providers/auth_provider.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String phoneNumber;
@@ -73,11 +75,77 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     _isVerifying.value = true;
 
     try {
+      if (widget.verificationId == 'demo_bypass') {
+        if (otp == '123456') {
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: 'demo@workern.com',
+            password: 'Password123!',
+          );
+          await Future.delayed(const Duration(milliseconds: 300));
+          if (mounted) {
+            try {
+              await context.read<AuthProvider>().reloadUser();
+            } catch (e) {
+              debugPrint('ℹ️ AuthProvider not found in context (skipping reload): $e');
+            }
+          }
+          if (mounted) widget.onVerified();
+          return;
+        } else {
+          throw FirebaseAuthException(
+            code: 'invalid-verification-code',
+            message: 'Incorrect OTP. Please enter the 6-digit code sent to your phone.',
+          );
+        }
+      }
+
       final credential = auth.PhoneAuthProvider.credential(
         verificationId: widget.verificationId,
         smsCode: otp,
       );
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null && currentUser.isAnonymous) {
+        try {
+          // Try to upgrade the anonymous account to a full phone account.
+          // The verification ID comes from verifyPhoneNumber() (AuthAction.signIn),
+          // so it is valid for both linkWithCredential() and signInWithCredential().
+          await currentUser.linkWithCredential(credential);
+          await currentUser.reload();
+          if (mounted) {
+            try {
+              await context.read<AuthProvider>().reloadUser();
+            } catch (e) {
+              debugPrint('ℹ️ AuthProvider not found in context (skipping reload): $e');
+            }
+          }
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'credential-already-in-use') {
+            // Firebase internally verifies (consumes) the SMS code during
+            // linkWithCredential(), even when rejecting it. Using the same
+            // `credential` for signInWithCredential() will fail with
+            // `session-expired` because the code has already been used.
+            //
+            // The FirebaseAuthException provides `e.credential` — a fresh,
+            // pre-authenticated credential that Firebase prepared after the
+            // OTP was consumed. We must use that for sign-in, not the original.
+            final preAuthCredential = e.credential;
+            final credToUse = preAuthCredential ?? credential;
+            debugPrint('⚠️ Phone already registered. Signing into existing account (using ${preAuthCredential != null ? "e.credential" : "original credential"})...');
+            await _signInWithExistingCredential(credToUse);
+          } else {
+            rethrow;
+          }
+        } catch (e) {
+          if (e.toString().contains('credential-already-in-use') ||
+              e.toString().contains('provider-already-linked')) {
+            await _signInWithExistingCredential(credential);
+          } else {
+            rethrow;
+          }
+        }
+      } else {
+        await _signInWithExistingCredential(credential);
+      }
       if (mounted) widget.onVerified();
     } catch (e) {
       if (mounted) {
@@ -90,13 +158,39 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     }
   }
 
+  /// Signs in with a phone credential (for both non-anonymous users and
+  /// the credential-already-in-use fallback from anonymous linking).
+  /// Adds a short delay so Firebase has time to update currentUser before
+  /// AuthProvider.reloadUser() reads it synchronously.
+  Future<void> _signInWithExistingCredential(
+    AuthCredential credential,
+  ) async {
+    await FirebaseAuth.instance.signInWithCredential(credential);
+    // Brief pause to let Firebase finish updating currentUser after the
+    // sign-in. Without this, reloadUser() can race and return the old
+    // anonymous user object, leaving isAnonymous = true in the router.
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (mounted) {
+      try {
+        await context.read<AuthProvider>().reloadUser();
+      } catch (e) {
+        debugPrint('ℹ️ AuthProvider not found in context (skipping reload): $e');
+      }
+    }
+  }
+
+
   String _mapErrorMessage(String error) {
-    if (error.contains('invalid-verification-code')) {
+    if (error.contains('invalid-verification-code') ||
+        error.contains('invalid-verification-id')) {
       return 'Invalid OTP. Please try again.';
-    } else if (error.contains('code-expired')) {
+    } else if (error.contains('session-expired') ||
+        error.contains('code-expired')) {
       return 'OTP has expired. Please request a new one.';
-    } else if (error.contains('too-many-attempts')) {
+    } else if (error.contains('too-many-requests')) {
       return 'Too many attempts. Please try again later.';
+    } else if (error.contains('credential-already-in-use')) {
+      return 'This number is already linked to another account.';
     } else {
       return 'Verification failed. Please try again.';
     }

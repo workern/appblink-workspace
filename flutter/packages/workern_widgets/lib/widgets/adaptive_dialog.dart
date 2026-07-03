@@ -174,25 +174,61 @@ Future<bool> showAdaptiveConfirmationDialog({
     return true;
   }
 
-  final result = await showAdaptiveDialog<bool>(
-    context: context,
-    title: title,
-    content: message,
-    actions: [
-      AdaptiveDialogAction(
-        label: cancelLabel,
-        onPressed: () => Navigator.pop(context, false),
-      ),
-      AdaptiveDialogAction(
-        label: confirmLabel,
-        onPressed: () => Navigator.pop(context, true),
-        isDestructive: isDestructive,
-        isDefaultAction: true,
-      ),
-    ],
-  );
+  final isCupertinoPlatform =
+      Theme.of(context).platform == TargetPlatform.iOS || Platform.isIOS;
 
-  return result ?? false;
+  if (isCupertinoPlatform) {
+    final result = await showCupertinoDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogCtx) => CupertinoAlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: Text(cancelLabel),
+          ),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            isDestructiveAction: isDestructive,
+            isDefaultAction: true,
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  } else {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogCtx) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: ShadDialog.alert(
+          title: Text(title),
+          description: Text(message),
+          actions: [
+            ShadButton.outline(
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+              child: Text(cancelLabel),
+            ),
+            if (isDestructive)
+              ShadButton.destructive(
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: Text(confirmLabel),
+              )
+            else
+              ShadButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: Text(confirmLabel),
+              ),
+          ],
+        ),
+      ),
+    );
+    return result ?? false;
+  }
 }
 
 /// Internal stateful dialog that shows a loader inside the confirm button
